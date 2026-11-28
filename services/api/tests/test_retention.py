@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
 from app.services.retention import (
     MAX_DAYS,
     MIN_DAYS,
@@ -11,6 +12,16 @@ from app.services.retention import (
     build_lake_purge_sql,
     resolve_policy,
 )
+
+
+@pytest.fixture(autouse=True)
+def explicit_lake_profile(monkeypatch):
+    from pathlib import Path
+
+    from app.core.config import settings
+    path = Path(__file__).resolve().parents[3] / "deploy/aisoc21/lake-storage-3b/storage.example.json"
+    monkeypatch.setattr(settings, "AISOC_LAKE_STORAGE_POLICY_FILE", str(path))
+    monkeypatch.setattr(settings, "CLICKHOUSE_DATABASE", "aisoc")
 
 
 def test_defaults_when_no_config():

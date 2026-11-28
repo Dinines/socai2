@@ -80,7 +80,7 @@ def test_complete_release_generates_and_validates_outside_source_tree(release, t
     ended = json.loads((tmp_path/'console/end.json').read_text())
     assert ended['reason'] == 'eof' and ended['execution_attempts'] == 0 and not ended['all_parts_completed']
     manifest = json.loads((package/'compatibility.json').read_text())
-    assert manifest['service_version'] == manifest['viewer_version'] == '0.6.1'
+    assert manifest['service_version'] == manifest['viewer_version'] == '0.6.2'
     assert manifest['investigation_read_operations'] == 55 and manifest['investigation_operations'] == 80
     assert not manifest['startup_executes_tests']
     assert (package/'services/investigation_test/web/viewer.js').is_file()

@@ -1,0 +1,125 @@
+diff --git a/services/fusion/app/services/lake_alert_receiver.py b/services/fusion/app/services/lake_alert_receiver.py
+index 5a015b31e..d0d25e239 100644
+--- a/services/fusion/app/services/lake_alert_receiver.py
++++ b/services/fusion/app/services/lake_alert_receiver.py
+@@ -23,7 +23,7 @@ from app.services.delivery_recovery import (
+     restore_snapshot,
+ )
+ from app.services.lake_alert_selection import SelectionPolicy, field, select_alert
+-from app.services.lake_ingress import ABSENT, decode, nested
++from app.services.lake_ingress import ABSENT, Projection, decode, nested, project_labels
+ from app.services.receipt_json import (
+     LAKE_INPUT_VERSION,
+     decoded,
+@@ -115,6 +115,7 @@ def adapt_alert(row, selection: SelectionPolicy, policy: ReceivePolicy, *, decis
+     description, _ = string(fields["description_paths"])
+     rule_id, rule_id_path = string(("finding_info.analytic.uid",))
+     rule_name, rule_name_path = string(("finding_info.analytic.name",))
++    techniques, tactics = project_labels(Projection(document))
+     rule_sources = {
+         key: path
+         for key, path in (("rule_id_source", rule_id_path), ("rule_name_source", rule_name_path))
+@@ -130,7 +131,7 @@ def adapt_alert(row, selection: SelectionPolicy, policy: ReceivePolicy, *, decis
+         source_alert_id=UUID(current["identity"]["source_subject_id"]), source=policy.body["source"],
+         connector_type=policy.body["connector_type"], connector_id=policy.body["connector_id"],
+         title=title, description=description or "", severity=fields["severity_mapping"][str(severity)],
+-        rule_id=rule_id, rule_name=rule_name,
++        rule_id=rule_id, rule_name=rule_name, mitre_tactics=tactics, mitre_techniques=techniques,
+         external_id=source_id, source_event_ids=[source_id], ocsf_class_uid=ref["class_uid"],
+         event_time=parse_received_time(ref["event_time"]) if row["event_time_source"] == "ocsf_time_ms" else None,
+         raw_event=envelope, field_metadata={"entity_sources": paths, "title_source": title_path,
+diff --git a/services/fusion/app/services/lake_ingress.py b/services/fusion/app/services/lake_ingress.py
+index 748ae3a6e..5239f80af 100644
+--- a/services/fusion/app/services/lake_ingress.py
++++ b/services/fusion/app/services/lake_ingress.py
+@@ -277,21 +277,22 @@ class Projection:
+         return [v for v in value if isinstance(v, str) and v]
+ 
+ 
+-def _labels(projection):
++def project_labels(projection):
++    """Return explicit techniques/tactics, retaining the projection's issues."""
+     p = projection
+     techniques = p.strings(p.array(("mitre_techniques",)), ("mitre_techniques",))
+     tactics = p.strings(p.array(("mitre_tactics",)), ("mitre_tactics",))
+-    for field in ("mitre_attck", "attacks"):
+-        for item in p.array((field,)):
++    for field in (("mitre_attck",), ("attacks",), ("finding_info", "attacks")):
++        for item in p.array(field):
+             if not isinstance(item, dict):
+-                p.bad((field,), "invalid_object_item")
++                p.bad(field, "invalid_object_item")
+                 continue
+-            paths = (("technique_id",), ("tactic_names",)) if field == "mitre_attck" else (("technique", "uid"), ("tactic", "uid"))
++            paths = (("technique_id",), ("tactic_names",)) if field == ("mitre_attck",) else (("technique", "uid"), ("tactic", "uid"))
+             for output, path in zip((techniques, tactics), paths, strict=True):
+                 value = nested(item, path)
+                 if value is ABSENT or value is None:
+                     continue
+-                output.extend(p.strings(value if path == ("tactic_names",) else [value], (field, *path)))
++                output.extend(p.strings(value if path == ("tactic_names",) else [value], (*field, *path)))
+     return list(dict.fromkeys(techniques)), list(dict.fromkeys(tactics))
+ 
+ 
+@@ -351,7 +352,7 @@ def adapt_ocsf(payload: bytes | None, *, profile: IngressProfile, position: Kafk
+             p.bad(("is_alert",), "invalid_bool")
+         is_alert = None
+     sha256, fingerprints = _fingerprints(p)
+-    techniques, tactics = _labels(p)
++    techniques, tactics = project_labels(p)
+     raw = p.value(("raw_data",))
+     row.update(
+         tenant_id=profile.tenant_id, event_time=event_time, severity=p.string(("severity",)),
+diff --git a/services/fusion/tests/test_lake_alert_receiver.py b/services/fusion/tests/test_lake_alert_receiver.py
+--- a/services/fusion/tests/test_lake_alert_receiver.py
++++ b/services/fusion/tests/test_lake_alert_receiver.py
+@@ -18,9 +18,11 @@
+ )
+ from app.services.lake_alert_receiver import ReceiptHold, ReceivePolicy, adapt_alert
+ from app.services.lake_alert_selection import SelectionPolicy
++from app.services.lake_ingress import Projection, project_labels
+ from app.services.receipt_json import canonical_numbers, decoded, encoded, model_value
+ from app.services.socai2_sink import Socai2AlertSink
+ 
++from .lake_ingress_cases import event
+ from .test_lake_alert_selection import document, partial, row
+ 
+ ROOT = Path(__file__).resolve().parents[3]
+@@ -65,6 +67,37 @@
+     assert material["raw_json"]["field_metadata"]["lake_ingress"]["lake_ref"]["event_id"] == str(source["event_id"])
+ 
+ 
++def test_native_finding_labels_reach_material_without_changing_source(policies):
++    selection, policy = policies
++    doc = document()
++    native = event()["attacks"][0]
++    doc["finding_info"]["attacks"] = [native, copy.deepcopy(native)]
++    original = copy.deepcopy(doc)
++    source = row(doc, selection)
++    alert = adapt_alert(source, selection, policy)
++    expected_tactics = [native["tactic"]["uid"]]
++    expected_techniques = [native["technique"]["uid"]]
++    assert source["mitre_tactics"] == alert.mitre_tactics == expected_tactics
++    assert source["mitre_techniques"] == alert.mitre_techniques == expected_techniques
++    _, material, _, _ = p.project(fused_for(alert), alert, p.snapshot_id(alert.id))
++    assert material["detection"]["tactics"] == expected_tactics
++    assert material["detection"]["techniques"] == expected_techniques
++    assert material["detection"]["labels_provided"] is True
++    assert material["raw_text"] == source["ocsf_json"]
++    assert material["ocsf_json"] == original == doc
++    assert alert.raw_event["ocsf_event"] == original
++
++    # Keep valid labels and the same typed issue semantics; never infer from names.
++    doc["finding_info"]["attacks"].extend([
++        {"tactic": {"uid": False}},
++        {"tactic": {"name": doc["finding_info"]["title"]}},
++    ])
++    projection = Projection(doc)
++    assert project_labels(projection) == (expected_techniques, expected_tactics)
++    assert projection.issues == {"finding_info.attacks.tactic.uid:invalid_string_item"}
++    assert row(doc, selection)["parse_status"] == "partial"
++
++
+ def test_missing_event_time_and_partial_title_are_not_fabricated(policies):
+     selection, policy = policies
+     original = document()

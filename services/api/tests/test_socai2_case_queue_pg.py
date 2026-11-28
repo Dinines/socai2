@@ -11,7 +11,7 @@ from uuid import UUID, uuid4
 from app.api.v1.deps import CurrentUser, get_current_user
 from app.api.v1.endpoints import socai2_cases as api
 from app.models import socai2 as m
-from app.socai2.baseline_store import C
+from app.socai2.baseline_store import CA, A, C
 from app.socai2.case_contracts import CaseQueueQuery
 from app.socai2.case_reader import CaseReader
 from app.socai2.case_service import CaseService
@@ -110,6 +110,28 @@ async def run_checks(engine, record, only=None):
             "detail"] == "case_cursor_filters_changed"
         return {"case_ids": list(map(str, ids)), "metric_delta": expected, "pages": 2}
 
+    async def test_queue_pg_active_member_count():
+        _, ids = await fixture()
+        case_id, empty_case_id = ids[:2]
+        async with service.transaction(TENANT) as store:
+            for status in ("new", "in_progress", "completed", "unknown"):
+                alert_id = uuid4()
+                await store.db.execute(insert(A).values(
+                    id=alert_id, tenant_id=TENANT, title="Synthetic case member", source_namespace="lyc_case_queue",
+                    connector_type="lyc_case_queue", source_identity_key=str(alert_id), handling_status=status,
+                ))
+                await store.db.execute(insert(CA).values(
+                    id=uuid4(), tenant_id=TENANT, case_id=case_id, alert_id=alert_id,
+                    membership_source="manual", source_operation_id=uuid4(),
+                ))
+        page = await get(q=str(case_id), limit=1)
+        assert page["total"] == 1 and page["items"][0]["case"]["id"] == str(case_id)
+        assert page["items"][0]["member_count"] == 4
+        assert page["items"][0]["active_member_count"] == 2
+        empty = (await get(q=str(empty_case_id), limit=1))["items"][0]
+        assert empty["member_count"] == empty["active_member_count"] == 0
+        return {"mixed_members_verified": True, "empty_members_verified": True}
+
     async def test_queue_pg_tenant_permissions_and_cursor_binding():
         nonlocal principal
         prefix, ids = await fixture()
@@ -178,7 +200,7 @@ async def run_checks(engine, record, only=None):
             raise AssertionError("queue transaction allowed a write")
         return {"repeatable_read": True, "readonly_sqlstate": "25006", "case_rows_unchanged": 4}
 
-    checks = [test_queue_pg_metrics_filters_and_stable_pagination,
+    checks = [test_queue_pg_metrics_filters_and_stable_pagination, test_queue_pg_active_member_count,
         test_queue_pg_tenant_permissions_and_cursor_binding, test_queue_pg_readonly_snapshot_and_no_time_refresh]
     try:
         for check in checks:

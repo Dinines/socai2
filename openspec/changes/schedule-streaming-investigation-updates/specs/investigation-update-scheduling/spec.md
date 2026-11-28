@@ -216,7 +216,7 @@ Case关系读取 SHALL 区分满额续建关系与共享事件关系；用于关
 - **THEN** 保存Case、事件关联/活跃目标和首轮task，直接按正常生命周期调度；不要求额外手动启用或识别旧数据批次
 
 ### Requirement: One dispatcher enforces capacity without head of line blocking
-系统 SHALL 由唯一调度器领取task/pending，多个生产者仅追加；总N为正整数配置默认1，同主体同分析kind最多一个本地活动执行。pending优先且最多检查本轮开始P条，忙或未到重试时间放回尾部；余下容量按Case>A>I>知识维护处理普通队列，各队列最多其开始长度。N MUST NOT 被误用为最多检查条数，不批量重写队列或从中间重排，不在每个HTTP worker启动领取循环。
+系统 SHALL 由唯一调度器领取task/pending，多个生产者仅追加；总N为正整数配置默认1，同主体同分析kind最多一个本地活动执行。pending优先且最多检查本轮开始P条，忙或未到重试时间放回尾部；余下容量按Case>A>I处理本期普通分析队列，各队列最多其开始长度。N MUST NOT 被误用为最多检查条数，不批量重写队列或从中间重排，不在每个HTTP worker启动领取循环。
 
 #### Scenario: Pending contains ten requests for an active Case
 - **WHEN** N=2、A已运行，pending10条全属A而普通队列有空闲B
@@ -245,8 +245,8 @@ dispatch.poll_interval_seconds SHALL 来自显式profile，默认60秒；每轮�
 - **THEN** T2等同主体空闲后再读取最新材料，保留T1输入，按自己的手动/自动规则比较并执行，不丢请求或同主体并行
 
 #### Scenario: Different intents remain independent
-- **WHEN** 同Case有普通check、显式rerun或后续定向/综合请求
-- **THEN** 各请求保留意图且同Case串行；普通材料无变化不能吞掉明确rerun/定向/综合请求
+- **WHEN** 同Case有普通check或显式rerun请求
+- **THEN** 各请求保留意图且同Case串行；普通材料无变化不能吞掉明确rerun请求
 
 ### Requirement: Business records are readable before asynchronous analysis completes
 A/I/Case SHALL 先在短事务持久保存业务对象、关联及异步task，再由调度器启动模型分析。模型未返回时业务记录及任务 SHALL 已可独立查询，Run/结果可为空或运行中；接收事务 MUST NOT 等待模型。完成后另存结果及更新关联，失败 MUST 保留对象、旧结果及失败记录。
@@ -295,6 +295,8 @@ Case SHALL 固定同Case最近一次实际执行且本地已结束的完整调�
 
 局部调用unknown且本地已结束时 SHALL 保存阶段回执并允许独立下游按已冻结材料继续，不能因它终止整个可执行路径。未确定usage SHALL 保持未知并保留该次最大预算预留，不按零费用/零消耗释放本轮预算。若余量不足，仅跳过受影响调用并继续程序收尾；最终Run unknown时仍使用工件交付，不伪造terminal Result或远端成功。
 
+本地结束凭证 SHALL 核对同Run/step的请求与响应两份原件、类型、hash及实际结束时刻；缺任一原件或旧unknown无合法凭证 MUST NOT 放行后续调用。模型用量预留 SHALL 来自实际已保存请求且可核量算绑定；计量矛盾不得被正文错误覆盖。查询连接 SHALL 由本次调用独占，执行与关闭观察时限由选定策略配置；关闭观察超时仍须等待worker真实退出，MUST NOT 提前释放名额。明确服务端拒绝不冒称传输unknown。
+
 #### Scenario: A timeout occurs with capacity one
 - **WHEN** N=1、A等待回复超时并已完成本地收尾
 - **THEN** task A失败、attempt记local_ended_at、Run保留unknown，不自动重试；队列继续启动B，无人工解除步骤
@@ -322,7 +324,7 @@ Case SHALL 固定同Case最近一次实际执行且本地已结束的完整调�
 - **THEN** 原件可按原记录读取，但执行拒绝，不通过旧模型装配补造一次新调查
 
 ### Requirement: The target HTTP version submits analyses asynchronously
-E01 SHALL 返回Case与首轮分析任务，Case investigations和事件diagnose SHALL 接受operation_key+mode(check/rerun)并异步202。analysis-tasks列表/详情 SHALL 提供持久状态与真实结果链接，列表含主体更新摘要。目标版本 MUST NOT 保留旧E11/E13两阶段启动、E36手动A或同步兼容分支；未知输入422，不静默忽略旧比较/时间窗参数。人工定向及用户手动后续综合的输入/结果字段按已确认Q1流程补齐，不自动续接；默认内部窗口及日志条数按Q2提供，不新增外部时间参数。Q3不新增同告警材料版本接口或重新分诊。模型读取附件正文非本期要求，自选执行窗口是独立未定扩展，不建立猜测占位API/表。
+E01 SHALL 返回Case与首轮分析任务，Case investigations和事件diagnose SHALL 接受operation_key+mode(check/rerun)并异步202。analysis-tasks列表/详情 SHALL 提供持久状态与真实结果链接，列表含主体更新摘要。目标版本 MUST NOT 保留旧E11/E13两阶段启动、E36手动A或同步兼容分支；未知输入422，不静默忽略旧比较/时间窗参数。默认内部窗口及日志条数按Q2提供，不新增外部时间参数。Q3不新增同告警材料版本接口或重新分诊。模型读取附件正文非本期要求，自选执行窗口是独立未定扩展，不建立猜测占位API/表。
 
 #### Scenario: A client submits while another run is active
 - **WHEN** 开放Case正在执行，用户用新operation_key提交check/rerun
@@ -343,7 +345,7 @@ E01 SHALL 返回Case与首轮分析任务，Case investigations和事件diagnose
 - **THEN** 调用方可通过续页完整发现目录并逐项定位，跨页父步骤和历史复用引用仍指向真实来源，不只报告truncated而没有后续读取方式
 
 ### Requirement: Automatic investigations provide traceable windows for time bounded queries
-自动调查 SHALL 在时间限定工具调用前按相关告警的最早/最晚真实发生时间生成默认查询起止，分别向前/后扩展默认3600秒，并保存实际窗口、来源和profile配置；两项扩展量 SHALL 可分别配置，不能因外部提交不收时间参数就将内部窗口一律留空。完整调查按本轮选入成员、定向问题按实际相关成员推导，不因扩大查询时间自动新增Case成员。系统 MUST 区分本轮查询窗口、候选探索日期、用户自选调查执行范围及历史知识独立回看策略。
+自动调查 SHALL 在时间限定工具调用前按相关告警的最早/最晚真实发生时间生成默认查询起止，分别向前/后扩展默认3600秒，并保存实际窗口、来源和profile配置；两项扩展量 SHALL 可分别配置，不能因外部提交不收时间参数就将内部窗口一律留空。完整调查按本轮选入成员，C3/Deep补查按实际相关成员推导，不因扩大查询时间自动新增Case成员。系统 MUST 区分本轮查询窗口、候选探索日期、用户自选调查执行范围及历史知识独立回看策略。
 
 可靠告警时间不足时 SHALL 保存受影响目标的补查缺口，保留其他分析及可用工具结果；MUST NOT 用当前/入库时间伪造发生时间、将未查询报告为查空或仅因该缺口否定全部结论。系统 SHALL 保持实际派生窗口，不另设最大时间跨度、静默裁剪或自动分窗；沿配置的单次查询超时与条数上限执行，超时/失败记录补查缺口并保留其他有效分析。
 
@@ -460,8 +462,55 @@ A/I/C3/Deep/C6实际请求 SHALL 按路径、容器类型和用途过滤tenant_u
 - **WHEN** Deep输出请求query但binding未提供、字段截断或动作组合不合法
 - **THEN** 保存原答及相应缺失/无效单元，查询派发数为零，其余有效答案与独立下游继续；完整合法stop/length答复使用同一个接收器
 
+#### Scenario: C6 retains a complete whole-case core while optional sections are cut
+- **WHEN** C6已交付完整核心结论、冻结全案范围及全体成员的有效analyzed/unresolved判断，但可选尾部截断
+- **THEN** 原结论及独立单元保存为accepted模型Result，delivery partial且Run completed；缺失字段在有版本retained_output与stage_delivery明确记录，原文/span/hash保持；不补造影响、建议或比较正文，不改变正常完整答复的既有校验规则
+
+#### Scenario: C6 retains text or analysis without a qualified whole-case core
+- **WHEN** C6截断恢复分支的核心结论未闭合、范围不全或必要成员判断缺失，但有可解释独立单元
+- **THEN** 保留实际核心文字或分析，Result rejected且delivery partial、Run failed；没有核心时conclusion=null/unavailable，缺失成员由程序记录not_analyzed及assessment=null；不刷新正常完成基线、不覆盖有效判断，不从C3借结论填满C6
+
+#### Scenario: C6 returns no usable unit
+- **WHEN** C6已收到的正文没有任何结构/身份合法的独立单元
+- **THEN** 保存原答、none回执及system_only/none结果，conclusion=null/unavailable、Run failed；系统交付说明与模型结论分开，既有模型/人工判断保持
+
+#### Scenario: C6 recovery preserves provenance and recommendation position
+- **WHEN** 接收器恢复嵌套analysis单元或跳过不合法的建议数组项
+- **THEN** 仅保留原位置对应的合法单元；原路径、值和span/hash指实际收到正文，UUID适配值另存；推荐ID沿原数组序号生成，不因前项隔离而重排，C6 followups不派发
+
+#### Scenario: A closed invalid C6 unit does not erase later independent units
+- **WHEN** C6中间单元存在重复键或独立可选单元无效，而后续完整单元的边界仍可严格定位
+- **THEN** 隔离冲突的两个定义并继续解析合法相邻单元；重复整个analysis/conclusion时排除该整个字段，未知子树不清空合法兄弟项；完整合法Delivery才标complete，其他有效内容按部分结果资格保存，程序固定比较独立还原
+
+### Requirement: Previous partial analysis and comparable conclusions remain distinct
+后轮调查 SHALL 先固定同Case最近实际开始且本地结束的whole_case Run，再检查该轮比较资格。比较结论须来自completed Run及accepted模型Result；新C6恢复结果还须满足已保存恢复资格。没有合格结论时 SHALL 保留previous_run_id、空comparison_result_id及不可比原因，不退回更早成功轮。该轮已有严格接收回执的有效分析 MAY 按任务/成员选入本轮冻结材料，明确prior_analysis和原范围；不得重解析历史拒收原答追认为有效，不得因上一轮结束而自行触发新调查。
+
+#### Scenario: The immediately preceding failed round has useful findings
+- **WHEN** R1有合格结论，R2无核心且failed但已保存有效发现，随后显式受理R3
+- **THEN** R2冻结比较R1；R3的previous_run_id指R2、comparison_result_id为空且说明原因，R2发现以可核原件链的本轮副本进入C3/C6；R1仍可作为既有判断查阅，但不被偷换为R3的比较基线
+
+#### Scenario: Partial result adoption uses the existing whole-case guards
+- **WHEN** 用户预览或采用一个C6截断恢复结果
+- **THEN** partial/uncertain不单独否决，核心、全员覆盖、来源Run完成、新鲜度和review_token按既有规则检查；无核心结果被拒且不覆盖当前判断，晚完成结果不覆盖运行期间形成的较新人工采用
+
+#### Scenario: Previous material keeps its original scope and source boundary
+- **WHEN** 下一轮冻结上一轮已接收单元且当前Case范围有交集或变化
+- **THEN** 原文、原声明范围、来源Run/原件/路径/hash保持，适用交集另存；仅按本环节用途选择字段并引用本Run精确冻结路径，旧无合法回执或错Run材料不混入，business_view不因历史分析副本变化而改变
+
 ### Requirement: Local call failures do not cancel independent downstream work
 阶段 SHALL 在调用边界区分未发出故障、已发出后超时/断连、明确失败响应及工具未接通，保存真实状态和已收到且可定位的部分内容。异常后 SHALL 继续依赖齐备的独立步骤，缺硬依赖的步骤保存skip/unavailable原因，最终保存可读收尾；不得要求人工解除或阻塞其它任务。没有实际接收缓冲时不得凭空恢复正文。未知动作不重放；调用超时/预算/重试均受profile约束，既有默认60秒最多一次只适用于已确认可重试的任务失败，不因局部可选步骤重跑全案。
+
+#### Scenario: Known optional source and graph failures preserve usable analysis
+- **WHEN** C1及原件校验合法，背景来源/单条查询明确失败、唯一C3补答无有效内容，或C5成员锚点超过已配置图容量
+- **THEN** 保存各子步真实失败/缺口及初答有效分析，依赖齐备的Deep/C6继续；失败查询不作查空，同binding不重发；C5无图不补造节点/边，C6不再次强制建图，Result允许graph_artifact_id=null且保留图缺口
+
+#### Scenario: Missing optional graph does not weaken frozen evidence checks
+- **WHEN** 图失败、缺失或不覆盖当前材料集合
+- **THEN** 仅排除该图关系且不回退旧图；C1身份、原件hash及C6前后材料集合核对仍执行，硬依赖或持久化错误不被当作可选图失败吞掉
+
+#### Scenario: A locally finished attempt has a clock ordering mismatch
+- **WHEN** 执行句柄已结束，但有时区的完成回执时间早于数据库记录的attempt或待结束running Run的开始时间
+- **THEN** 保存操作使用数据库实际确认本地已结束的观察时间，并记录原回执时间、开始时间及观察时间；原结果/错误、重试资格保持，仍无有效时间次序则拒绝保存，unknown Run不填伪造ended_at，不重派业务
 
 #### Scenario: A Deep call times out after dispatch
 - **WHEN** 该调用本地已超时收尾而远端结果未知，其余事实仍可读

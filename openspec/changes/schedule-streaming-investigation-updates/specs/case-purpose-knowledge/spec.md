@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Model knowledge inputs are deduplicated and selected for the current task
-C3、Deep、C6 SHALL 使用本Run冻结且适合本步骤的知识，按真实身份/版本去重并保留查询出处与独立角色。模型输入 SHALL 先满足本案必要材料、人工反馈、反证及前序引用，再按配置容量选完整可选条目；MUST NOT 改写正文、将同卡多命中计为独立证据或丢弃必要来源凑容量。Case自动更新和用户完整重跑仍走完整C1–C6，不新增反馈专用C6-only路径；人工定向后的手动综合按case-human-http-flow执行，复用知识仍须恢复真实来源和必要依据。
+C3、Deep、C6 SHALL 使用本Run冻结且适合本步骤的知识，按真实身份/版本去重并保留查询出处与独立角色。模型输入 SHALL 先满足本案必要材料、人工反馈、反证及前序引用，再按配置容量选完整可选条目；MUST NOT 改写正文、将同卡多命中计为独立证据或丢弃必要来源凑容量。Case自动更新和用户完整重跑仍走完整C1–C6，不新增反馈专用C6-only路径。
 
 #### Scenario: Multiple queries retrieve the same historical card
 - **WHEN** 多个成员/目的命中同一知识块

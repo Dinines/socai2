@@ -133,9 +133,13 @@ def project(rows, tenant, case, run, members, *, comparable=False):
                     and set(value["alert_ids"]) != {aliases[a] for a in raw["value"]["alert_ids"]}):
                 raise ValueError("previous_analysis_scope_mismatch")
             if field == "findings" and value["state"] == "observed" and "statement" not in raw["value"]:
+                from .case_citation_quality import normalized
                 from .case_program_output import observed_text
                 from .citation_quality import new_review
-                if value["statement"] != observed_text(raw["value"], boundary, citation_review=new_review()):
+                review = new_review()
+                # Receipts retain raw units; replay admission on a separate derived copy.
+                admitted = normalized({"findings": [raw["value"]]}, review)["findings"][0]
+                if value["statement"] != observed_text(admitted, boundary, citation_review=review):
                     raise ValueError("previous_analysis_program_observation_mismatch")
             if field == "questions" and (identity == "coverage" or identity not in questions):
                 continue

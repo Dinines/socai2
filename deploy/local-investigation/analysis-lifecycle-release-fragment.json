@@ -15,16 +15,25 @@
     "services/api/app/socai2/case_management_contracts.py": "app/socai2/case_management_contracts.py",
     "services/api/app/socai2/case_adoption.py": "app/socai2/case_adoption.py",
     "services/api/app/socai2/case_adoption_contracts.py": "app/socai2/case_adoption_contracts.py",
-    "deploy/local-investigation/analysis-tasks.json": "config/analysis-tasks.json"
+    "deploy/local-investigation/analysis-tasks.json": "config/analysis-tasks.json",
+    "services/api/app/socai2/analysis_task_times.py": "app/socai2/analysis_task_times.py"
   },
   "environment_by_target": {
-    "local": {"SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": "<absolute-frozen-runtime>/config/analysis-tasks.json"},
-    "aisoc21": {"SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": "/app/config/analysis-tasks.json"}
+    "local": {
+      "SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": "<absolute-frozen-runtime>/config/analysis-tasks.json"
+    },
+    "aisoc21": {
+      "SOCAI2_ANALYSIS_TASKS_CONFIG_FILE": "/app/config/analysis-tasks.json"
+    }
   },
   "activation_order": [
-    "Apply migration128 using explicit database, existing writer/reader roles and time limits before loading the changed core.",
+    "Apply migration128 and migration133 using the explicit database and time limits before loading current ORM/core; include the S5 coordinated timing fragment for dispatcher/HTTP/page changes.",
     "Merge the core and selected configuration into the coordinated frozen release; HTTP adapters are maintained separately.",
     "This fragment does not enable a scheduler, consumer or model execution. Automatic producers remain a later step."
   ],
-  "notes": "No standalone deployment command, schema reset, historical task backfill or V1 modification. Combine with the final change release and verify actual runtime configuration."
+  "notes": "No standalone deployment command, schema reset, historical task backfill or V1 modification. Combine with the final change release and verify actual runtime configuration.",
+  "current_source_migrations": [
+    "128_socai2_analysis_lifecycle.sql",
+    "133_socai2_analysis_task_times.sql"
+  ]
 }

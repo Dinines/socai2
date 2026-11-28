@@ -13,10 +13,10 @@ from investigation_http.contracts import (
     AlertStatus,
     AssignmentState,
     ContentView,
+    IncidentDetailView,
     IncidentListQuery,
     IncidentSort,
     IncidentSubjectPage,
-    IncidentSubjectView,
     OwnerDirectoryPage,
     OwnerDirectoryQuery,
     RecordPage,
@@ -122,10 +122,10 @@ async def alert(alert_id: UUID, user: User, service: Service):
     return await invoke(service.read(user.tenant_id, "alerts", alert_id, "view"))
 
 
-@router.get("/incidents/{incident_id}", response_model=IncidentSubjectView)
+@router.get("/incidents/{incident_id}", response_model=IncidentDetailView)
 async def incident(incident_id: UUID, user: User, service: Service):
-    """事件事实及case_receiving：唯一接收Case、当前自动接收资格和no_target/closed/auto_window_expired原因。"""
-    return await invoke(service.read(user.tenant_id, "incidents", incident_id, "view"))
+    """事件事实、接收 Case、已保存采用诊断及独立的最近一次诊断尝试。"""
+    return await invoke(service.read(user.tenant_id, "incidents", incident_id, "incident_detail"))
 
 
 @router.get("/{subject}/{identity}/records/{section}", response_model=RecordPage)

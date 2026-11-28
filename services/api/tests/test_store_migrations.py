@@ -66,10 +66,21 @@ class TestEveryStoreHasARunner:
 
 
 class TestLakeRunner:
+    @pytest.fixture(autouse=True)
+    def policy(self, monkeypatch):
+        from app.db.lake_schema import LakeStoragePolicy
+        monkeypatch.setattr(lake_migrations, "configured_policy", lambda: LakeStoragePolicy("lyc_lake_unit", ("test-v1",), 400, 400))
+        monkeypatch.setattr(lake_migrations, "verify_schema", AsyncMock())
+
     @pytest.fixture
     def client(self) -> AsyncMock:
+        ledger = set()
+        async def execute(sql, params=None):
+            if sql.startswith("INSERT INTO") and "_migrations" in sql:
+                ledger.add(sql.split("SELECT '", 1)[1].split("'", 1)[0])
+            return [(value,) for value in sorted(ledger)] if sql.startswith("SELECT migration_id") else []
         c = AsyncMock()
-        c.execute = AsyncMock(return_value=[])
+        c.execute = AsyncMock(side_effect=execute)
         return c
 
     async def test_applies_and_records(self, client: AsyncMock) -> None:
@@ -88,7 +99,7 @@ class TestLakeRunner:
     async def test_an_applied_migration_is_not_reapplied(self, client: AsyncMock) -> None:
         """A recorded id is skipped and everything after it still runs."""
         first, *rest = lake_migrations.MIGRATIONS
-        client.execute = AsyncMock(return_value=[(first.id,)])
+        await lake_migrations._record(client, first, 0, lake_migrations.configured_policy())
         assert await lake_migrations.run_migrations(client) == [m.id for m in rest]
 
     async def test_a_failure_stops_the_run(self, client: AsyncMock) -> None:
@@ -97,7 +108,7 @@ class TestLakeRunner:
 
         async def failing(sql: str, params: Any = None) -> Any:
             calls["n"] += 1
-            if "CREATE DATABASE" in sql:
+            if "INSERT INTO" in sql:
                 raise RuntimeError("no such cluster")
             return []
 
@@ -107,20 +118,20 @@ class TestLakeRunner:
 
     async def test_non_strict_returns_what_succeeded(self, client: AsyncMock) -> None:
         async def failing(sql: str, params: Any = None) -> Any:
-            if "CREATE DATABASE" in sql:
+            if "INSERT INTO" in sql:
                 raise RuntimeError("boom")
             return []
 
         client.execute = failing
         assert await lake_migrations.run_migrations(client, strict=False) == []
 
-    async def test_drives_a_command_style_client(self) -> None:
+    async def test_drives_a_command_style_client(self, client) -> None:
         """Two ClickHouse client shapes are in use across this repo. A
         runner that speaks one silently does not run in half the
         deployments."""
         c = AsyncMock()
         del c.execute
-        c.command = AsyncMock(return_value=[])
+        c.command = client.execute
         await lake_migrations.run_migrations(c)
         assert c.command.await_count > 0
 
@@ -131,14 +142,15 @@ class TestLakeRunner:
         with pytest.raises(TypeError, match="neither execute"):
             await lake_migrations._execute(Opaque(), "SELECT 1")
 
-    async def test_an_unreadable_ledger_is_a_first_run_not_a_crash(self, client: AsyncMock) -> None:
+    async def test_an_unreadable_ledger_stops_instead_of_assuming_first_run(self, client: AsyncMock) -> None:
         async def execute(sql: str, params: Any = None) -> Any:
             if "SELECT migration_id" in sql:
                 raise RuntimeError("table does not exist")
             return []
 
         client.execute = execute
-        assert await lake_migrations.applied_ids(client) == set()
+        with pytest.raises(RuntimeError, match="table does not exist"):
+            await lake_migrations.applied_ids(client)
 
     @pytest.mark.parametrize("row", [("001_baseline",), {"migration_id": "001_baseline"}, "001_baseline"])
     async def test_reads_every_driver_row_shape(self, client: AsyncMock, row: Any) -> None:

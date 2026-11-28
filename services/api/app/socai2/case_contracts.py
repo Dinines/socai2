@@ -305,6 +305,7 @@ class CaseBaselineRecord(Contract):
 class CaseQueueItem(Contract):
     case: CaseView
     member_count: int = Field(ge=0)
+    active_member_count: int = Field(ge=0, description="正式成员中当前状态为 new 或 in_progress 的告警数。")
     open_task_count: int = Field(ge=0)
     baseline_records: list[CaseBaselineRecord]
     page_data: CasePageData | None = None

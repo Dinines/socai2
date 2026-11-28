@@ -131,7 +131,7 @@
 
 ## 工作台、测试API与Swagger
 
-新测试服务唯一入口为[deploy/investigation-test/README.md](../../deploy/investigation-test/README.md)，列全只读账本、调查上游、页面配置及CLI。W1账本/8个GET、W2只读代理、W3页面及[W4完整包0.4.0](evidence/streaming-w4-package-20261116-01/README.md)已按各自范围验证；W4还提供package-build.json与candidate-21.json，配置和账本外置，21回环18477候选经35GET及一次重启后正常停止。W5已切到实际4177/0.6.0；按负责人授权清理后账本为空，新数据未投递。Swagger部署全部参数见[deploy/api-docs/README.md](../../deploy/api-docs/README.md)，业务HTTP配置见[deploy/http-service/README.md](../../deploy/http-service/README.md)。
+新测试服务唯一入口为[deploy/investigation-test/README.md](../../deploy/investigation-test/README.md)，列全只读账本、调查上游、页面配置及CLI。W1账本/8个GET、W2只读代理、W3页面及[W4完整包0.4.0](evidence/streaming-w4-package-20261116-01/README.md)已按各自范围验证；W4还提供package-build.json与candidate-21.json，配置和账本外置，21回环18477候选经35GET及一次重启后正常停止。W5当时切到4177/0.6.0；其清理后空态仅属11-16批次。当前已更新为[D6的0.6.2/r9](evidence/workbench-d6-release-20261118-01/README.md)，四异常代表及恢复日常两轮实际读回通过，已有数据和账本保持。Swagger部署全部参数见[deploy/api-docs/README.md](../../deploy/api-docs/README.md)，业务HTTP配置见[deploy/http-service/README.md](../../deploy/http-service/README.md)。
 
 [processing_audit_view.json](processing_audit_view.json)只控制查阅呈现：
 
@@ -141,6 +141,6 @@
 | `local_preview.host` | string，127.0.0.1 | 独立预览绑定地址 | 保留默认 |
 | `local_preview.port` | int，4178 | 独立预览端口，不修改实际4177 | 保留默认 |
 
-[workbench-display-current.json](../../deploy/aisoc21/workbench-display-current.json)是**已部署展示状态清单**：`mode=live_http`、`read_only=true`、`database_url`为空，通过同源代理读调查HTTP及测试账本。实际0.6.0/4177运行、活动批次为0；`runtime_source/deployment_root/state_root`定位已冻结包与包外状态，`receipt/http_receipt/data_reset_receipt`追溯部署、读取与清理。它不是运行profile；运行参数用[release-4177.json](../../deploy/investigation-test/release-4177.json)。旧静态导出不作为当前展示数据，不能从清理备份自动恢复。
+当前正式工作台通过同源代理读取18024和既有测试账本，版本0.6.2/r9；[本批release](../../deploy/investigation-test/releases/workbench-d6-20261118-01/release.json)与[最终日常回执](evidence/workbench-d6-release-20261118-01/final-preservation-03.json)记录实际镜像、配置、账本和服务身份。旧[workbench-display-current.json](../../deploy/aisoc21/workbench-display-current.json)虽保留原文件名，内容仅为11-16的0.6.0/空态历史清单；旧[release-4177.json](../../deploy/investigation-test/release-4177.json)同样不是当前运行参数。旧静态导出不作为当前数据，不从清理备份自动恢复。
 
 本轮所有模块验收均应记录代码/配置身份、实际输入和读回。支持服务的健康探针只说明进程或特定依赖，不替代Kafka告警→事件→调查及HTTP/展示的同批整体验收。

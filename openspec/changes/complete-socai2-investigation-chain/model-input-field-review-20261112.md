@@ -501,3 +501,13 @@ C3负责初步解释、成员判断、五个业务问题和必要补查，不负
 已完成[本地程序修复](../../../docs/operations/evidence/case-c3-coverage-20261113-01/README.md)及[10批一次最新固定Run](../../../docs/operations/evidence/fixed-investigation-20261113-10/README.md)。7项既有定向场景通过，105项离线原材料/引用保持、旧09六问仍可接受；真实C3为五问、程序保存六问。5次生成后C6一次纠错接受待复核/部分交付并采用，4次ASGI和SQL读回一致；影响Deep重复引用拒收且未进入C6判断，原答/失败/旧行保持。65,000tokens，无加预算/额外Run；两端4177只留最新批次，旧展示备份，模型服务未发布。正文质量仍NOT_PASSED，主任务未核销。
 
 本节[限定独立结束审计](../../../docs/operations/evidence/fixed-investigation-20261113-10/audit.md)通过；C3 partial本批真实未触发，重算和旧边界兼容只据定向/离线证据，不扩大验收。交接已说明HTTP/表及六问读取保持，模型运行服务未发布，原始失败与正文质量未通过继续保留。
+
+## 33. 一个事件包含多个告警的 I 输入用途审计
+
+2026-11-27，负责人要求先按判断用途复审一轮 I 输入，再回到两轮案件执行。[本轮逐类字段审计](incident-input-field-audit-20261127.md)已区分必要、条件提供、后台留存及当前/拟议表示；复用一个三告警冻结输入离线重建当前最终 messages，原件、成员、角色及来源保持。共同主机有一组可按稳定身份和完全同值共享；同一历史原件共享与查询只呈现业务结果已经实现。membership 台账不进入提示不列为缺口，也不新增归并评分/说明。
+
+M0 原生结构另确认 `raw_json.field_metadata.lake_ingress.lake_ref.source_namespace/tenant_id` 仍进入 I 最终提示，建议沿已识别外壳的 I 专用过滤修正。相关实现均未开始；不扩大 A/C3、认证语义或模型质量修复。原两段包保留，未投递、落库、调用模型/tokenizer或发布。[统筹独立引用/原件检查](../../../docs/operations/evidence/case-multiround-20261127-01/coordinator-incident-input-review.json)7项通过；完整工程边界见[回执](../../../docs/operations/evidence/incident-input-audit-20261127-01/core-audit-engineering.json)。
+
+## 34. Case 同材料镜像与后续容量修正
+
+按[Case 输入容量分步方案](case-input-capacity-20261128.md)推进：M0c 已完成同材料严格等价 OCSF 镜像选择，M0d 已完成剩余类别用途复核和明确入站台账选择，两步均通过生成结构的直接验证及统筹独审。原件、差异/未知业务内容、明确依赖和既有来源范围保持。真实容量、模型业务质量与部署仍未验；实际统计回传先按 AGENTS 的脱敏确认范围执行。

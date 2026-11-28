@@ -58,6 +58,32 @@ export function boundResults(task, runId) {
 export function resumeVisible(isActive, interrupted, nested) {
   return !nested && (isActive || interrupted);
 }
+// Optional sections retain their own error; selection cancellation still wins.
+export async function readPart(load) {
+  try { return {data:await load(),availability:'available',error:null}; }
+  catch(error) {
+    if(error.name==='AbortError')throw error;
+    return {data:null,availability:'error',error:error.message};
+  }
+}
+export async function readPagePart(readPage, identity=null) {
+  const data=[],seen=new Set();let cursor=null;
+  try {
+    do {
+      const page=await readPage(cursor);
+      if(identity && ['subject_type','subject_id','run_id'].some(k=>page[k]!==identity[k]))
+        throw new Error('读取目录与指定主体或Run不一致');
+      if(!Array.isArray(page.items))throw new Error('目录响应缺少条目');
+      data.push(...page.items);cursor=page.next_cursor;
+      if(cursor && seen.has(cursor))throw new Error('目录分页未向前推进');
+      seen.add(cursor);
+    } while(cursor);
+    return {data,availability:'available',error:null};
+  } catch(error) {
+    if(error.name==='AbortError')throw error;
+    return {data,availability:data.length?'partial':'error',error:error.message};
+  }
+}
 export class ReadScope {
   constructor() { this.generation = 0; this.controllers = new Set(); }
   reset() {

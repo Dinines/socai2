@@ -1,0 +1,18 @@
+services:
+  lake-alert-delivery:
+    image: ${SOCAI2_LAKE_DELIVERY_IMAGE:?select the candidate image containing 4c}
+    entrypoint: ["python", "-m", "app.workers.lake_alert_delivery"]
+    command: ["--profile", "/config/delivery.json"]
+    restart: "no"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - ${SOCAI2_LAKE_DELIVERY_CONFIG_DIR:?select the private runtime configuration directory}:/config:ro
+    networks: [delivery]
+networks:
+  delivery:
+    external: true
+    name: ${SOCAI2_LAKE_DELIVERY_NETWORK:?select the existing datastore network}

@@ -1,6 +1,56 @@
 # 告警字段必需性与 Fusion 评分就绪核查
 
-本批记录已验收的规则接收映射、A 置信度提示、单条首次接收与真实 A，以及旧查询跳过原因。整项 change 和未完成的模型质量问题保持各自状态。
+2026-11-25。调查核心复核[告警功能到字段矩阵](alert-required-fields-review-20261125.md)和[评分启用安排](alert-chain-acceptance-plan-20261124.md#11月25日后续确认评分能力并按授权启用-fusion)。现场只读容器、源码指纹、已完成交付的 profile 和既有同一告警回执。内存核查只使用截图对应的冻结原件。0 新接收、0 消息发送、0 业务写入、0 模型调用、0 服务启动或重载。
+
+## Fusion 评分实现与实际入口
+
+| 入口 | 21 实际核查 | 本组影响 |
+| --- | --- | --- |
+| 常驻 `app.main:app` | `socai2-fusion-c173-release-20261121-03` 正在运行，`AISOC_FEATURE_CONFIDENCE` 已设置且有效值为 `true`。实际镜像的评分器、引擎、投影、写入、接收和两类入口共 8 处源码与当前工作树同指纹。 | 常驻入口已启用评分，其配置的 Topic 与本组两段专用 Topic 无交集。 |
+| 本组独立湖交付 | 首条和后续 9 条均由一次性 `open_delivery()` 交付。创建引擎时读取各自 `profiles/delivery.json` 的 `runtime.confidence_enabled`，两份实配 `enabled=true`、评分开关为 `false`。后 9 条使用与当前相同的镜像及匹配源码。查验时未见此交付进程在运行。 | 截图同材料首快照与 E28/E31 均为 `disabled`，由本批 profile 解释。批准组已全部完成交付，首快照是历史结果。 |
+
+`FusionEngine.process()` 在非重复输入的归并和 ML 基础特征之后调用同步 `ConfidenceScorer`。成功产出分数、分档、因子和 `computed`。同材料投影为 `confidence_state=available` 及 0–100 数值，禁用、失败及非同输入分别保留相应状态和空值。`Socai2AlertSink` 保存首个快照和检测材料。既有测试覆盖分档、确定性、因子、边界和禁用，湖交付的快照存取沿 4b/4c 回执。内存直接核同一冻结原件的 scorer → v2 快照序列化及恢复 → 材料投影，开启时得有限数值和非空因子，关闭时为禁用空值，两个分支均保持原文字节。 [评分测试](../../../services/fusion/tests/test_confidence.py) · [4c 存取验收](../../../docs/operations/evidence/lake-alert-delivery-4c-20261119-01/README.md) · [指定组交付](alert-kafka-source-handoff-20261124.md#实际接续结果)
+
+### 供统筹审核的配置差异和直接验证
+
+1. 后 9 条实配为 21 `/opt/sting-aisoc-socai2/validation/alert-kafka-source-handoff-20261124-02/profiles/delivery.json`，原首条另有其历史 profile。准备一个同目录独立版本，唯一业务配置差异为 `runtime.confidence_enabled: false → true`。沿用原 `enabled`、选择范围、连接、接收、风险 profile 及交付限额，保留归档配置。场内无独立交付进程可重载，常驻服务的开关已开。
+2. 统筹确认后，可在 21 安装上述独立启用版。用同镜像和挂载源码执行 `DeliveryPolicy.load()` 及 scorer 构造，只读核生效布尔值、三个配置引用和历史文件指纹。这能证明正式候选配置可加载。现有 10 条均已完成，本组缺少新的首次接收项，启动交付进程无法取得新的评分保存正例。
+3. 以后有明确批准的首次接收项时，由同一独立入口用 `app.workers.lake_alert_delivery --profile <启用版> --once` 或已核的 `open_delivery()` 外壳加载。范围只包括明确批准的来源及首次接收项。验收核首快照 `computed`、同材料 `available`、有限数值和依据从 PG 到 E28/E31 一致，最后核页面可见。旧首快照、冻结 ACK 及 A 原答保持。没有新首接收证据时，分别记录配置可加载、进程是否实际运行和正例待验。
+
+评分代码及受控投影已就绪，常驻服务已启用。本组独立交付进程已退出，历史 profile 保持关闭。
+
+### 21 配置安装回执
+
+统筹审核后，已安装原后 9 条交付 profile 同目录的 `delivery-confidence-enabled.json`。唯一业务差异为 `runtime.confidence_enabled: false → true`，新文件保持 `0600` 与原所有者。原文件、三个实际引用和历史回执的内容、模式、所有者核对一致。首次离线校验在安装前停止；修正离线验证入口后，用同一镜像及归档挂载源码通过 `DeliveryPolicy.load()`、相对引用和 `ConfidenceScorer.enabled` 检查，最终文件指纹等于已验证工件。
+
+当前交付为 21 启用版配置已安装且可加载。常驻服务继续运行，独立业务 worker 保持退出。获准的新首接收操作须显式选用新文件。本阶段未发生新首次保存或 8181 数字正例。 [配置和指纹回执](../../../docs/operations/evidence/alert-confidence-core-20261125-01/profile-install.json)
+
+## AI 分诊数值与截图空值
+
+实际 A 请求由 `alert_model_boundary.build()` 使用 [alert-input-v1.json](../../../services/api/app/socai2/alert-input-v1.json) 的系统提示，附加 ATT&CK 指令。第 3 步修改前，该 profile 与发布清单同指纹。原提示要求 `confidence` 表达模型对本次判定的自评，无法估计时为 `null`。 [请求执行入口](../../../services/api/app/socai2/alert_basic_executor.py:76)
+
+`alert_output_adapter.ModelAnswer` 每个判定分支都要求 `confidence` 键存在，值接受有限 0–1 数字或显式 `null`，有效 0 保留。同轮 `model_request` 保存的实际 Schema 已确认此合同。原答快照和接收解析绑定同一模型步骤；原答明确 `null`，无字段遗漏或拒收。适配原样保留 `AlertOutput.confidence`，数字配 `available`，本次空值配 `not_computed`。`StageResultService.finish()` 保存同一材料和 Run 的 assessment。E28 返回 `triage.confidence/score_state`，数值可用时乘 100 生成 `confidence_percent`。截图的实存和 E28 逐层一致。既有模型替身执行器测试覆盖数值原答及同材料 PG assessment，代码有对应的百分比投影。 [适配](../../../services/api/app/socai2/alert_output_adapter.py:15) · [保存](../../../services/api/app/socai2/stage_results.py:321) · [E28 投影](../../../services/api/app/socai2/page_reader.py:101) · [数值存取测试](../../../services/api/tests/test_socai2_alert_basic_executor.py:109) · [正式同源回执](../../../docs/operations/evidence/alert-management-feedback-21-20261124-01/alert-confidence-fields-20261125.json) · [独立复核](../../../docs/operations/evidence/alert-sidebar-confidence-review-20261125-01/independent-review.json)
+
+**矩阵第 6 行。** F03-01 的评分功能需要可显示的有效数值。截图这轮正常保存并发布，评分数值缺项与执行、交付状态分别记录。产品文档要求显示评分，并保留真实历史空态，尚未明确所有成功 A 在任何证据条件下均须给数值。建议正常完成且能够估计时必须给有效数值；确实无法估计时保留空值、明确原因并记录该次评分缺项。当前 `not_computed` 只表达未给数值，未保存评分专属原因，无法从原答空值推断更具体原因。落定例外适用哪些判定、原因如何产出和展示后，再核冻结合同、旧记录兼容与不升级门控。旧结果保持。
+
+## 对统筹矩阵 12 行的逐项结论
+
+| 行／功能 | 核心确认的必需条件、产出和接口 | 已有证据与差距 |
+| --- | --- | --- |
+| 1. 告警身份及基本属性 | `facts.id/title/source_namespace/handling_status` 必需。正常 OCSF 接收须有全局 UID、可投影标题和可映射 `severity_id`。连接类型沿配置，可靠发生时间保持，缺失时 `event_time=null` 与 `unknown`。正常接收成功须有同事务当前材料。 | 指定组存取和截图 E28 基本字段已核。通用 DTO 对旧数据允许等级、时间、连接和材料空值。实际来源结合配置来源及同版材料引用。 |
+| 2. 原检测规则 | 同版 `finding_info.analytic.name/uid` 已提供时，应由湖接收分别填既有 `RawAlert.rule_name/rule_id`，材料投影保存，E28/E31 读取。各字段独立保留缺失。建议沿根路径与 partial 的既有冲突检测，保留差异及来源。 | 确认缺口在我方 `services/fusion` 的 `adapt_alert`，原始 OCSF 已有规则。旧材料可按同版 E31 原路径带来源读取。新接收映射另步实施，保存旧快照和字段合同。 |
+| 3. 原检测置信度 | 已提供的源等级或带明确量纲的源数值应可查看。材料 E31 保留原字段及类型，按源合同解释。只有枚举时可显示等级，量化分值保持空。 | 截图原件只有源枚举，E31 已保存，检测卡缺独立的源等级展示。现有 Fusion 数值字段语义固定。独立展示或新增归一字段由核心、HTTP 和前端另行对齐。 |
+| 4. Fusion 评分 | 新首接收计算成功时，材料应有真实数值、来源、状态、分档及因子。`disabled/failed/not_computed` 保留实际状态，数值为空。同材料首快照由程序冻结。 | 实现、镜像、开关、内存投影和原禁用快照已核。本组独立交付的启用后持久正例及页面显示待验。 |
+| 5. AI 结论 | 可发布 A 必须有四态 `verdict` 和非空理由，待复核是明确结果。核心单元不足时保存真实执行状态和局部交付诊断，E28 按已发布指针或空态显示，E22/E24 可追溯实际尝试。 | 截图有已发布结论，E28 与实存同源。`A_FIELDS` 要求判定、置信度槽、理由和依据槽可解析。结论可用与完整交付分别记录。 |
+| 6. AI 分诊置信度 | 评分展示需要有限数值。现行 Schema 强制键，允许空值，程序保留原值并投影百分比。建议允许例外时明确未评分原因。 | 原答、解析、PG、E28 同源空值。程序数值链存在，本轮评分值缺项。业务例外和原因合同待定。 |
+| 7. 理由及解释 | 已发布结论须有模型非空 `rationale` 和同轮可读解释。程序从冻结输入装配事实和模板，把分析原文附入解释工件。E28 给理由，E22/E24 给同轮解释正文或实际可用状态。 | 截图理由和原答、解析、E28 相同。解释读取沿已验的同 Run 回执。正文与实际依据是否一致按独立质量证据判断。 |
+| 8. 依据及限制 | 完整答复的 `evidence_ids` 为有界数组，生成要求至少一项。确定判定使用本轮直接观察或人工陈述。程序按冻结引用表绑定，保存可读回的 `source_refs`、限制及诊断。局部或历史引用不可用时保留原因和空集合。 | 实际请求和原答均有引用槽，已有固定 Run 和工件读取证据。坏引用保留原声明和诊断，模板事实引用与模型依据须区分。引用有效性和正文质量分别验收。 |
+| 9. 后续核实建议 | 完整 `recommendations` 为数组，明确无建议可 `[]`。有项时理由、依据必须齐全，程序装配建议 ID 和核实类型。E28 与同轮解释读取已保存建议。截断或缺项由交付诊断表达。 | 同轮 Schema 和 E28 的数组形状已核，既有建议/空态已读回。实际响应状态沿独立回执。 |
+| 10. ATT&CK | 模型生成数组键，有行为依据才能产出可用映射。程序校验词表、战术技术和证据，保存同轮解释。明确无映射为 `[]`，旧结果未保存或不可用为 `null`。检测标签与 AI 分诊映射分别读取。 | 既有正式非空、空数组及同源读回成立。类别语义存在未通过记录。截图仅核接口槽，原结论保持。 |
+| 11. 形成时间、来源与新鲜度 | 现行 A 发布后 assessment ID、`assessed_at`、真实 `source_run_id`、本轮冻结材料和解释必需。程序存身份和形成时间，按冻结输入与当前材料计算 `freshness/valid_for_current_input`，执行状态独立。 | 截图 E28 的形成时间可解析，assessment、Run 和材料身份一致，新鲜度及运行状态槽在场。历史不可得保留实际空值及状态。 |
+| 12. 实际分诊过程 | 有尝试即应提供实际 `run.id/state`、时间、交付、步骤、工件及可读状态。失败和未知保存原因和实际原件，读取固定 Run。 | 沿固定 Run、步骤及工件的限定验收。本步复核字段职责。 |
+
+工程验证保存在 `.local/validation/alert-confidence-core-20261125-01/` 的 `runtime-readonly.json`、`projection-readonly.json`、`a-field-readonly.json`。截图原件、原答及 PG/HTTP 对照沿原受控目录。人工反馈、人员和资产沿既有接口职责，本步范围限告警及 A。
 
 ## 第 1 步湖接收规则映射
 

@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -139,3 +139,68 @@ def test_older_policy_snapshots_remain_loadable_without_becoming_execution_defau
     assert policy.snapshot()["toml_text"] and not policy.snapshot()["profiles"]
     with pytest.raises(ValueError, match="execution_profile_required"):
         policy.require_execution_profiles()
+
+
+def test_incident_context_admission_still_saves_measurement_and_blocks_insufficient_run_budget(current, monkeypatch):
+    from datetime import UTC, datetime
+
+    import httpx
+    from app.socai2 import incident_diagnosis_executor as implementation
+    from app.socai2.baseline_store import digest, encoded
+    from app.socai2.token_budget import BackendTokenMeter
+
+    now = datetime.now(UTC)
+    tenant, subject, run_id, input_id, stage_id = (uuid4() for _ in range(5))
+    source = {"query_receipts_version": "unit"}
+    policy = current.model
+    full_reservation = 1 + policy.context_tokens + policy.tokenizer["safety_tokens"] + policy.output_tokens["I"]
+    limits = current.incident_diagnosis.limits(now, current.identity).model_copy(
+        update={"max_tokens": full_reservation - 1})
+    run = {"started_at": now, "input_artifact_id": input_id, "limits": limits.model_dump(mode="json")}
+    result = Mock()
+    result.mappings.return_value.all.return_value = []
+    store = SimpleNamespace(
+        one=AsyncMock(return_value={"material_state": "complete", "sha256": digest(source), "size_bytes": len(encoded(source))}),
+        db=SimpleNamespace(execute=AsyncMock(return_value=result)), now=AsyncMock(return_value=now),
+        where=lambda table, *clauses: clauses)
+
+    @asynccontextmanager
+    async def transaction(*args, **kwargs):
+        yield store
+
+    service = SimpleNamespace(transaction=transaction, begin=AsyncMock(return_value={
+        "newly_claimed": True, "run_id": run_id, "input_artifact_id": input_id}))
+
+    def tokenize(request):
+        body = json.loads(request.content)
+        return httpx.Response(200, json={"count": 1 if "messages" in body else policy.context_tokens,
+                                        "max_model_len": policy.context_tokens})
+
+    meter = BackendTokenMeter(policy, transport=httpx.MockTransport(tokenize))
+    gateway = SimpleNamespace(model=policy.alias, provider=policy.protocol, schema_profile=policy.schema_profile,
+                              configure=AsyncMock(return_value=True), measure=meter.measure, complete=AsyncMock())
+    executor = IncidentDiagnosisExecutor(service, gateway=gateway)
+    executor.locked = AsyncMock(return_value=(run, source))
+    executor.step = AsyncMock(return_value=stage_id)
+    executor.save = AsyncMock(return_value=uuid4())
+    executor.stop = AsyncMock()
+    executor.outcome = AsyncMock(return_value={"state": "failed", "stop_reason": "model_token_budget_insufficient"})
+    data = {"members": [], "omissions": {}, "view_limitations": [], "omission_details": [],
+            "omission_detail_count": 0, "omission_details_truncated": False}
+    prepared = {"boundary": {}, "severity_opinion_version": "unit", "business_verdict_version": "unit"}
+    monkeypatch.setattr(implementation.incident_model_boundary, "build", lambda *args, **kwargs: (
+        [{"role": "user", "content": "synthetic evidence"}], {}, data, prepared))
+    monkeypatch.setattr(implementation.incident_output_adapter, "candidate_schema", lambda value: {"type": "object"})
+    outcome = asyncio.run(executor.execute(tenant, subject, uuid4()))
+    assert outcome["stop_reason"] == "model_token_budget_insufficient"
+    executor.save.assert_awaited_once()
+    saved = executor.save.await_args.args[4]
+    measured = saved["token_measurement"]
+    assert measured["context_fits"] and measured["context_required_tokens"] < policy.context_tokens
+    assert measured["context_accounting"] == "chat_template_plus_output_and_safety"
+    assert measured["reserved_total_tokens"] == saved["reserved_token_upper_bound"] == full_reservation
+    assert measured["body_sha256"] == digest(saved["body"])
+    assert not saved["preflight_passed"] and saved["preflight_error"] == "model_token_budget_insufficient"
+    assert json.loads(json.dumps(saved))["token_measurement"] == measured
+    executor.stop.assert_awaited_once_with(tenant, run_id, "failed", "model_token_budget_insufficient")
+    gateway.complete.assert_not_awaited()

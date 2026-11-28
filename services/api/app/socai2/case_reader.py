@@ -191,9 +191,13 @@ class CaseReader:
         ]).select_from(C).where(C.c.tenant_id == tenant)))[0]
         clauses = queue_filters(tenant, query)
         total = (await self.db.execute(select(func.count()).select_from(C).where(*clauses))).scalar_one()
-        member_count = select(func.count()).select_from(CA).where(
-            CA.c.tenant_id == tenant, CA.c.case_id == C.c.id).correlate(C).scalar_subquery()
+        member_scope = (CA.c.tenant_id == tenant, CA.c.case_id == C.c.id)
+        member_count = select(func.count()).select_from(CA).where(*member_scope).correlate(C).scalar_subquery()
+        active_member_count = select(func.count()).select_from(CA.join(A, and_(
+            A.c.tenant_id == CA.c.tenant_id, A.c.id == CA.c.alert_id,
+        ))).where(*member_scope, A.c.handling_status.in_(("new", "in_progress"))).correlate(C).scalar_subquery()
         listing = select(C, member_count.label("member_count"),
+            active_member_count.label("active_member_count"),
             sort_column.label("_list_sort_value"),
             queue_open_tasks(tenant).scalar_subquery().label("open_task_count")).where(*clauses)
         if point:
@@ -222,6 +226,7 @@ class CaseReader:
             from .case_relationship_reader import case_view
             view = await case_view(self.store, row)
             items.append(CaseQueueItem(case=view, member_count=row["member_count"],
+                active_member_count=row["active_member_count"],
                 open_task_count=row["open_task_count"], page_data=await read_page_data(self.store, row), baseline_records=[
                     CaseBaselineRecord(run=await project_comparison(self.store, RunView, run), start_eligibility=start_availability(
                         row, run, row["member_count"], active)) for run in baseline]))

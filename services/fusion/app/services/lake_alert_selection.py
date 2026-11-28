@@ -22,6 +22,16 @@ def integers(value):
     return isinstance(value, list) and all(type(n) is int and 0 <= n < 2**32 for n in value) and len(set(value)) == len(value)
 
 
+def validate_read_limits(limits):
+    if not isinstance(limits, dict) or set(limits) != {
+        "max_records", "max_result_bytes", "query_timeout_seconds",
+        "connect_timeout_seconds", "send_receive_timeout_seconds",
+    }:
+        raise ValueError("explicit_read_limits_required")
+    if any(type(value) is not int or value <= 0 for value in limits.values()):
+        raise ValueError("invalid_read_limits")
+
+
 @dataclass(frozen=True)
 class SelectionPolicy:
     body: dict
@@ -78,11 +88,7 @@ class SelectionPolicy:
                     if (not integers(initial) or not initial or not set(initial) <= set(rule["activity_ids"])
                             or set(initial) & set(rule["update_activity_ids"] + rule["close_activity_ids"])):
                         raise ValueError("invalid_immutable_initial_activities")
-        limits = body["read_limits"]
-        if set(limits) != {"max_records", "max_result_bytes", "query_timeout_seconds", "connect_timeout_seconds", "send_receive_timeout_seconds"}:
-            raise ValueError("explicit_read_limits_required")
-        if any(type(v) is not int or v <= 0 for v in limits.values()):
-            raise ValueError("invalid_read_limits")
+        validate_read_limits(body["read_limits"])
         return cls(body, hashlib.sha256(raw).hexdigest())
 
     def scope(self):

@@ -34,7 +34,7 @@ def test_explicit_page_mount_keeps_api_schema_and_never_creates_ledger(config):
             assert client.get(path).content == page.content
         assert client.get("/viewer/config.json").json() == {
             "viewer_version": __version__, **viewer.model_dump()}
-        for name in ("viewer.css", "viewer.js", "viewer_state.mjs", "execution_flow.mjs", "frozen_sources.mjs", "test_sources.mjs", "viewer_links.mjs"):
+        for name in ("viewer.css", "viewer.js", "viewer_state.mjs", "execution_flow.mjs", "delivery_view.mjs", "frozen_sources.mjs", "test_sources.mjs", "viewer_links.mjs"):
             asset = client.get("/viewer/assets/" + name)
             assert asset.status_code == 200
             assert asset.headers["cache-control"] == "no-store"

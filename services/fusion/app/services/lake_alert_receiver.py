@@ -23,7 +23,7 @@ from app.services.delivery_recovery import (
     restore_snapshot,
 )
 from app.services.lake_alert_selection import SelectionPolicy, field, select_alert
-from app.services.lake_ingress import ABSENT, decode, nested
+from app.services.lake_ingress import ABSENT, Projection, decode, nested, project_labels
 from app.services.receipt_json import (
     LAKE_INPUT_VERSION,
     decoded,
@@ -115,6 +115,7 @@ def adapt_alert(row, selection: SelectionPolicy, policy: ReceivePolicy, *, decis
     description, _ = string(fields["description_paths"])
     rule_id, rule_id_path = string(("finding_info.analytic.uid",))
     rule_name, rule_name_path = string(("finding_info.analytic.name",))
+    techniques, tactics = project_labels(Projection(document))
     rule_sources = {
         key: path
         for key, path in (("rule_id_source", rule_id_path), ("rule_name_source", rule_name_path))
@@ -130,7 +131,7 @@ def adapt_alert(row, selection: SelectionPolicy, policy: ReceivePolicy, *, decis
         source_alert_id=UUID(current["identity"]["source_subject_id"]), source=policy.body["source"],
         connector_type=policy.body["connector_type"], connector_id=policy.body["connector_id"],
         title=title, description=description or "", severity=fields["severity_mapping"][str(severity)],
-        rule_id=rule_id, rule_name=rule_name,
+        rule_id=rule_id, rule_name=rule_name, mitre_tactics=tactics, mitre_techniques=techniques,
         external_id=source_id, source_event_ids=[source_id], ocsf_class_uid=ref["class_uid"],
         event_time=parse_received_time(ref["event_time"]) if row["event_time_source"] == "ocsf_time_ms" else None,
         raw_event=envelope, field_metadata={"entity_sources": paths, "title_source": title_path,

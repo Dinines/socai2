@@ -63,6 +63,8 @@ def classify_failure(error, *, stage, deadline=False):
         status = reported.get("http_status")
         if type(status) is int:
             detail["http_status"] = status
+        if error.envelope_code:
+            return Outcome("failed", error.envelope_code, stage, detail)
         if detail["exception_type"] in {"ConnectTimeout", "PoolTimeout"}:
             return Outcome("failed", "service_unavailable", stage, detail, True)
         if error.rejection_code or status in {400, 401, 403, 404, 422}:
@@ -87,6 +89,29 @@ def classify_failure(error, *, stage, deadline=False):
         return Outcome("failed", "invalid_input", stage, detail)
     # A bare HTTP 5xx/ConnectError does not establish whether execution happened.
     return Outcome("failed" if stage == "input" else "unknown", "execution_failed", stage, detail)
+
+
+def model_dispatch_fact(error):
+    """Dispatch evidence is separate from outcome/retry classification."""
+    from .model_errors import ModelCallError
+    if isinstance(error, ExecutionFailure):
+        return False if error.not_executed else None
+    if isinstance(error, ModelCallError):
+        status = error.details.get("http_status")
+        if type(status) is int and 100 <= status < 600:
+            return True
+        if error.details.get("exception_type") in {"ConnectTimeout", "PoolTimeout"}:
+            return False
+        return None
+    if isinstance(error, httpx.HTTPStatusError):
+        return True
+    if isinstance(error, (httpx.PoolTimeout, httpx.ConnectTimeout, ConnectionRefusedError)):
+        return False
+    if isinstance(error, OSError) and error.errno in {errno.ENETUNREACH, errno.EHOSTUNREACH}:
+        return False
+    if isinstance(error, socket.gaierror) and error.errno == socket.EAI_AGAIN:
+        return False
+    return None
 
 
 class Executor(Protocol):

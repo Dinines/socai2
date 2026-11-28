@@ -8,10 +8,12 @@ from pydantic import Field
 
 from .baseline_contracts import Contract
 from .enums import (
-    BusinessVerdict,
     AlertStatus,
     AssignmentState,
+    BusinessVerdict,
+    Delivery,
     Disposition,
+    RunState,
     ScoreState,
     Severity,
     TimeSource,
@@ -131,12 +133,35 @@ class CaseReceiving(Contract):
 
 class IncidentDerivedFields(DerivedFields):
     severity_source: Literal["manual_override", "member_max", "model", "initial_policy", "unknown"] | None = None
+    active_member_count: int | None = Field(default=None, ge=0, description="当前事件全部成员中处理状态为 new 或 in_progress 的告警数；未提供为 null。")
+    unknown_status_member_count: int | None = Field(default=None, ge=0, description="当前事件全部成员中处理状态为 unknown 的告警数；未提供为 null。")
+    detection_sources: list[str] | None = Field(default=None, description="全部当前成员的 connector_type（为 null 时取 source_namespace），去重并稳定排序；无成员为 []，未提供为 null。")
 
 
 class IncidentSubjectView(SubjectView):
     derived: IncidentDerivedFields
     case_receiving: CaseReceiving
     business_verdict: BusinessVerdict | None = Field(default=None, description="Saved model verdict of facts.latest_diagnosis_id, or null.")
+
+
+class PublishedIncidentDiagnosis(Contract):
+    id: UUID
+    source_run_id: UUID
+    summary: str | None
+    conclusion: str | None
+    open_questions: list[str]
+
+
+class IncidentDiagnosisAttempt(Contract):
+    run_id: UUID
+    state: RunState
+    delivery_state: Delivery
+    stop_reason: str | None
+
+
+class IncidentDetailView(IncidentSubjectView):
+    published_diagnosis: PublishedIncidentDiagnosis | None
+    latest_attempt: IncidentDiagnosisAttempt | None
 
 
 class SubjectPage(Contract):

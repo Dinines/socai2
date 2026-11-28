@@ -9,15 +9,26 @@
     "services/api/app/socai2/analysis_dispatch_types.py": "app/socai2/analysis_dispatch_types.py",
     "services/api/app/socai2/analysis_dispatch_runtime.py": "app/socai2/analysis_dispatch_runtime.py",
     "services/api/app/socai2/analysis_dispatcher.py": "app/socai2/analysis_dispatcher.py",
-    "deploy/local-investigation/analysis-dispatch.example.json": "config/analysis-dispatch.example.json"
+    "deploy/local-investigation/analysis-dispatch.example.json": "config/analysis-dispatch.example.json",
+    "services/api/app/core/operational_logging.py": "app/core/operational_logging.py",
+    "services/api/app/core/logging.py": "app/core/logging.py",
+    "services/api/app/core/config.py": "app/core/config.py",
+    "deploy/local-investigation/operational-logging.example.json": "config/operational-logging.example.json"
   },
-  "entrypoint": ["python", "-m", "app.socai2.analysis_dispatch_runtime", "--profile", "<absolute-private-profile>"],
+  "entrypoint": [
+    "python",
+    "-m",
+    "app.socai2.analysis_dispatch_runtime",
+    "--profile",
+    "<absolute-private-profile>"
+  ],
   "instances": 1,
   "notes": [
     "Keep disabled until actual business executors and their profiles are validated; no HTTP worker starts this process.",
     "Select one explicit tenant and database. N covers all registered kinds in this single process, not multiple independently started profiles.",
     "Use a shared durable state directory and lock path for the sole instance. Stop the old process before starting the replacement; no distributed ownership/failover.",
     "Preserve completion receipts and use the same Redis namespace on replacement. Credentials stay outside Git.",
-    "Merge this fragment into the coordinated change release; this file is not permission to enable producers or deploy."
+    "Merge this fragment into the coordinated change release; this file is not permission to enable producers or deploy.",
+    "Current-source startup requires logging_profile_file and a persistent process-specific log directory; see operational-logs-release-fragment.json before new install or upgrade."
   ]
 }

@@ -60,7 +60,8 @@ async def require_idle(store, run_id, steps=None, owner=None):
             raise StoreError("baseline_step_in_progress")
 
 
-async def local_receipt(store, run, step, request, response, *, code, dispatched, state="unknown", rows=None):
+async def local_receipt(store, run, step, request, response, *, code, dispatched, state="unknown", rows=None,
+                        parse_state="no_response"):
     """Called after the owned coroutine/worker has actually exited, never on dispatch."""
     from .baseline_context import reference
     from .baseline_store import digest
@@ -90,9 +91,10 @@ async def local_receipt(store, run, step, request, response, *, code, dispatched
             "local_ended_at": now.isoformat(), "request_dispatched": dispatched, "finish_reason": None,
             "error": {"code": code, "message": code, "retryable": False, "occurred_at": now.isoformat()},
             "retry_allowed": False, "retry_reason": "local_call_closed_no_automatic_replay"},
-        "parse": {"state": "closed_units" if units else "no_response", "truncated": bool(units), "reasons": [code]},
+        "parse": {"state": "closed_units" if units else parse_state, "truncated": bool(units), "reasons": [code]},
         "delivery": {"state": "partial" if units else "none", "reasons": [code]}, "retained_units": units,
-        "missing_units": [{"path": "$", "reason_code": "remote_result_not_complete"}], "invalid_units": [],
+        "missing_units": [{"path": "$", "reason_code": code if parse_state == "unusable" else "remote_result_not_complete"}],
+        "invalid_units": [],
         "quality": {"policy": "transport_receipt_no_business_judgment", "state": "not_checked", "issues": [],
             "processing": [], "references": [], "prose_quality": "not_checked"},
         "use": {"material_paths": [u["path"] for u in units], "dispatch_paths": [],
@@ -109,6 +111,7 @@ async def local_receipt(store, run, step, request, response, *, code, dispatched
 async def accounted_steps(store, run_id, steps):
     """Unknown usage reserves the exact persisted request; it is not measured usage."""
     from .baseline_store import F, StoreError, digest
+    from .model_errors import DEADLINE_BEFORE_DISPATCH, INPUT_CONTRACT_REJECTED
     result = []
     for step in steps:
         row = dict(step)
@@ -122,8 +125,11 @@ async def accounted_steps(store, run_id, steps):
             if (type(bound) is int and bound > 0 and meter.get("reserved_total_tokens") == bound
                     and meter.get("body_sha256") == digest(payload.get("body"))):
                 row["reserved_tokens"] = bound
-            if ((step["error"] or {}).get("code") in {"model_schema_rejected", "service_unavailable"}
-                    and (step["error"] or {}).get("request_dispatched") is False):
+            failure = step["error"] or {}
+            unsent = (failure.get("code") in {"model_schema_rejected", "service_unavailable",
+                INPUT_CONTRACT_REJECTED, DEADLINE_BEFORE_DISPATCH} and failure.get("request_dispatched") is False)
+            schema_rejected = failure.get("code") == "model_schema_rejected" and failure.get("not_executed") is True
+            if unsent or schema_rejected:
                 row["not_executed"] = True
         result.append(row)
     return result

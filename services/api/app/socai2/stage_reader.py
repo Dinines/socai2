@@ -126,7 +126,12 @@ class StageReader:
             q = q.where(or_(R.c.requested_at < before["requested_at"],
                 and_(R.c.requested_at == before["requested_at"], R.c.id < before["id"])))
         rows = (await self.store.db.execute(q.order_by(R.c.requested_at.desc(), R.c.id.desc()).limit(limit + 1))).mappings().all()
-        entries = [await self.entry(row, subject) for row in rows[:limit]]
+        entries = [
+            current
+            if self.kind == "incident_diagnosis" and current is not None and current.run.id == row["id"]
+            else await self.entry(row, subject)
+            for row in rows[:limit]
+        ]
         page_type = IncidentStagePage if self.kind == "incident_diagnosis" else StagePage
         return page_type(subject_id=self.identity, kind=self.kind, current_pointer_id=subject[self.pointer],
             current=current, current_unavailable_reason=reason, entries=entries,

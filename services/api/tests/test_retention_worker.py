@@ -29,6 +29,16 @@ TENANT_A = uuid.UUID("11111111-1111-1111-1111-111111111111")
 TENANT_B = uuid.UUID("22222222-2222-2222-2222-222222222222")
 
 
+@pytest.fixture(autouse=True)
+def explicit_lake_profile(monkeypatch):
+    from pathlib import Path
+
+    from app.core.config import settings
+    path = Path(__file__).resolve().parents[3] / "deploy/aisoc21/lake-storage-3b/storage.example.json"
+    monkeypatch.setattr(settings, "AISOC_LAKE_STORAGE_POLICY_FILE", str(path))
+    monkeypatch.setattr(settings, "CLICKHOUSE_DATABASE", "aisoc")
+
+
 class FakeResult:
     def __init__(self, rows: list[tuple[Any, ...]]) -> None:
         self.rows = rows
@@ -227,7 +237,7 @@ class TestCountSqlMirrorsDeleteSql:
 
     def test_clamping_applies_to_the_count_path_too(self) -> None:
         assert "INTERVAL 1 DAY" in build_lake_count_sql(TENANT_A, 0)
-        assert "INTERVAL 3650 DAY" in build_lake_count_sql(TENANT_A, 999_999)
+        assert "INTERVAL 400 DAY" in build_lake_count_sql(TENANT_A, 999_999)
         assert build_alert_count_sql(0)[1]["days"] == 1
 
 

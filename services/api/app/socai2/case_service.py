@@ -151,6 +151,10 @@ class CaseService(BaselineService):
         async with self.transaction(tenant_id, readonly=True) as store:
             return await CaseReader(store).case(case_id)
 
+    async def read_info_summary(self, tenant_id, case_id):
+        from .case_info import read_info_summary
+        return await read_info_summary(self, tenant_id, case_id)
+
     async def read_history(self, tenant_id, case_id, *, limit=20, cursor=None):
         from .case_reader import CaseReader
         async with self.transaction(tenant_id, readonly=True) as store:

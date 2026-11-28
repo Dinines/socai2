@@ -20,6 +20,30 @@ def write(path, value):
     return path
 
 
+def test_logging_directory_mount_matches_readonly_profile(tmp_path):
+    profile_file = write(tmp_path/'logging.json', {'directory': '/app/logs'})
+    directory = tmp_path/'logs'
+    directory.mkdir()
+    env = {'SOCAI2_LOGGING_PROFILE_FILE': '/app/config/logging.json'}
+    mounts = [{'source': str(profile_file), 'target': env['SOCAI2_LOGGING_PROFILE_FILE'], 'read_only': True}]
+    cfg = {'logging_directory_mount': {'source': str(directory), 'target': '/app/logs'}}
+    manager.add_logging_volume(cfg, env, mounts)
+    assert mounts[-1] == {'type': 'bind', 'source': str(directory), 'target': '/app/logs', 'read_only': False}
+    assert mounts[0]['read_only'] is True
+    with pytest.raises(AssertionError, match='duplicate_runtime_mount_target'):
+        manager.add_logging_volume(cfg, env, mounts)
+
+
+def test_logging_mount_cannot_fall_back_to_container_storage(tmp_path):
+    profile_file = write(tmp_path/'logging.json', {'directory': '/app/logs'})
+    env = {'SOCAI2_LOGGING_PROFILE_FILE': '/app/config/logging.json'}
+    mounts = [{'source': str(profile_file), 'target': env['SOCAI2_LOGGING_PROFILE_FILE'], 'read_only': True}]
+    with pytest.raises(AssertionError, match='explicit_logging_profile_and_mount_required'):
+        manager.add_logging_volume({}, env, mounts)
+    with pytest.raises(AssertionError, match='logging_directory_profile_mismatch'):
+        manager.add_logging_volume({'logging_directory_mount': {'source': str(tmp_path), 'target': '/app/other'}}, env, mounts)
+
+
 def profile(tmp_path):
     source = tmp_path/'source'
     for name in ('app/__init__.py', 'app/schema.json', 'investigation_http/main.py'):

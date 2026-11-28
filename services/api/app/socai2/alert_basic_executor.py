@@ -13,13 +13,18 @@ from . import ai_delivery_store
 from . import baseline_enrichment_sources as sources
 from .alert_model_boundary import build
 from .alert_output_adapter import schema
+from .analysis_dispatch_types import ExecutionFailure
 from .baseline_analysis import budget_reason
 from .baseline_analysis_model import TenantChatGateway, usage
 from .baseline_context import reference
 from .baseline_contracts import Limits
 from .baseline_enrichment import S, error
 from .baseline_store import StoreError, digest, encoded
-from .model_errors import ModelCallError
+from .model_errors import (
+    DEADLINE_BEFORE_DISPATCH,
+    INPUT_CONTRACT_REJECTED,
+    ModelCallError,
+)
 from .model_protocol import prepare_request
 from .runtime_policy import active_policy, execution_policy
 from .stage_result_contracts import ALERT_EXECUTOR_VERSION as VERSION
@@ -127,21 +132,18 @@ class AlertBasicExecutor:
                 with log_context(run_id=rid, step_id=model, stage="A", operation="model_complete"):
                     async with asyncio.timeout_at(deadline):
                         payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
-            except ModelCallError as exc:
+            except (Exception, asyncio.CancelledError) as exc:
                 async with self.service.transaction(tenant) as store:
                     run, _ = await self.locked(store, rid)
-                    response_id = await self.save(store, run, model, "model_response",
-                        {"schema_version": VERSION, **exc.payload(), "usage": usage(None)})
-                    await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                        output_artifact_id=response_id, usage=usage(None)))
-                    if exc.rejection_code:
-                        now = await store.now()
-                        await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                            state="failed", ended_at=now, error=error(exc.rejection_code, now)))
-                if exc.rejection_code:
-                    await self.fail(tenant, rid, stage, exc.rejection_code)
+                    await ai_delivery_store.save_call_failure(store, run, stage, model, request_id, VERSION, exc)
+                if (isinstance(exc, ExecutionFailure) and exc.code in {INPUT_CONTRACT_REJECTED, DEADLINE_BEFORE_DISPATCH}
+                        and exc.not_executed and not exc.temporary):
+                    await self.fail(tenant, rid, stage, exc.code)
                     return await self.outcome(tenant, claim)
-                raise  # Keep the existing uncertainty transition; never retry or adopt.
+                if isinstance(exc, ModelCallError) and (exc.envelope_code or exc.rejection_code):
+                    await self.fail(tenant, rid, stage, exc.envelope_code or exc.rejection_code)
+                    return await self.outcome(tenant, claim)
+                raise  # Preserve cancellation, unexpected bugs and existing task retry classification.
             from .citation_quality import seal
             recorded = usage(payload)
             async with self.service.transaction(tenant) as store:

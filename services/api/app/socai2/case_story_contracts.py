@@ -1,6 +1,7 @@
 """Read-only story envelopes; source DTOs retain their existing contracts."""
 from datetime import datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import AwareDatetime, Field, field_validator
 
@@ -23,10 +24,38 @@ class StoryQuery(Contract):
         return (value.strip() or None) if value is not None else None
 
 
+class RelatedStoryQuery(StoryQuery):
+    view: Literal["related"] = "related"
+    focus_alert_id: UUID | None = None
+
+
+class MemberRelationsQuery(Contract):
+    objects_limit: int = Field(default=20, ge=1, le=100)
+    objects_cursor: str | None = Field(default=None, max_length=2048)
+    runs_limit: int = Field(default=20, ge=1, le=100)
+    runs_cursor: str | None = Field(default=None, max_length=2048)
+
+
+class StorySummary(Contract):
+    member_alert_count: int = Field(ge=0)
+    member_object_count: int = Field(ge=0)
+    members_without_current_material_count: int = Field(ge=0)
+    activity_time_from: AwareDatetime | None
+    activity_time_to: AwareDatetime | None
+    matched_alert_count: int = Field(ge=0)
+    focus_alert_id: UUID | None
+
+
 class StoryCursor(Contract):
     fingerprint: str
     at: AwareDatetime | None
     key: str = Field(pattern=r"^(alert|investigation|human_result):[0-9a-f-]{36}$")
+
+
+class MemberRelationCursor(Contract):
+    fingerprint: str
+    id: UUID
+    at: AwareDatetime | None = None
 
 
 class StoryEntry(Contract):

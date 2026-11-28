@@ -1,10 +1,10 @@
 # 告警事件与 Case 逐页产品功能清单
 
-更新于 2026-11-14。本清单按现有页面设计说明“有什么、为什么需要、操作后发生什么、做到哪一步”。适用范围是告警分诊、事件诊断、Case 调查及其阅读和人工协作；资产库存、用户基础资料由业务后端提供，不要求迁入旧 AiSOC 的其他模块或数据表。
+更新于2026-11-20。正式产品将采用4173告警、事件和Case调查的功能与设计；本清单保留稳定F编号、用户目的和操作结果，作为服务端HTTP/真实数据库接通的范围依据。资产库存、人员目录和文件字节由业务后端提供，相关联调依赖继续保留。
 
-**本清单按后端实际能力标状态。** 现有页面只作测试与设计参考，本轮不要求修改页面；125项功能的目的和结果保留，逐项给出对应HTTP、已实现部分和缺口。具体输入输出、字段与错误沿接口链接读取。原交接清单71个HTTP操作中69已实现、2对话预留501；11-15预检发现21实际64操作、缺7项既有功能且无凭据401，按负责人要求等待发布，不能据此把仓库已有实现改成未开发，详见[运行差异](../../docs/operations/evidence/http-test-alignment-20261115-01/README.md)；组合功能不等于新增接口，本轮文档核对不代替各项原发布验收。
+[125项功能→现行HTTP→请求/返回结构→用例端口→数据库来源](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)已完成本步结构核对，配套[机器可读结构清单](../../docs/integration/product-api-data-requirements-20261114.coverage.json)。共125项，10项整行暂缓，其余115项的普通功能映射76个现行操作；这不是115项均已完成真实业务验收。正式现场80操作，完整候选82操作；正式已有异步建案/调查任务、统一Run目录和完整步骤/工件读取，旧“待发布/未注册”说明不再作为当前状态。
 
-**后续需求由产品提出，不能按现有接口反推。** [125项功能→必需数据/接口→来源表→提供责任](../../docs/integration/product-api-data-requirements-20261114.md)逐项保留本清单目的，明确调查模块和业务后端应提供什么。建案自动首轮、再次调查/事件诊断异步、任务与Run分开等新目标按该文第5/7节及[目标合同](../../openspec/changes/schedule-streaming-investigation-updates/http-workflow-contract-20261114.md)覆盖下文现行prepare/start等调用说明；尚未发布，不冒充已实现。完整跨主体目录/统计、任务GET及完整步骤工件遍历已完成本地验证；事件异步E37及范围/覆盖读取已完成103次HTTP联验；Case容量分配、首轮受理、两级关联及事件接收字段完成72次HTTP联验，均待统一发布；[Case首轮执行和读回](../../docs/integration/case-initial-http.md)已完成39次HTTP及6项直接检查，旧E11/E13已移除，check/rerun已完成新批顺序执行、41次终态读取/原key回放，周期边界47 GET通过，待统一发布。见[事件接入指南](../../docs/integration/analysis-submission-http.md)及下文F17-02/F18-01。
+当前差异须分开：正式未装132风险/优先级增量，候选已隔离验证；S5/S6、SF05及SF06采用Result展示已有候选限定验收；SF04业务判定和SF06人工版本/工件候选已验。告警提供取数接口，核页面跳转参数和响应。人员、资产、文件合同由业务后端给出，正式版本与新真实告警共验。AI聊天、人工定向分析和真实响应审批执行按负责人11-20答复继续暂缓，其余功能全部纳入。[本批回执](../../docs/operations/evidence/http-real-data-20261120-01/README.md)记录实际证据、原失败及新批尚未执行的边界。
 
 [产品规则](../../docs/design/alert-incident-case-product-requirements.md) · [规则确认记录：D01–D07 已确认](../../docs/design/investigation-product-decisions.md) · [字段与 J01–J14 跳转合同](frontend-data-navigation-contract.md) · [当前问题](../../docs/investigation/current-issues.md)
 
@@ -20,18 +20,18 @@
 
 共用的A/I/Case运行详情归入“调查功能”集中说明，并保留从告警/事件进入的入口。未解决问题随调查结论显示；需要人工核实时由用户创建任务，不另设问题管理。资产库存/人员目录/真实响应审批执行由业务后端承接；本服务保留所需读取、引用和建议展示，不增加旧AiSOC平台功能。
 
-本批实现E21采用已有调查结果，新增E63预览与E64判断历史；原其他61接口合同保持。采用只改变当前判断并保留历史，未完任务/Run及处理状态保持。附件上传/下载仍由业务后端负责。
+采用已有结果、采用预览及判断历史已有当前接口/存储；采用只改变当前判断并保留历史，不取消未完任务、不自动结案。附件引用与文件字节分开，上传/下载继续由业务后端负责。
 
 **2026-11-13排期调整：** 各页面AI对话相关功能暂缓，包括F26-01–08、F20-04，以及F13-02/F22-09中的助手入口、F20-01/F17-01中的问答记录。保留125项原设计及实际实现状态；告警分诊、事件诊断、Case调查、普通人工任务、已有分析读取和结果采用按原计划推进。
 
 ### 2026-11-14后续确认的功能与规则增量
 
-下表在原125项基础上维护新增/变更要求，不据旧原型占位排除功能，也不计作125项已实现。接口必需数据、来源和责任见[提供要求P2–P10](../../docs/integration/product-api-data-requirements-20261114.md#5-新流程的必要数据和真正未定的部分)；以下均为目标规则，现行服务尚未切换。具体请求/返回类型、错误和分页已在[HTTP目标合同第8节](../../openspec/changes/schedule-streaming-investigation-updates/http-workflow-contract-20261114.md#8-后续已确认更新对http的要求)落定，Q1–Q6不再列为用户待决。
+下表在原125项基础上维护新增/变更要求，不据旧原型占位排除功能，也不计作125项已实现。接口必需数据、来源和责任见[提供要求P2–P10](../../docs/integration/product-api-data-requirements-20261114.md#5-新流程的必要数据和真正未定的部分)；当前实现与现场版本以11-20映射及各项回执为准。具体请求/返回类型、错误和分页已在[HTTP目标合同第8节](../../openspec/changes/schedule-streaming-investigation-updates/http-workflow-contract-20261114.md#8-后续已确认更新对http的要求)落定，Q1–Q6不再列为用户待决。
 
 | 功能位置/影响 | 已确认的用户行为和结果 | 接口必须说明什么 |
 | --- | --- | --- |
-| Case关联列表 | 先显示满额续建的Case，再显示共享事件的其他Case；排除自身、去重并能打开对应案。负责人已明确“关联规则已定，按此同步” | Case身份/标题/状态、关系类型、共同事件及显式/成员归属来源；[related-cases接口](../../docs/integration/case-allocation-http.md)已本地验收，待统一发布；E30事件→Case不等同本列表 |
-| 新建/添加/移动成员（F09-04、F13-02–06） | 单Case默认100条，后续自动或手工新增进入当前接收Case；溢出才续建，保留各案历史 | 原请求Case、实际分配、各自范围/新增/已有/排除成员及新案首轮任务均已本地验收；受理时无Run；第6步实际调度/首轮保存及读取已验，周期更新待第7步 |
+| Case关联列表 | 先显示满额续建的Case，再显示共享事件的其他Case；排除自身、去重并能打开对应案。负责人已明确“关联规则已定，按此同步” | Case身份/标题/状态、关系类型、共同事件及显式/成员归属来源；`GET /cases/{case_id}/related-cases`已在正式80操作中；E30事件→Case不等同本列表 |
+| 新建/添加/移动成员（F09-04、F13-02–06） | 单Case默认100条，后续自动或手工新增进入当前接收Case；溢出才续建，保留各案历史 | 现行allocations返回各实际Case/范围及新案initial_task；受理时可无Run。首轮执行及周期规则沿原验收复用，本批新真实Run未执行，不据路由存在宣称所有自动行为已启用 |
 | 事件关联Case（F13-03及成员/概览） | 事件保留多个独立Case关联，但仅一个接收后续新告警；单条告警可加入多个Case，无活跃Case标记 | 全部关联和唯一接收者已本地接通E29/E30；活跃含义是接收告警，不是调查运行中；打开列表不切换目标 |
 | 人工定向分析和手动全案综合（11-15后置） | 用户指定问题/方向及可选工具，取得独立建议/结论；用户另行点击后才异步综合，复用适用材料 | 保留设计，未实现且不开放接口，不作为本期主流程联验前置。目标仍需定向任务/Run/结果及综合来源、实际范围和依据；不无条件完整重跑、不自动采用。普通AI聊天仍暂停 |
 | 更新来源及补查（调查概览/结果） | 范围、可用A分诊、I诊断及有效人工事实驱动后续检查；不新增同告警新材料版本入口或重新分诊 | 使用的上游结果和实际覆盖；日志默认相关告警前后各1小时，默认单次50条配置化，缺时/超限说明限制并保留其他分析 |
@@ -39,18 +39,16 @@
 
 **自动期限补充：** 不新增旧对象迁入/启用/激活功能。期限内已受理的自动首次尝试跨7天仍可执行该轮，但不重试；关闭和无变化等规则保持，不放行超期新自动扩案/续建。补查窗口不加独立最大跨度、裁剪或拆窗，沿既有查询超时；失败保留缺口及其他分析。
 
-## 如何阅读实现状态
+## 如何阅读本次核对状态
 
 | 状态 | 含义 |
 | --- | --- |
-| 已实现 | 已有后端处理或读取；输入、输出、结果见该行接口 |
-| 已实现，需组合接口 | 对应数据或操作都可调用，需要按说明组合读取；不承诺另有一个聚合接口 |
-| 部分实现 | 只完成说明中的部分，缺失能力明确列出 |
-| 未实现 | 不能完成对应业务；有参考读取或预留501不算实现 |
-| 暂缓（未实现） | 保留原设计和缺口，按负责人决定暂停实施，不列为当前下一项 |
-| 无需独立后端接口 / 调用方处理 | 选列、展示跳转、已加载内容下载等交互使用既有数据；不因此新增接口 |
+| 接口/存储已映射 | 已定位当前HTTP、核心和内部来源；复用已有功能证据，本批未逐项重新执行业务，不能当整页已接好 |
+| 已映射，字段/展示缺口保留 | 有读取或操作入口，但相应SF内容或产品绑定仍待完成；S5时间候选已验，正式未发布 |
+| 含外部待接 | 调查侧有对应身份、引用或读写；仍须业务后端提供人员、库存或文件内容的HTTP链路 |
+| 暂缓 | 用户明确保留设计但本期不接；AI预留501及不存在的审批执行入口不算完成 |
 
-E01–E53是Swagger接口编号，点击可看路径、参数、输入输出及错误；文末E1–E5仅为历史证据索引，两者不是同一编号。模型质量未通过仍单列，不以HTTP200代替结论质量。
+列显隐、选择、布局、刷新和下载已取得报告由调用方处理，使用现行读取接口；不据此新建偏好或管理平台。旧E编号只作历史追溯，不能照旧71操作包调用E11/E13/E36或读取旧pending_run_id。字段以现行OpenAPI及上述结构清单为准，模型质量仍单列。
 
 下文沿用 F01–F28 并细分子项，技术附录仍可按原 F 编号查字段。未注明新的规则时沿用现有产品规则。关联、保存、启动、采用、审批和执行分别表达；取消未提交表单不保存，写入成功后按服务回执刷新，异常或版本冲突不假报成功。
 
@@ -77,38 +75,38 @@ E01–E53是Swagger接口编号，点击可看路径、参数、输入输出及�
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F01-01 默认九列 | 快速了解检测和处理责任 | 展示名称、严重程度、告警时间、资产标签、处理状态、类别、检测源、涉及资产、负责人；资产标签不取告警标签替代 | 已实现，需组合接口 | [E26](http-handoff/endpoints.md#e26)、[E30](http-handoff/endpoints.md#e30)。读取告警基础信息、负责人名称和汇总；涉及资产通过 /alerts/{alert_id}/records/assets 查询库存匹配和标签。资产、人员目录由业务后端维护。 |
-| F01-02 搜索与快捷筛选 | 找到当前要处理的告警 | 按名称、等级、状态、时间和全部／分配给我缩小列表；不改告警本身，“我”取实际登录人 | 已实现 | [E26](http-handoff/endpoints.md#e26)。按标题/ID、等级、状态、负责人、分配状态和真实发生时间查询全库；分配给我传实际owner_id。 |
-| F01-03 排序与列选择 | 按紧急程度或时间阅读 | 仅严重程度、告警时间支持排序；列选择影响显示，不改变数据；发生时间不能用入库时间补齐 | 已实现；列选择由调用方处理 | [E26](http-handoff/endpoints.md#e26)。服务支持发生时间、入库时间和等级升降序，空值最后；列显隐由调用方处理，偏好持久化未实现。 |
-| F01-04 指标与分页 | 了解工作量，避免把当前页当全部 | 显示统计范围及已载入数量；高严重度统计含 high、critical；调查中按运行中的基础调查去重告警 | 已实现 | [E26](http-handoff/endpoints.md#e26)。读filtered_total和next_cursor展示筛选总数及续页；total/overall_stats保持租户整体，高等级含high/critical；before_id仅旧查询。 |
-| F01-05 预览及打开详情 | 不离开列表先判断是否深入 | 侧栏只展示概览；打开详情保持选中告警 ID，详情仍保留相关告警 | 已实现 | [E28](http-handoff/endpoints.md#e28)。选 alert_id→详情，预览与跳转为前端交互，404展示不存在。 |
-| F01-06 导出与批量选择 | 交接筛选结果或对明确对象操作 | E54按当前筛选和排序导出全部命中，可选公开列；勾选仅建立选择范围，确认管理才修改对象 | 已实现 | [E26](http-handoff/endpoints.md#e26)、[E51](http-handoff/endpoints.md#e51)、[E54](http-handoff/endpoints.md#e54)。完整CSV导出超过限制明确报错，不截断。 |
-| F01-09 刷新与清除条件 | 恢复阅读范围并查看更新 | 刷新已有列表，移除单个条件或重置筛选；不重跑分诊，不改变告警状态 | 已实现 | [E26](http-handoff/endpoints.md#e26)。刷新GET；移除条件或改排序时清空cursor/before_id回首页，不触发分诊。 |
+| F01-01 默认九列 | 快速了解检测和处理责任 | 展示名称、严重程度、告警时间、资产标签、处理状态、类别、检测源、涉及资产、负责人；资产标签不取告警标签替代 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 人员目录/资产库存按既定业务后端合同接线，当前身份匹配不等于目录整链验收。 分区：alerts/records/assets。 |
+| F01-02 搜索与快捷筛选 | 找到当前要处理的告警 | 按名称、等级、状态、时间和全部／分配给我缩小列表；不改告警本身，“我”取实际登录人 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F01-03 排序与列选择 | 按紧急程度或时间阅读 | 仅严重程度、告警时间支持排序；列选择影响显示，不改变数据；发生时间不能用入库时间补齐 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F01-04 指标与分页 | 了解工作量，避免把当前页当全部 | 显示统计范围及已载入数量；高严重度统计含 high、critical；调查中按运行中的基础调查去重告警 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F01-05 预览及打开详情 | 不离开列表先判断是否深入 | 侧栏只展示概览；打开详情保持选中告警 ID，详情仍保留相关告警 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F01-06 导出与批量选择 | 交接筛选结果或对明确对象操作 | E54按当前筛选和排序导出全部命中，可选公开列；勾选仅建立选择范围，确认管理才修改对象 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F01-09 刷新与清除条件 | 恢复阅读范围并查看更新 | 刷新已有列表，移除单个条件或重置筛选；不重跑分诊，不改变告警状态 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
 
 ### 告警概况与公共操作
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F01-07 标题、属性与来源 | 确认看到的是哪条告警 | 阅读等级、处理状态、负责人、租户、来源号、发生／入库时间；来源未知如实显示 | 已实现 | [E28](http-handoff/endpoints.md#e28)。facts/owner_name/owner_resolution/derived；来源不明和时间缺失按原值展示。 |
-| F02-01 检测信息与 ATT&CK | 理解哪个检测触发及其标签 | 展示实际规则、检测置信度及量纲、战术技术；点击可回到原材料，不把标签认定为攻击事实 | 已实现，需组合接口 | [E28](http-handoff/endpoints.md#e28)、[E31](http-handoff/endpoints.md#e31)、[E30](http-handoff/endpoints.md#e30)。详情取得 material.id→正文及 section=objects/sources；检测标签不当事实结论。 |
-| F03-01 AI 分诊与评分 | 理解系统对该条检测的判断 | 判定、置信度、理由来自同一次分诊；与检测分数分开，名称按已确认 D04 使用“AI 分诊置信度” | 已实现，需组合接口 | [E28](http-handoff/endpoints.md#e28)、[E22](http-handoff/endpoints.md#e22)、[E24](http-handoff/endpoints.md#e24)。triage百分数与指定Run confidence区分量纲；判定/理由来自同一分诊版本。 |
-| F03-02 发生了什么与依据 | 用可读解释理解原始记录 | 展示已保存解释、关键依据、原文中实际存在的限制和建议；无建议不补造 | 已实现，需组合接口 | [E22](http-handoff/endpoints.md#e22)、[E24](http-handoff/endpoints.md#e24)、[E33](http-handoff/endpoints.md#e33)。沿 explanation 实际来源定位工件读正文；GET不重新生成解释。 |
-| F03-03 查看分诊过程 | 复核结论如何产生 | 从分析目录进入指定 A Run；失败尝试和已发布分诊分别可查 | 已实现，需组合接口 | [E22](http-handoff/endpoints.md#e22)、[E24](http-handoff/endpoints.md#e24)、[E32](http-handoff/endpoints.md#e32)、[E33](http-handoff/endpoints.md#e33)。目录选run_id→Run→trace→工件，保留失败尝试。 |
-| F08-01 实体、IOC 与相关告警 | 查看同主机近期发生的事情及共同线索 | 展示最近7条其他告警的名称、等级、时间和主机来源；点击打开候选告警，7是条数不是天数 | 已实现，需组合接口 | [E71](http-handoff/endpoints.md#e71)查同主机最近7条→[E28](http-handoff/endpoints.md#e28)打开→[E31](http-handoff/endpoints.md#e31)回原件；[E30](http-handoff/endpoints.md#e30)读取实体/IOC及一般关系；不要求同战术。 |
-| F03-04 人工判定及理由 | 让分析员记录与 AI 不同的意见 | 真实威胁、误报、正常行为、需人工跟进；误报／预期正常关闭；已关闭告警改判真实威胁／需跟进时记录理由并恢复处理中；其他反馈不自动改状态，关联事件／Case 只提示变化，D02 已确认 | 已实现 | [E48](http-handoff/endpoints.md#e48)、[E49](http-handoff/endpoints.md#e49)、[E28](http-handoff/endpoints.md#e28)、[E30](http-handoff/endpoints.md#e30)。单条或明确勾选批量提交人工判定及理由；D02关闭/恢复，反馈与模型判断并存，详情及活动读回。 |
-| F03-05 相似历史复核 | 人工反馈前对照类似情况 | 按同主机同战术、同 IP／文件哈希查看最近候选，逐条打开核对；不自动批量判定 | 已实现，需组合接口 | [E70](http-handoff/endpoints.md#e70)查同主机且同战术、同IP或合法算法哈希→E28/E31核对→用户确认后E48/E49反馈；默认起点前30天，最近5条，支持续页，不自动复制判定。 |
-| F23-01 管理告警 | 分配责任并维护处理信息 | 管理负责人、状态和标签；仅分配不改变处理状态，人工直接关闭须说明原因并保留原判定，D02 已确认 | 已实现 | [E50](http-handoff/endpoints.md#e50)、[E51](http-handoff/endpoints.md#e51)、[E28](http-handoff/endpoints.md#e28)、[E30](http-handoff/endpoints.md#e30)。单条/批量维护负责人、标签和状态；仅分配不改变告警状态，关闭须理由并保留原判定。 |
-| F13-01 查看所属事件和 Case | 找到集合背景及后续调查 | 事件进入其详情；一个 Case 直达，多个供选择，零个明确无关联 | 已实现，需组合接口 | [E30](http-handoff/endpoints.md#e30)、[E29](http-handoff/endpoints.md#e29)、[E03](http-handoff/endpoints.md#e03)。section=incidents/cases→相应详情，零/一/多关系按返回值显示。 |
-| F13-02 关联／新建与准备调查 | 将告警带入持续调查上下文 | 普通关联只保存成员；“准备调查”按零／一／多 Case 选择后打开同案助手，不自动发送。建案／关联后形成待更新范围 | 部分实现 | [E30](http-handoff/endpoints.md#e30)、[E01](http-handoff/endpoints.md#e01)、[E08](http-handoff/endpoints.md#e08)、[E19](http-handoff/endpoints.md#e19)。先查cases，选择已有案关联或新建；候选已返回实际多案分配/版本和新案initial任务，待统一发布。打开助手/发送仍暂缓。 |
+| F01-07 标题、属性与来源 | 确认看到的是哪条告警 | 阅读等级、处理状态、负责人、租户、来源号、发生／入库时间；来源未知如实显示 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F02-01 检测信息与 ATT&CK | 理解哪个检测触发及其标签 | 展示实际规则、检测置信度及量纲、战术技术；点击可回到原材料，不把标签认定为攻击事实 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：alerts/records/objects,sources。 |
+| F03-01 AI 分诊与评分 | 理解系统对该条检测的判断 | 判定、置信度、理由来自同一次分诊；与检测分数分开，名称按已确认 D04 使用“AI 分诊置信度” | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F03-02 发生了什么与依据 | 用可读解释理解原始记录 | 展示已保存解释、关键依据、原文中实际存在的限制和建议；无建议不补造 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F03-03 查看分诊过程 | 复核结论如何产生 | 从分析目录进入指定 A Run；失败尝试和已发布分诊分别可查 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。自动入站A任务及实际Run/步骤可读；不恢复已退役手动analyze。 |
+| F08-01 实体、IOC 与相关告警 | 查看同主机近期发生的事情及共同线索 | 展示最近7条其他告警的名称、等级、时间和主机来源；点击打开候选告警，7是条数不是天数 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：alerts/records/objects,related_alerts。 |
+| F03-04 人工判定及理由 | 让分析员记录与 AI 不同的意见 | 真实威胁、误报、正常行为、需人工跟进；误报／预期正常关闭；已关闭告警改判真实威胁／需跟进时记录理由并恢复处理中；其他反馈不自动改状态，关联事件／Case 只提示变化，D02 已确认 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：alerts/records/activities。 |
+| F03-05 相似历史复核 | 人工反馈前对照类似情况 | 按同主机同战术、同 IP／文件哈希查看最近候选，逐条打开核对；不自动批量判定 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F23-01 管理告警 | 分配责任并维护处理信息 | 管理负责人、状态和标签；仅分配不改变处理状态，人工直接关闭须说明原因并保留原判定，D02 已确认 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 人员目录/资产库存按既定业务后端合同接线，当前身份匹配不等于目录整链验收。 分区：alerts/records/activities。 |
+| F13-01 查看所属事件和 Case | 找到集合背景及后续调查 | 事件进入其详情；一个 Case 直达，多个供选择，零个明确无关联 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：alerts/records/incidents,cases。 |
+| F13-02 关联／新建与准备调查 | 将告警带入持续调查上下文 | 普通关联保存成员变化；新建返回实际Case分配及首轮任务，进入对应案查看进展。原助手入口保留设计并暂缓，不自动发送问题 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。普通关联/建案返回真实allocations及initial_task；助手入口暂缓。 分区：alerts/records/cases。 |
 
 ### 时间线、原始数据与响应
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F01-08 时间线 | 分辨发生与处理的先后 | 最新在上显示真实发生、检测、调查及人工活动；点击回到对应来源，不造缺失时间 | 已实现，需组合接口 | [E28](http-handoff/endpoints.md#e28)、[E30](http-handoff/endpoints.md#e30)、[E22](http-handoff/endpoints.md#e22)。facts时间、section=activities与A目录按真实事件时间合并；缺时间单列。 |
-| F04-01 原始记录阅读 | 验证解释是否符合收到的材料 | 查看原始 JSON／文本、标准化记录、富化内容和版本；缺正文保留版本与可用性 | 已实现，需组合接口 | [E28](http-handoff/endpoints.md#e28)、[E31](http-handoff/endpoints.md#e31)。当前material.id→原始JSON/文本/标准化/富化，保留版本与availability。 |
-| F05-01 来源引用与历史版本 | 确认材料出自哪里，复查当时输入 | 显示命名空间、来源 ID 及路径；回查某轮时读冻结版本，不能换成当前材料 | 已实现，需组合接口 | [E30](http-handoff/endpoints.md#e30)、[E24](http-handoff/endpoints.md#e24)、[E33](http-handoff/endpoints.md#e33)、[E18](http-handoff/endpoints.md#e18)。section=sources/source_artifacts；历史A取当轮输入工件，Case取冻结materials，不替换为当前材料。 |
-| F27-01 响应建议与自动处理 | 区分建议和真实动作 | 阅读解释／调查各自建议，打开既有 Run、查询及真实回执；没有 Case 仍能看已存自动处理 | 部分实现 | [E22](http-handoff/endpoints.md#e22)、[E24](http-handoff/endpoints.md#e24)、[E33](http-handoff/endpoints.md#e33)、[E30](http-handoff/endpoints.md#e30)。建议从解释/结果取，section=responses读已有关联；审批及实际执行未接。 |
+| F01-08 时间线 | 分辨发生与处理的先后 | 最新在上显示真实发生、检测、调查及人工活动；点击回到对应来源，不造缺失时间 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：alerts/records/activities。 |
+| F04-01 原始记录阅读 | 验证解释是否符合收到的材料 | 查看原始 JSON／文本、标准化记录、富化内容和版本；缺正文保留版本与可用性 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F05-01 来源引用与历史版本 | 确认材料出自哪里，复查当时输入 | 显示命名空间、来源 ID 及路径；回查某轮时读冻结版本，不能换成当前材料 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：alerts/records/sources,source_artifacts。 |
+| F27-01 响应建议与自动处理 | 区分建议和真实动作 | 阅读解释／调查各自建议，打开既有 Run、查询及真实回执；没有 Case 仍能看已存自动处理 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。已保存建议及responses关联可读；新审批/执行继续暂缓，关联不证明执行成功。 分区：alerts/records/responses。 |
 
 ## 二、事件功能（15项）
 
@@ -139,26 +137,26 @@ E01–E53是Swagger接口编号，点击可看路径、参数、输入输出及�
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F06-01 列表与搜索筛选 | 安排多告警集合的处理顺序 | 查看事件名称、状态、有效等级、成员、资产和负责人；搜索／筛选只改变列表 | 已实现 | [E27](http-handoff/endpoints.md#e27)。标题/ID、有效等级、状态、负责人、分配状态和成员真实发生时间筛选全库，返回filtered_total和next_cursor。 |
-| F06-02 四项指标 | 找到待处理、待分配及近期变化 | 活跃事件、待分配、24h 有新告警、高严重程度均数事件；缺负责人不自动算未分配 | 已实现 | [E27](http-handoff/endpoints.md#e27)。读取overall_stats，按事件统计和观察时间展示。 |
-| F06-03 预览与进入详情 | 快速了解整件事 | 侧栏看事件整体说明、成员／资产／调查及已有优先级；进入默认概览，不用告警评分列表代替事件说明 | 已实现 | [E29](http-handoff/endpoints.md#e29)。incident_id→事实与派生摘要；诊断补E23。 |
-| F06-06 处理中与队列压缩 | 分别看处理进度和告警归并规模 | E57按告警发生时间及来源统计，已归并/未归并分开；事件去重，处理中按实际状态；比例以已归并告警为分母，不代表准确率或解决率 | 已实现 | [E57](http-handoff/endpoints.md#e57)。同一只读快照；不随事件表格关键词/负责人筛选变化，空分母返回null。 |
-| F06-07 刷新、日期、列和导出 | 适配阅读及交接需要 | 按日期和条件查询，排序、选列、分页；E55导出全部筛选命中；刷新和复制列表链接由调用方处理 | 已实现 | [E27](http-handoff/endpoints.md#e27)、[E55](http-handoff/endpoints.md#e55)。支持完整CSV导出及列选择；跨设备偏好无明确需求不实施。 |
-| F23-06 批量管理事件 | 对明确选中的事件统一处理 | 勾选后管理负责人／状态等，按所选范围确认；沿用事件状态联动，不改未选事件 | 已实现 | [E53](http-handoff/endpoints.md#e53)、[E29](http-handoff/endpoints.md#e29)、[E30](http-handoff/endpoints.md#e30)。批量管理明确选中的事件，各项版本校验，整体成功或拒绝；未选事件不变。 |
-| F23-02 事件管理 | 指定负责人与处理结果 | 分配后进入处理中，已解决案仅改负责人不重开；人工解决需说明；严重度覆盖保留理由且不改成员等级 | 已实现 | [E52](http-handoff/endpoints.md#e52)、[E29](http-handoff/endpoints.md#e29)、[E30](http-handoff/endpoints.md#e30)。事件负责人、状态、标签和人工等级覆盖可写；解决/等级覆盖需理由，保留成员等级和原诊断。 |
+| F06-01 列表与搜索筛选 | 安排多告警集合的处理顺序 | 查看事件名称、状态、有效等级、成员、资产和负责人；搜索／筛选只改变列表 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F06-02 四项指标 | 找到待处理、待分配及近期变化 | 活跃事件、待分配、24h 有新告警、高严重程度均数事件；缺负责人不自动算未分配 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F06-03 预览与进入详情 | 快速了解整件事 | 侧栏看事件整体说明、成员／资产／调查及已有优先级；进入默认概览，不用告警评分列表代替事件说明 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F06-06 处理中与队列压缩 | 分别看处理进度和告警归并规模 | E57按告警发生时间及来源统计，已归并/未归并分开；事件去重，处理中按实际状态；比例以已归并告警为分母，不代表准确率或解决率 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F06-07 刷新、日期、列和导出 | 适配阅读及交接需要 | 按日期和条件查询，排序、选列、分页；E55导出全部筛选命中；刷新和复制列表链接由调用方处理 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F23-06 批量管理事件 | 对明确选中的事件统一处理 | 勾选后管理负责人／状态等，按所选范围确认；沿用事件状态联动，不改未选事件 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 人员目录/资产库存按既定业务后端合同接线，当前身份匹配不等于目录整链验收。 分区：incidents/records/activities。 |
+| F23-02 事件管理 | 指定负责人与处理结果 | 分配后进入处理中，已解决案仅改负责人不重开；人工解决需说明；严重度覆盖保留理由且不改成员等级 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。管理保存及活动可读；132候选优先级/风险字段已验，正式旧Schema尚未升级。 人员目录/资产库存按既定业务后端合同接线，当前身份匹配不等于目录整链验收。 分区：incidents/records/activities。 |
 
 ### 五个事件详情页签与 Case 入口
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F06-04 概览与 ATT&CK | 理解事件是什么及大致范围 | 显示说明、阶段计数、成员／资产、首次末次发生时间和缺时间数量；阶段覆盖不等于防御覆盖率 | 已实现，需组合接口 | [E29](http-handoff/endpoints.md#e29)、[E30](http-handoff/endpoints.md#e30)。derived与section=members/objects，阶段来自真实成员材料。 |
-| F07-01 当前诊断和最近尝试 | 分开看可引用判断及执行是否成功 | 已发布诊断保留；最近尝试失败单列原因；无发布结果仍可看成员和尝试 | 已实现，需组合接口 | [E23](http-handoff/endpoints.md#e23)、[E25](http-handoff/endpoints.md#e25)、[E32](http-handoff/endpoints.md#e32)。current与entries分别显示；current_unavailable_reason和失败尝试保留。候选新增同Run的选入范围及实际覆盖，事件异步诊断已本地验收，详见[逐字段说明](../../docs/integration/incident-analysis-http.md)。 |
-| F06-05 时间线与共同线索 | 看告警如何在时间和对象上相连 | 按成员发生时间阅读并回查共有对象；未知时间单列，不编造归并规则 | 已实现，需组合接口 | [E30](http-handoff/endpoints.md#e30)、[E29](http-handoff/endpoints.md#e29)。members/objects/activities及关联来源按真实时间组合。 |
-| F08-02 关联分析图 | 解释为何属于同一事件 | 固定本事件范围，筛选来源、聚焦告警／对象，查看节点和边依据；不跨事件扩展 | 已实现，需组合接口 | [E30](http-handoff/endpoints.md#e30)、[E23](http-handoff/endpoints.md#e23)、[E33](http-handoff/endpoints.md#e33)。members/objects及诊断依据组装本事件图；对象共现不标因果，无跨事件扩展。 |
-| F08-03 成员告警 | 逐条核实组成事件的告警 | 查看等级、时间、状态及资产；点标题开预览，再打开对应告警详情 | 已实现 | [E30](http-handoff/endpoints.md#e30)、[E28](http-handoff/endpoints.md#e28)。subject=incidents,section=members；告警ID打开详情，按next_offset分页。 |
-| F08-04 涉及对象与资产匹配 | 确认主机、账号等从哪里出现 | 查看对象、来源告警及库存匹配；同名不等于同一资产，无库存仍保留来源对象 | 已实现，需组合接口 | [E30](http-handoff/endpoints.md#e30)。objects与assets连接；assets是对象匹配边，total不是去重资产数，未匹配仍保留对象。 |
-| F23-03 处理活动 | 复查谁改了什么 | 显示操作者、时间、目标、前后值及结果；点目标回相应对象，步骤不冒充管理活动 | 已实现 | [E30](http-handoff/endpoints.md#e30)。section=activities；显示matching_targets和截断，不按共享Case泛化主体活动。 |
-| F13-03 进入／创建／关联 Case | 将集合推进到深入调查 | 一案直达、多案选择、无案新建或关联；新建带事件名称及全部合法成员，整体校验、并集去重 | 已实现，需组合接口 | [E30](http-handoff/endpoints.md#e30)、[E01](http-handoff/endpoints.md#e01)、[E08](http-handoff/endpoints.md#e08)、[E03](http-handoff/endpoints.md#e03)。事件cases关系→新建/关联，incident_ids保留显式关系并展开成员；不自动start。 |
+| F06-04 概览与 ATT&CK | 理解事件是什么及大致范围 | 显示说明、阶段计数、成员／资产、首次末次发生时间和缺时间数量；阶段覆盖不等于防御覆盖率 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：incidents/records/members,objects。 |
+| F07-01 当前诊断和最近尝试 | 分开看可引用判断及执行是否成功 | 已发布诊断保留；最近尝试失败单列原因；无发布结果仍可看成员和尝试 | 已映射，字段/展示缺口保留 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。当前有效诊断、最新尝试分开；diagnose为202异步check/rerun。 |
+| F06-05 时间线与共同线索 | 看告警如何在时间和对象上相连 | 按成员发生时间阅读并回查共有对象；未知时间单列，不编造归并规则 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：incidents/records/members,objects。 |
+| F08-02 关联分析图 | 解释为何属于同一事件 | 固定本事件范围，筛选来源、聚焦告警／对象，查看节点和边依据；不跨事件扩展 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：incidents/records/members,objects。 |
+| F08-03 成员告警 | 逐条核实组成事件的告警 | 查看等级、时间、状态及资产；点标题开预览，再打开对应告警详情 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：incidents/records/members。 |
+| F08-04 涉及对象与资产匹配 | 确认主机、账号等从哪里出现 | 查看对象、来源告警及库存匹配；同名不等于同一资产，无库存仍保留来源对象 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 人员目录/资产库存按既定业务后端合同接线，当前身份匹配不等于目录整链验收。 分区：incidents/records/objects,assets。 |
+| F23-03 处理活动 | 复查谁改了什么 | 显示操作者、时间、目标、前后值及结果；点目标回相应对象，步骤不冒充管理活动 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：incidents/records/activities。 |
+| F13-03 进入／创建／关联 Case | 将集合推进到深入调查 | 一案直达、多案选择、无案新建或关联；新建带事件名称及全部合法成员，整体校验、并集去重 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。实际allocations/initial_task及唯一事件接收者；另有Case→Case related-cases读取。 分区：incidents/records/cases。 |
 
 ## 三、调查功能（88项）
 
@@ -166,112 +164,112 @@ E01–E53是Swagger接口编号，点击可看路径、参数、输入输出及�
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F09-01 四项案件指标 | 安排负责人和人工跟进 | 待分配、处理中、高严重程度、待人工跟进均按案件计数；点击替换指标条件，其他筛选保留 | 已实现 | [E02](http-handoff/endpoints.md#e02)。metrics整体四项，high_severity仅high；与筛选total分开。 |
-| F09-02 搜索筛选和分页 | 在真实案件库定位案件 | 按标题／完整 ID、状态、等级、负责人 ID、分配状态、指标查；换条件回首页 | 已实现 | [E02](http-handoff/endpoints.md#e02)。q及已声明筛选+cursor；条件改变丢弃旧cursor。 |
-| F09-03 列选择与排序 | 按工作习惯阅读 | 选择业务更新时间、创建时间或等级及升降序；列选择只改变显示，不改变数据 | 已实现；列选择由调用方处理 | [E02](http-handoff/endpoints.md#e02)。按业务更新时间、创建时间或等级升降序；列显隐由调用方处理，偏好持久化未实现。 |
-| F09-08 日期范围与导出 | 按工作时段查找并交接案件 | 选择最近时段或自定义范围，E56按业务更新时间筛选并导出全部命中，可选公开列 | 已实现 | [E02](http-handoff/endpoints.md#e02)、[E56](http-handoff/endpoints.md#e56)。完整CSV；超限明确失败。 |
-| F09-09 手动与自动刷新 | 保持列表便于持续查看 | 手动刷新重读；原型自动刷新定时重绘当前集合，不代表后台持续取新数据或自动调查 | 部分实现；展示交互由调用方处理 | [E02](http-handoff/endpoints.md#e02)。手动GET刷新；自动刷新调度由前端实现，当前正式接线未完成。 |
-| F09-10 案件预览 | 不离开队列先了解案件 | 从行／预览入口看摘要，再进入默认案件资料；保持选中案件身份 | 已实现 | [E03](http-handoff/endpoints.md#e03)。队列item.id→详情预览，保留当前列表位置。 |
-| F09-11 调查运行与管理设置入口 | 提供跨案运行入口并说明占位边界 | 查看调查运行进入全局目录；案件管理设置当前只是占位，不据按钮增加设置功能 | 部分实现 | [E02](http-handoff/endpoints.md#e02)、[E10](http-handoff/endpoints.md#e10)、[E22](http-handoff/endpoints.md#e22)、[E23](http-handoff/endpoints.md#e23)。运行入口需要组合；管理设置模块没有对应实现。 |
-| F09-04 新建 Case | 为明确材料建立工作区 | 输入名称并选择至少一项告警／事件；保存后打开实际新案及首轮任务，不能创建成功就报调查完成 | 已实现 | [E01](http-handoff/endpoints.md#e01)、[E03](http-handoff/endpoints.md#e03)、[E12](http-handoff/endpoints.md#e12)。候选选择告警/完整事件创建→实际分配到的Case/版本/首轮任务；无pending_run_id。受理及[首轮实际执行/读取](../../docs/integration/case-initial-http.md)已隔离联验，待发布。 |
-| F09-05 资料页头与刷新 | 随时知道当前案件及管理状态 | 显示标题、等级、状态、负责人和显式关联事件；刷新读真实状态，未知优先级不造值 | 已实现 | [E03](http-handoff/endpoints.md#e03)。Case身份/资料刷新；owner_id名称由业务后端解析。 |
-| F23-04 管理 Case | 调整责任与管理信息 | 管理名称／说明、负责人、状态、等级和标签；运行中／执行不明不能结案；未完任务提醒后可说明理由结案且任务原状保留；人工重开不自动启动调查，D01 已确认 | 已实现 | [E03](http-handoff/endpoints.md#e03)、[E04](http-handoff/endpoints.md#e04)、[E44](http-handoff/endpoints.md#e44)、[E45](http-handoff/endpoints.md#e45)、[E46](http-handoff/endpoints.md#e46)、[E47](http-handoff/endpoints.md#e47)。E44读取版本与结案条件，E45管理标题/说明/负责人/等级/标签及未结案状态，E46结案、E47重开；E04保持分类/期限。D01已实现，前端页面接线另验。 |
-| F14-01 跨页执行提示 | 切页后仍知道调查进行到哪 | 按原task_id找回受理、执行或失败状态；有Run后沿链接查看过程，人工任务另行展示 | 分析任务GET已本地验收；待统一发布 | [分析任务列表/详情](../../docs/integration/analysis-tasks-http.md)返回status_url、attempts.run_url及results；A/I自动调度和事件异步提交已本地验收，Case异步仍待接；全站提示属于页面接线。 |
+| F09-01 四项案件指标 | 安排负责人和人工跟进 | 待分配、处理中、高严重程度、待人工跟进均按案件计数；点击替换指标条件，其他筛选保留 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F09-02 搜索筛选和分页 | 在真实案件库定位案件 | 按标题／完整 ID、状态、等级、负责人 ID、分配状态、指标查；换条件回首页 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F09-03 列选择与排序 | 按工作习惯阅读 | 选择业务更新时间、创建时间或等级及升降序；列选择只改变显示，不改变数据 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F09-08 日期范围与导出 | 按工作时段查找并交接案件 | 选择最近时段或自定义范围，E56按业务更新时间筛选并导出全部命中，可选公开列 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F09-09 手动与自动刷新 | 保持列表便于持续查看 | 手动刷新重读；原型自动刷新定时重绘当前集合，不代表后台持续取新数据或自动调查 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F09-10 案件预览 | 不离开队列先了解案件 | 从行／预览入口看摘要，再进入默认案件资料；保持选中案件身份 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F09-11 调查运行与管理设置入口 | 提供跨案运行入口并说明占位边界 | 查看调查运行进入全局目录；案件管理设置当前只是占位，不据按钮增加设置功能 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。统一Run目录已提供；管理设置只有未定义占位，不新增配置平台。 |
+| F09-04 新建 Case | 为明确材料建立工作区 | 输入名称并选择至少一项告警／事件；保存后打开实际新案及首轮任务，不能创建成功就报调查完成 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F09-05 资料页头与刷新 | 随时知道当前案件及管理状态 | 显示标题、等级、状态、负责人和显式关联事件；刷新读真实状态，未知优先级不造值 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F23-04 管理 Case | 调整责任与管理信息 | 管理名称／说明、负责人、状态、等级和标签；运行中／执行不明不能结案；未完任务提醒后可说明理由结案且任务原状保留；人工重开不自动启动调查，D01 已确认 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。基本管理/关闭重开已有；132候选人工优先级/风险字段已验，正式旧Schema尚未升级。 人员目录/资产库存按既定业务后端合同接线，当前身份匹配不等于目录整链验收。 |
+| F14-01 跨页执行提示 | 切页后仍知道调查进行到哪 | 按原task_id找回受理、执行或失败状态；有Run后沿链接查看过程，人工任务另行展示 | 已映射，字段/展示缺口保留 | **接口/存储已映射**；[现行HTTP/字段/存取](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。主体任务GET可跨页找回原task/attempt；S5候选入队/起止/观察时间及active_step已真实保存读回，正式未发布。 |
 
 ### 案件资料
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F09-06 案件说明和范围概况 | 先理解背景，再深入调查 | 阅读说明、成员、资产、材料、记录数量和活动时间；进入成员／对象／历史 | 已实现，需组合接口 | [E03](http-handoff/endpoints.md#e03)、[E39](http-handoff/endpoints.md#e39)、[E10](http-handoff/endpoints.md#e10)。范围成员/事件、历史、人工任务计数；缺数据不填0。 |
-| F10-01 案件分类与截止时间 | 支持管理标记和跟进时限 | 保存分类、期限后重新读取；无值显示未分类／未设期限，版本冲突不能覆盖 | 已实现 | [E03](http-handoff/endpoints.md#e03)、[E04](http-handoff/endpoints.md#e04)、[E05](http-handoff/endpoints.md#e05)。读版本→同时提交分类/期限+source_note→刷新；409保留编辑内容。 |
-| F11-01 当前采用判断 | 确认案件当前认可什么 | 阅读结论、形成／采用时间和来源；没有就显示尚无判断，不取最近 Run 标题拼接 | 已实现 | [E03](http-handoff/endpoints.md#e03)、[E05](http-handoff/endpoints.md#e05)。current_assessment/assessment及来源；不取最新失败Run覆盖。 |
-| F12-01 判断覆盖与依据变化 | 知道结论能否用于当前成员 | 分开显示判断覆盖、尚未调查成员及依据 current／stale／unverified；保留旧判断并指出限制 | 已实现，需组合接口 | [E03](http-handoff/endpoints.md#e03)、[E05](http-handoff/endpoints.md#e05)、[E14](http-handoff/endpoints.md#e14)。采用判断覆盖范围与当前成员比较，按真实freshness展示变更。 |
-| F12-02 回查判断来源 | 让判断可复核 | 点击 Result、工件、人工版本回到形成时的记录；不能用今天的任务内容替换旧依据 | 已实现，需组合接口 | [E03](http-handoff/endpoints.md#e03)、[E14](http-handoff/endpoints.md#e14)、[E24](http-handoff/endpoints.md#e24)、[E25](http-handoff/endpoints.md#e25)、[E43](http-handoff/endpoints.md#e43)。按来源类型和身份打开指定结果/分诊/诊断/人工版本，不跳当前版本冒充旧引用。 |
-| F11-02 结论中的未解决问题 | 说明当前判断仍有哪些事实未查清 | 随当前采用判断展示未解决问题及限制，回查对应调查；需要人工确认时由用户创建任务，不单独管理问题或计入任务待办 | 已实现，需组合接口 | [E03](http-handoff/endpoints.md#e03)、[E14](http-handoff/endpoints.md#e14)、[E15](http-handoff/endpoints.md#e15)。questions及原结论限制一并展示；用户需要时自行E38创建任务，无问题状态/关闭/合并接口。 |
-| F09-07 ATT&CK 阶段与详细信息 | 看成员检测涉及哪些阶段 | 同层级展示阶段、告警数及管理资料；阶段标签不证明完整攻击链 | 已实现，需组合接口 | [E03](http-handoff/endpoints.md#e03)、[E28](http-handoff/endpoints.md#e28)、[E31](http-handoff/endpoints.md#e31)。遍历当前成员读取材料阶段标签，原字段不足就显示未知。 |
-| F11-03 显式采用其他结果 | 有意改变当前案件判断 | 先比较旧判断与候选结论、未解决问题、覆盖和依据；填写理由并确认未完工作，采用后保留旧判断。局部或过期结果不能覆盖全案，任务/Run/处理状态保持 | 已实现 | [E63](http-handoff/endpoints.md#e63)预览→[E21](http-handoff/endpoints.md#e21)提交摘要/理由/必要确认→[E03](http-handoff/endpoints.md#e03)当前判断、[E64](http-handoff/endpoints.md#e64)历史、[E17](http-handoff/endpoints.md#e17)活动；冲突需重新预览。 |
+| F09-06 案件说明和范围概况 | 先理解背景，再深入调查 | 阅读说明、成员、资产、材料、记录数量和活动时间；进入成员／对象／历史 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F10-01 案件分类与截止时间 | 支持管理标记和跟进时限 | 保存分类、期限后重新读取；无值显示未分类／未设期限，版本冲突不能覆盖 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F11-01 当前采用判断 | 确认案件当前认可什么 | 阅读结论、形成／采用时间和来源；没有就显示尚无判断，不取最近 Run 标题拼接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。current_assessment.sources→Result/冻结人工版本/原工件；SF06来源链及SF04已采用模型Result的判定已候选验证，正式版本联验仍待。 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。current_assessment.sources→同源Result，正式代表已与PG一致；SF06为剩余绑定/展示，SF04独立业务判定仍缺。 |
+| F12-01 判断覆盖与依据变化 | 知道结论能否用于当前成员 | 分开显示判断覆盖、尚未调查成员及依据 current／stale／unverified；保留旧判断并指出限制 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。SF06已按采用Result恢复依据与未决项，人工版本和工件原文亦已候选接通；原Scope及采用覆盖保留，当前成员覆盖另算。旧导出运行时投影通过，正式产品接入仍待。 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。判断覆盖/来源与同源Result读取已有；SF06需绑定实际依据，不能固定空数组。 |
+| F12-02 回查判断来源 | 让判断可复核 | 点击 Result、工件、人工版本回到形成时的记录；不能用今天的任务内容替换旧依据 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F11-02 结论中的未解决问题 | 说明当前判断仍有哪些事实未查清 | 随当前采用判断展示未解决问题及限制，回查对应调查；需要人工确认时由用户创建任务，不单独管理问题或计入任务待办 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。SF06采用Result.questions/findings保留状态、原文和原范围，已回答问题单列，技术停止码仅作执行信息；人工版本/工件按原文与角色展示，不从通用工件推导未决事实。完整产品验收仍待。 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。同源Result.questions/findings已有真实PG/HTTP读取；技术停止码不当业务待核事实，SF06展示未核销。 |
+| F09-07 ATT&CK 阶段与详细信息 | 看成员检测涉及哪些阶段 | 同层级展示阶段、告警数及管理资料；阶段标签不证明完整攻击链 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F11-03 显式采用其他结果 | 有意改变当前案件判断 | 先比较旧判断与候选结论、未解决问题、覆盖和依据；填写理由并确认未完工作，采用后保留旧判断。局部或过期结果不能覆盖全案，任务/Run/处理状态保持 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
 
 ### 案件故事
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F20-01 事实与认识时间线 | 理解事情和调查怎样发展 | 倒序组合告警发生、Run 开始／结束、已保存回答和人工完成；无时间排后，活跃轮不提前给结论 | 已实现（非对话范围）；战术/资产需组合 | [E65](http-handoff/endpoints.md#e65)集中读取当前告警、基础调查和人工完成修订；E31/E30读战术及库存；AI对话记录暂缓。 |
-| F20-02 搜索与等级筛选 | 从长故事找相关活动 | 按告警名、主机、账号及等级缩小阅读，不改变正式成员或已存历史 | 已实现 | [E65](http-handoff/endpoints.md#e65)对整个故事搜索后分页；等级只筛告警，保留调查/人工结果作上下文。 |
-| F20-03 单选／多选告警 | 结合共同对象理解局部范围 | 右侧看所选告警、共有对象及相关调查；可开原告警 | 已有数据；选择由调用方处理 | [E65](http-handoff/endpoints.md#e65)给出告警ID；E28/E30读原告警和对象，选中状态不改Case成员。 |
-| F20-04 围绕条目或全案提问 | 让问题有明确上下文 | 带入全案、多条告警、某轮结果或人工结果至同案助手；打开和选择均不执行 | 暂缓（未实现） | [E19](http-handoff/endpoints.md#e19)。仅助手预留501，不能将故事选中范围当新成员写入。 |
-| F20-05 回到结果和人工版本 | 从摘要追到形成依据 | 点击指定 Run／任务修订，保留当时范围、时间与结果 | 已实现，需组合接口 | [E65](http-handoff/endpoints.md#e65)返回真实Run/Result/Task修订ID，沿E12/E14/E43/E28回查，历史人工结果不冒充当前待办。 |
+| F20-01 事实与认识时间线 | 理解事情和调查怎样发展 | 倒序组合告警发生、Run 开始／结束、已保存回答和人工完成；无时间排后，活跃轮不提前给结论 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 本行普通功能保留，问答部分暂缓。 |
+| F20-02 搜索与等级筛选 | 从长故事找相关活动 | 按告警名、主机、账号及等级缩小阅读，不改变正式成员或已存历史 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F20-03 单选／多选告警 | 结合共同对象理解局部范围 | 右侧看所选告警、共有对象及相关调查；可开原告警 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F20-04 围绕条目或全案提问 | 让问题有明确上下文 | 带入全案、多条告警、某轮结果或人工结果至同案助手；打开和选择均不执行 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
+| F20-05 回到结果和人工版本 | 从摘要追到形成依据 | 点击指定 Run／任务修订，保留当时范围、时间与结果 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
 
 ### 调查概览
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F14-02 活跃与待启动分开 | 不把排队当执行或丢失下一轮 | 分别显示accepted、running及终态；准备中可无Run，本地已收尾unknown不常驻执行中，原Run结果仍unknown | 分析任务GET已本地验收；待统一发布 | [分析任务列表/详情](../../docs/integration/analysis-tasks-http.md)返回任务状态、每次尝试、本地结束、重试及真实Run链接；状态读取不代表调度已启动。 |
-| F14-03 检查更新 | 判断当前材料是否需要新一轮调查 | 提交检查后读取分析任务；无变化跳过，有变化由核心准备本轮材料 | 已实现，本地闭环已验、待发布 | 已退役E11；`POST /cases/{case_id}/investigations`、mode=check返回202，沿status_url读取；实际无变化为skipped/no_changes且无Run，有变化沿核心冻结后新轮调查。 |
-| F14-04 启动调查 | 建案后调查所选材料，需要时明确再次调查 | 新案登记首轮任务，后台冻结输入并执行；读取任务、Run和结果 | 已实现，本地闭环已验、待发布 | [首轮指南](../../docs/integration/case-initial-http.md)：E01→initial_task→Run/Result，无E13。investigations mode=rerun已验证保存独立任务、Run和结果，同key重放不多建；不传时间窗或比较对象，不盲目重发。 |
-| F16-01 已有结果摘要 | 判断下一步应看哪一轮 | 先读结论（含未解决问题）、变化、影响，再开完整结果；不另设问题队列；失败轮保留已存材料，已有采用判断单列 | 已实现，需组合接口 | [E10](http-handoff/endpoints.md#e10)、[E12](http-handoff/endpoints.md#e12)、[E14](http-handoff/endpoints.md#e14)。历史→选Run→结果摘要，区分当前采用与历史结论。 |
-| F22-01 人工摘要与待办 | 知道还缺哪些人工确认 | 未开始／进行中计待办，完成／取消不计；进入任务详情，不把任务数写成案件数 | 已实现，需组合接口 | [E39](http-handoff/endpoints.md#e39)。取完任务分页后按state计待办；不把questions纳入待办数。 |
-| F14-05 历史与故事入口 | 从当前工作切回演变过程 | 全部历史进入轮次列表，故事进入事实时间线 | 已实现，需组合接口 | [E10](http-handoff/endpoints.md#e10)、[E03](http-handoff/endpoints.md#e03)、[E39](http-handoff/endpoints.md#e39)。历史直接读；故事按F20组合，暂无独立故事接口。 |
+| F14-02 活跃与待启动分开 | 不把排队当执行或丢失下一轮 | 分别显示accepted、running及终态；准备中可无Run，本地已收尾unknown不常驻执行中，原Run结果仍unknown | 已映射，字段/展示缺口保留 | **接口/存储已映射**；[现行HTTP/字段/存取](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。accepted/running、准备无Run、实际步骤及本地结束分别读取；S5候选时间与耗时已验，旧缺失不补0。 |
+| F14-03 检查更新 | 判断当前材料是否需要新一轮调查 | 提交检查后读取分析任务；无变化跳过，有变化由核心准备本轮材料 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。mode=check提交并读取原task；无变化可skipped/no_changes，无Run不伪造。 |
+| F14-04 启动调查 | 建案后调查所选材料，需要时明确再次调查 | 新案登记首轮任务，后台冻结输入并执行；读取任务、Run和结果 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。新案initial_task；再次调查mode=rerun。202只代表受理，同key读回，不调用start。 |
+| F16-01 已有结果摘要 | 判断下一步应看哪一轮 | 先读结论（含未解决问题）、变化、影响，再开完整结果；不另设问题队列；失败轮保留已存材料，已有采用判断单列 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F22-01 人工摘要与待办 | 知道还缺哪些人工确认 | 未开始／进行中计待办，完成／取消不计；进入任务详情，不把任务数写成案件数 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F14-05 历史与故事入口 | 从当前工作切回演变过程 | 全部历史进入轮次列表，故事进入事实时间线 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
 
 ### 调查历史
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F14-06 历史记录分类与选择 | 区分首次、更新和保存的 AI 结论 | 按目标、原因、时间、范围、状态选择指定轮次；切轮保留阅读视图 | 已实现，需组合接口 | [E10](http-handoff/endpoints.md#e10)、[E22](http-handoff/endpoints.md#e22)、[E23](http-handoff/endpoints.md#e23)。本案baseline/ai_saved历史和成员A/I目录分别组合；当前Q无新保存记录。 |
-| F15-01 状态、交付与投入 | 判断哪轮可用及为何未完整交付 | 分开执行状态、完整性、停止原因、耗时、模型次数及 Tokens；未知值不记零 | 已实现，需组合接口 | [E12](http-handoff/endpoints.md#e12)、[E14](http-handoff/endpoints.md#e14)。state/delivery_state/usage/validation分开展示；none与缺值不同。 |
-| F16-02 结果比较 | 看这次增加了什么认识 | 以明确 comparison_result_id 比对新增输入、发现和判断；不随当前最新结果漂移 | 已实现，需组合接口 | [E14](http-handoff/endpoints.md#e14)。读取当前和已保存comparison_result_id两份结果；新首轮该值为null；[第7步比较读取](../../docs/integration/run-records-http.md)已核28次真实GET，按冻结上一实际Run显示可比或不可比及原因，不能回退更早采用结果。候选不通过E13或客户端指定比较对象。 |
-| F12-03 历史范围与冻结引用 | 避免用当前成员误读旧结论 | 打开当轮输入、任务版本及来源；后续成员和人工编辑不改旧引用 | 已实现，需组合接口 | [E12](http-handoff/endpoints.md#e12)、[E18](http-handoff/endpoints.md#e18)、[E15](http-handoff/endpoints.md#e15)、[E43](http-handoff/endpoints.md#e43)。run.members指定材料、输入工件及冻结H修订，不能拿当前资料替换。 |
+| F14-06 历史记录分类与选择 | 区分首次、更新和保存的 AI 结论 | 按目标、原因、时间、范围、状态选择指定轮次；切轮保留阅读视图 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F15-01 状态、交付与投入 | 判断哪轮可用及为何未完整交付 | 分开执行状态、完整性、停止原因、耗时、模型次数及 Tokens；未知值不记零 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F16-02 结果比较 | 看这次增加了什么认识 | 以明确 comparison_result_id 比对新增输入、发现和判断；不随当前最新结果漂移 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。只读冻结comparison_context及前轮Run/结果；不提交调查，不接受客户端指定比较对象。 |
+| F12-03 历史范围与冻结引用 | 避免用当前成员误读旧结论 | 打开当轮输入、任务版本及来源；后续成员和人工编辑不改旧引用 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
 
 ### 成员告警
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F13-04 当前成员及事件 | 清楚哪些材料正式属于本案 | 阅读成员和显式事件，区分间接共享告警关系；分页／截断显示数量 | 已实现，需组合接口 | [E03](http-handoff/endpoints.md#e03)、[E28](http-handoff/endpoints.md#e28)、[E29](http-handoff/endpoints.md#e29)。Case members/linked_incidents→对应主体详情；member_count与截断保留。 |
-| F13-05 添加告警／事件 | 扩大正式调查范围 | 搜索、选择并确认，整体校验同来源同租户；并集去重，重复加入不重复更新，回查新增数 | 已实现 | [E26](http-handoff/endpoints.md#e26)、[E27](http-handoff/endpoints.md#e27)、[E03](http-handoff/endpoints.md#e03)、[E08](http-handoff/endpoints.md#e08)。分页选候选→读scope_revision→associations→刷新Case。 |
-| F13-06 移动成员 | 将告警明确交给另一案件 | 指定源成员和目标案，核两案版本，同步更新两案范围；原历史不变 | 已实现 | [E03](http-handoff/endpoints.md#e03)、[E09](http-handoff/endpoints.md#e09)。两案各读范围版本→move→刷新两案；事件显式关系不随告警移动。 |
-| F13-07 管理所选告警 | 对明确范围统一维护处理信息 | 仅影响勾选告警，不借“添加”从别案移走，不把选中视为提交 | 已实现 | [E51](http-handoff/endpoints.md#e51)、[E28](http-handoff/endpoints.md#e28)、[E30](http-handoff/endpoints.md#e30)。对明确所选告警整体保存管理修改，各项带版本；未选对象、Case成员和结论不变。 |
-| F13-08 成员变化后的提示 | 防止新增材料被误认为已分析 | 显示待更新及未覆盖成员，保留当前轮固定输入，引导准备／启动下一轮 | 已实现，需组合接口 | [E03](http-handoff/endpoints.md#e03)、[E12](http-handoff/endpoints.md#e12)。候选保存后读各案scope_revision及实际分配，新案沿initial_task查受理状态；既有案成员变化不预建Run，Case自动跟随/执行仍待接。 |
+| F13-04 当前成员及事件 | 清楚哪些材料正式属于本案 | 阅读成员和显式事件，区分间接共享告警关系；分页／截断显示数量 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F13-05 添加告警／事件 | 扩大正式调查范围 | 搜索、选择并确认，整体校验同来源同租户；并集去重，重复加入不重复更新，回查新增数 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F13-06 移动成员 | 将告警明确交给另一案件 | 指定源成员和目标案，核两案版本，同步更新两案范围；原历史不变 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F13-07 管理所选告警 | 对明确范围统一维护处理信息 | 仅影响勾选告警，不借“添加”从别案移走，不把选中视为提交 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：alerts/records/activities。 |
+| F13-08 成员变化后的提示 | 防止新增材料被误认为已分析 | 显示待更新及未覆盖成员，保留当前轮固定输入，引导准备／启动下一轮 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
 
 ### 案件关系图与关联探索
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F19-01 当前底图与阅读 | 理解案件内对象如何关联 | 使用有资格的已完成调查图；无完成调查按成员关系；纯文本答复不换底图，缺图不借其他轮伪补 | 已实现，需组合接口 | [E03](http-handoff/endpoints.md#e03)、[E30](http-handoff/endpoints.md#e30)、[E14](http-handoff/endpoints.md#e14)、[E15](http-handoff/endpoints.md#e15)。当前成员对象组合底图，已存图按graph_artifact_id读取并标历史轮次。 |
-| F19-02 筛选、布局与节点详情 | 从复杂关系定位对象和依据 | 筛选等级／状态／来源，缩放、分组、布局、重置视角；点节点或边看来源，不认定因果 | 部分实现；展示交互由调用方处理 | [E30](http-handoff/endpoints.md#e30)、[E15](http-handoff/endpoints.md#e15)。布局/筛选/聚焦前端处理；节点详情来自原料，正式交互未接。 |
-| F25-01 推荐线索与候选预览 | 找到值得进一步核查的案外材料 | 从当前案件成员或指定真实告警/对象查一层候选，显示匹配原件、时间差、范围和归属 | 已实现（候选查询） | [E66](http-handoff/endpoints.md#e66)。明确六类对象匹配，时间范围可调；哈希核算法与格式。按共享对象数/时间差/ID排序，不输出威胁分数。 |
-| F25-02 实体扩展与撤销 | 逐步探索而不立即扩大案件 | 预览后展开节点，区分新增关系，可撤销／重置；战术节点不能当实体扩展起点 | 已实现，需组合；画布由调用方处理 | [E66](http-handoff/endpoints.md#e66)逐层查询，[E30](http-handoff/endpoints.md#e30)回查；E67–E69保存恢复展开、撤销后的状态。 |
-| F25-03 保存／恢复探索 | 中断后继续当前思路 | 保存起点和画布状态，不生成 Run、不改变成员；新结果不偷偷替换已有探索 | 已实现，需组合 | [E67–E69](http-handoff/endpoints.md#e67)：读取底图→保存→恢复；来源核对、并发冲突和幂等明确，不产生调查。 |
-| F25-04 正式加入本案 | 把查到的有效告警纳入调查 | 明确确认后以关联加入，不从原案移走；记录实际新增及待更新；只预览／保存探索不会加入 | 已实现，需组合 | [E66](http-handoff/endpoints.md#e66)候选→[E03](http-handoff/endpoints.md#e03)最新版本→[E08](http-handoff/endpoints.md#e08)明确关联→读取成员；本机真实HTTP已走通。 |
-| F26-01 询问所选对象 | 针对关系提出具体问题 | 将对象及关联告警带入同案助手，打开不扩展、不加成员、不发送 | 暂缓（未实现） | [E19](http-handoff/endpoints.md#e19)。对象范围问答尚501，scope字段未实现。 |
+| F19-01 当前底图与阅读 | 理解案件内对象如何关联 | 使用有资格的已完成调查图；无完成调查按成员关系；纯文本答复不换底图，缺图不借其他轮伪补 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：由Case.members取得alert_id，再读alerts/records/objects。 |
+| F19-02 筛选、布局与节点详情 | 从复杂关系定位对象和依据 | 筛选等级／状态／来源，缩放、分组、布局、重置视角；点节点或边看来源，不认定因果 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：由节点来源取得alert_id，再读alerts/records/objects。 |
+| F25-01 推荐线索与候选预览 | 找到值得进一步核查的案外材料 | 从当前案件成员或指定真实告警/对象查一层候选，显示匹配原件、时间差、范围和归属 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F25-02 实体扩展与撤销 | 逐步探索而不立即扩大案件 | 预览后展开节点，区分新增关系，可撤销／重置；战术节点不能当实体扩展起点 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：由候选来源取得alert_id，再读alerts/records/objects。 |
+| F25-03 保存／恢复探索 | 中断后继续当前思路 | 保存起点和画布状态，不生成 Run、不改变成员；新结果不偷偷替换已有探索 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。GET底图→PUT exploration保存→GET恢复；不修改成员、不生成Run。 |
+| F25-04 正式加入本案 | 把查到的有效告警纳入调查 | 明确确认后以关联加入，不从原案移走；记录实际新增及待更新；只预览／保存探索不会加入 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F26-01 询问所选对象 | 针对关系提出具体问题 | 将对象及关联告警带入同案助手，打开不扩展、不加成员、不发送 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
 
 ### 对象与证据
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F21-01 按对象浏览 | 直接回答某台主机有什么依据 | 左侧搜索、按类型筛选和相关告警数；选中后右侧看资料、来源告警及调查 | 已实现，需组合接口 | [E03](http-handoff/endpoints.md#e03)、[E30](http-handoff/endpoints.md#e30)、[E05](http-handoff/endpoints.md#e05)。遍历成员objects→按命名空间/类型/键聚合，连接evidence；无Case对象聚合端点。 |
-| F21-02 按调查浏览 | 保留难以归类到对象的材料 | 按 Run 看查询、报告、工件；无当前对象仍可读历史，打开对应轮次查询页 | 已实现，需组合接口 | [E10](http-handoff/endpoints.md#e10)、[E12](http-handoff/endpoints.md#e12)、[E14](http-handoff/endpoints.md#e14)、[E15](http-handoff/endpoints.md#e15)。选择历史Run→其工件与结果，保留当轮范围。 |
-| F21-03 证据、威胁与覆盖 | 区分材料数量和有效判断 | 展示有效证据、威胁身份、覆盖及限制；无索引为未记录，有效空索引才为 0 | 已实现，需组合接口 | [E05](http-handoff/endpoints.md#e05)、[E06](http-handoff/endpoints.md#e06)、[E15](http-handoff/endpoints.md#e15)。读取evidence及对应工件；发布已有目录用E06，非自动生成证据。 |
-| F21-04 原件和引用回查 | 检查材料是否支持结论 | 定位来源告警、查询、结果、人工版本或回执；只有摘要、受限、缺原件分别显示 | 已实现，需组合接口 | [E15](http-handoff/endpoints.md#e15)、[E16](http-handoff/endpoints.md#e16)、[E18](http-handoff/endpoints.md#e18)、[E31](http-handoff/endpoints.md#e31)、[E33](http-handoff/endpoints.md#e33)、[E34](http-handoff/endpoints.md#e34)、[E35](http-handoff/endpoints.md#e35)。按引用所属Case/Run/A/I选对应正文路由；availability不足保留来源。 |
+| F21-01 按对象浏览 | 直接回答某台主机有什么依据 | 左侧搜索、按类型筛选和相关告警数；选中后右侧看资料、来源告警及调查 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 人员目录/资产库存按既定业务后端合同接线，当前身份匹配不等于目录整链验收。 分区：由Case.members取得alert_id，再读alerts/records/objects,assets。 |
+| F21-02 按调查浏览 | 保留难以归类到对象的材料 | 按 Run 看查询、报告、工件；无当前对象仍可读历史，打开对应轮次查询页 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F21-03 证据、威胁与覆盖 | 区分材料数量和有效判断 | 展示有效证据、威胁身份、覆盖及限制；无索引为未记录，有效空索引才为 0 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F21-04 原件和引用回查 | 检查材料是否支持结论 | 定位来源告警、查询、结果、人工版本或回执；只有摘要、受限、缺原件分别显示 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
 
 ### 人工任务
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F22-02 列表、状态和待办数 | 知道谁还需要确认什么 | 显示事项、说明、负责人、期限、状态和结果；徽标表示未完成数量，不等于总数 | 已实现 | [E39](http-handoff/endpoints.md#e39)。当前任务/状态列表，offset分页；待办只统计not_started/in_progress。 |
-| F22-03 用户新建与分配 | 承接需要人工确认的业务事实 | 用户阅读结论后明确创建任务，填事项，按需填说明、负责人、期限、来源调查及参考；保存后在同案任务页出现，不自动从未解决问题生成任务 | 已实现 | [E03](http-handoff/endpoints.md#e03)、[E38](http-handoff/endpoints.md#e38)、[E41](http-handoff/endpoints.md#e41)。用户明确创建，标题/负责人/期限/来源→回执任务；人员目录/通知由业务后端。 |
-| F22-04 编辑、取消及状态更新 | 在同一事项内继续协作 | 所有状态均可编辑，取消不删除历史；编辑带入原值，明确保存产生新版本 | 已实现 | [E41](http-handoff/endpoints.md#e41)、[E03](http-handoff/endpoints.md#e03)、[E40](http-handoff/endpoints.md#e40)。完整带回TaskFields和双版本后PUT，取消为state=cancelled，不删除旧版本。 |
-| F22-05 完成结果与适用范围 | 防止一句人工确认被推广到全案 | 完成须有非空结果及明确成员范围；对象范围需对象键；时间可不填，填写须成对；不强制工单或附件 | 已实现 | [E41](http-handoff/endpoints.md#e41)、[E03](http-handoff/endpoints.md#e03)、[E40](http-handoff/endpoints.md#e40)。completed需正文及有效result_scope；完成不会自动改调查判定。 |
-| F22-06 完成人、修改人与历史 | 能复核是谁在何时确认什么 | 分开负责人、实际完成者、修改者；看指定修订，元数据编辑不改变原事实或扩大范围 | 已实现，需组合接口 | [E41](http-handoff/endpoints.md#e41)、[E42](http-handoff/endpoints.md#e42)、[E43](http-handoff/endpoints.md#e43)。当前完成人/时间及修改历史按固定revision_id读取。 |
-| F22-07 并发冲突处理 | 不丢自己的输入也不覆盖他人 | 409 保留输入，查看最新；明确重新编辑才装入最新值，不自动重提交 | 已实现 | [E40](http-handoff/endpoints.md#e40)、[E41](http-handoff/endpoints.md#e41)、[E03](http-handoff/endpoints.md#e03)。409保留用户输入→读最新版本→显示差异再确认；不能自动覆盖重试。 |
-| F22-08 保存后的调查影响 | 让人工事实进入后续判断 | 保存只确认人工结果；后续调查可引用，故事和助手后续可见；不自动改当前判断或结案 | 部分实现 | [E40](http-handoff/endpoints.md#e40)。保存H仅生成修订；第7步核心已验证有效H变化触发新轮、同正文新修订不触发，HTTP已只读核对冻结来源，新HTTP批执行/终态读取与周期边界读取已通过；候选E11/E13已移除。E65可读已完成历史修订，Q对话暂缓。 |
+| F22-02 列表、状态和待办数 | 知道谁还需要确认什么 | 显示事项、说明、负责人、期限、状态和结果；徽标表示未完成数量，不等于总数 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F22-03 用户新建与分配 | 承接需要人工确认的业务事实 | 用户阅读结论后明确创建任务，填事项，按需填说明、负责人、期限、来源调查及参考；保存后在同案任务页出现，不自动从未解决问题生成任务 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 人员目录/资产库存按既定业务后端合同接线，当前身份匹配不等于目录整链验收。 |
+| F22-04 编辑、取消及状态更新 | 在同一事项内继续协作 | 所有状态均可编辑，取消不删除历史；编辑带入原值，明确保存产生新版本 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F22-05 完成结果与适用范围 | 防止一句人工确认被推广到全案 | 完成须有非空结果及明确成员范围；对象范围需对象键；时间可不填，填写须成对；不强制工单或附件 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F22-06 完成人、修改人与历史 | 能复核是谁在何时确认什么 | 分开负责人、实际完成者、修改者；看指定修订，元数据编辑不改变原事实或扩大范围 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F22-07 并发冲突处理 | 不丢自己的输入也不覆盖他人 | 409 保留输入，查看最新；明确重新编辑才装入最新值，不自动重提交 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F22-08 保存后的调查影响 | 让人工事实进入后续判断 | 保存只确认人工结果；后续调查可引用，故事和助手后续可见；不自动改当前判断或结案 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。有效人工事实保存后进入后续check；元数据改动不当新事实，保存不自动采用或结案。 |
 
 ### 处理活动、评论与附件
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F23-05 处理活动与目标 | 交接时说明谁做过什么 | 展示管理、成员、人工变更的时间、操作者、前后值、结果；展开目标并回原对象 | 已实现 | [E17](http-handoff/endpoints.md#e17)。读取匹配活动与目标前后值，按next_offset分页。 |
-| F24-01 评论阅读与提交 | 记录协作说明，不混入 AI 结论 | 查看作者、正文、时间；提交后形成同案备注，不能自动作为已核实事实 | 已实现 | [E58](http-handoff/endpoints.md#e58)提交、[E59](http-handoff/endpoints.md#e59)分页读取、[E17](http-handoff/endpoints.md#e17)活动。原文/作者/时间保存，重复提交不多写；任务和调查状态保持。 |
-| F24-02 已有附件查看／下载 | 回看补充资料的原件 | 查看文件名、类型、大小和所属案件，业务后端按file_id提供下载并报告文件失效 | 本服务已实现；下载由业务后端负责 | [E61](http-handoff/endpoints.md#e61)、[E62](http-handoff/endpoints.md#e62)。返回本案登记的文件引用及元数据；不混入Run工件，不探测文件存在性。 |
-| F24-03 上传补充附件 | 让协作材料能持久交接 | 业务后端先上传保存，随后登记案件关联；登记成功可再查文件ID供后端下载，失败不能显示关联已保存 | 本服务已实现；上传由业务后端负责 | [E60](http-handoff/endpoints.md#e60)、[E61](http-handoff/endpoints.md#e61)、[E62](http-handoff/endpoints.md#e62)。不接收文件字节，保存关联不代表文件下载或内容核验通过。 |
+| F23-05 处理活动与目标 | 交接时说明谁做过什么 | 展示管理、成员、人工变更的时间、操作者、前后值、结果；展开目标并回原对象 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F24-01 评论阅读与提交 | 记录协作说明，不混入 AI 结论 | 查看作者、正文、时间；提交后形成同案备注，不能自动作为已核实事实 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F24-02 已有附件查看／下载 | 回看补充资料的原件 | 查看文件名、类型、大小和所属案件，业务后端按file_id提供下载并报告文件失效 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。GET返回附件元数据及file_id/storage_ref；实际文件下载HTTP由业务后端提供，尚未联验。 |
+| F24-03 上传补充附件 | 让协作材料能持久交接 | 业务后端先上传保存，随后登记案件关联；登记成功可再查文件ID供后端下载，失败不能显示关联已保存 | 含外部待接 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。业务后端先保存文件字节，再POST登记引用并GET读回；不能把登记当上传成功。 |
 
 ### Case 案件助手
 
@@ -279,13 +277,13 @@ E01–E53是Swagger接口编号，点击可看路径、参数、输入输出及�
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F26-02 同案统一对话 | 各页面提问能接续同一上下文 | 页头／故事／结果／图进入同案对话；切案切换历史与范围，不串案 | 暂缓（未实现） | [E19](http-handoff/endpoints.md#e19)。无正式会话目录/历史读写；预留结构不算可用。 |
-| F26-03 范围选择与问题编辑 | 让 AI 知道要回答什么 | 可带全案、告警、Run、对象、人工事实；范围展示且问题可编辑；打开不执行 | 暂缓（未实现） | [E19](http-handoff/endpoints.md#e19)。产品范围选择尚无DTO字段，当前多传scope将422。 |
-| F26-04 建议问题 | 帮用户发现值得问的问题 | 历史对话存在时仍显示建议；点击只填输入框，由用户修改后发送 | 暂缓（未实现） | 暂无对应接口。无建议问题生成API。 |
-| F26-05 发送与只读分析 | 直接处理用户问题 | 发送后分析已有材料或按需查询，显示进度、结论、依据、影响及限制；需澄清则询问 | 暂缓（未实现） | [E19](http-handoff/endpoints.md#e19)。发送返回501，无真实工具或模型调度。 |
-| F26-06 失败与人工事实续接 | 不把失败当无风险，并补齐缺事实 | 显示未查／失败原因；需要人确认时建立事项，收到事实后续接原问题 | 暂缓（未实现） | [E19](http-handoff/endpoints.md#e19)。问答执行和人工续接未实现；现有任务不自动恢复Q。 |
-| F26-07 保存到调查记录 | 保留有价值的答复用于交接 | 确认标题与结论后冻结问题、回答及材料；进入故事／历史；取消不保存、重复不重建、不再执行 | 暂缓（未实现） | [E20](http-handoff/endpoints.md#e20)。save返回501，不会保存/采用/重跑。 |
-| F26-08 引用与继续追问 | 复核回答并延续问题 | 展开当时来源，允许回查当前任务但保留旧快照；新问题按新范围处理 | 暂缓（未实现） | [E19](http-handoff/endpoints.md#e19)、[E20](http-handoff/endpoints.md#e20)。尚无冻结Q引用与连续追问服务。 |
+| F26-02 同案统一对话 | 各页面提问能接续同一上下文 | 页头／故事／结果／图进入同案对话；切案切换历史与范围，不串案 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
+| F26-03 范围选择与问题编辑 | 让 AI 知道要回答什么 | 可带全案、告警、Run、对象、人工事实；范围展示且问题可编辑；打开不执行 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
+| F26-04 建议问题 | 帮用户发现值得问的问题 | 历史对话存在时仍显示建议；点击只填输入框，由用户修改后发送 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
+| F26-05 发送与只读分析 | 直接处理用户问题 | 发送后分析已有材料或按需查询，显示进度、结论、依据、影响及限制；需澄清则询问 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
+| F26-06 失败与人工事实续接 | 不把失败当无风险，并补齐缺事实 | 显示未查／失败原因；需要人确认时建立事项，收到事实后续接原问题 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
+| F26-07 保存到调查记录 | 保留有价值的答复用于交接 | 确认标题与结论后冻结问题、回答及材料；进入故事／历史；取消不保存、重复不重建、不再执行 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
+| F26-08 引用与继续追问 | 复核回答并延续问题 | 展开当时来源，允许回查当前任务但保留旧快照；新问题按新范围处理 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
 
 ### 共用的调查运行详情
 
@@ -295,79 +293,69 @@ Case 内从调查历史进入；A/I 从各自分析目录进入；全局列表�
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F14-07 跨主体运行目录 | 找到没有 Case 或不同案件的既有执行 | 按主体、轮次、状态、时间查看并打开指定 Run；不将候选 Case ID 当实际业务案 | 完整HTTP已本地验收；待统一发布 | [E26](http-handoff/endpoints.md#e26)、[E27](http-handoff/endpoints.md#e27)、[E02](http-handoff/endpoints.md#e02)、[E22](http-handoff/endpoints.md#e22)、[E23](http-handoff/endpoints.md#e23)、[E10](http-handoff/endpoints.md#e10)只能枚举主体再拼接历史，无法保证无遗漏。[统一目录HTTP](../../docs/integration/run-directory-http.md)已接通真实task/intent和意图筛选，通过隔离PG/ASGI验证；正式两端待统一发布。 |
-| F15-02 运行统计和卡片摘要 | 了解已有运行及其交付情况 | 统计运行记录、部分交付、未升级调查及关联 Case；卡片展示状态、输入数量、时间、摘要和 Run ID；当前原型没有搜索筛选控件 | 完整HTTP统计已本地验收；待统一发布 | [E22](http-handoff/endpoints.md#e22)、[E23](http-handoff/endpoints.md#e23)、[E10](http-handoff/endpoints.md#e10)、[E12](http-handoff/endpoints.md#e12)已有单轮数据；R1同范围真实统计已随完整接口完成本地验证，待统一发布；不以调用方已加载记录代替，也不另扩运营报表。 |
+| F14-07 跨主体运行目录 | 找到没有 Case 或不同案件的既有执行 | 按主体、轮次、状态、时间查看并打开指定 Run；不将候选 Case ID 当实际业务案 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。直接读取统一目录；尚无Run的任务从主体任务列表读取，不靠枚举全部主体拼目录。 |
+| F15-02 运行统计和卡片摘要 | 了解已有运行及其交付情况 | 统计运行记录、部分交付、未升级调查及关联 Case；卡片展示状态、输入数量、时间、摘要和 Run ID；当前原型没有搜索筛选控件 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。统计与目录使用同一筛选范围；Run详情沿detail_url，不存在GET /analysis-runs/{run_id}。 |
 
 ### 调查发现
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F16-03 目标、结论、发现与限制 | 先知道这一轮得到什么及哪些仍未查清 | 阅读原始范围、结论（含未解决问题）、依据、变化与案件影响；未解决问题保留在本轮结论中，无独立处理状态；系统收尾和模型判断分别标明 | 已实现，需组合接口 | [E14](http-handoff/endpoints.md#e14)、[E15](http-handoff/endpoints.md#e15)、[E24](http-handoff/endpoints.md#e24)、[E25](http-handoff/endpoints.md#e25)。按主体读正式结果/交付原件，questions随本轮结论；系统收尾和业务判断分开。 |
-| F15-03 执行、交付及用量 | 判断结果可用程度及停止原因 | 状态、完整性、覆盖、用量分别展示；unknown 保持待核实，有工件不代表成功 | 已实现，需组合接口 | [E12](http-handoff/endpoints.md#e12)、[E32](http-handoff/endpoints.md#e32)。state/delivery/usage/时间及unknown独立展示，费用缺失不填0。 |
-| F12-04 查看当轮原始输入 | 确认这轮究竟调查了谁 | 查看被冻结的告警版本、范围和人工事实；当前新增成员不并入旧轮 | 已实现，需组合接口 | [E12](http-handoff/endpoints.md#e12)、[E18](http-handoff/endpoints.md#e18)、[E15](http-handoff/endpoints.md#e15)、[E32](http-handoff/endpoints.md#e32)、[E33](http-handoff/endpoints.md#e33)。当轮input_artifact_id和冻结材料/任务版本，不加载当前替代历史。 |
-| F22-09 用户创建人工任务／询问结果 | 对结论中需要核实的内容开展后续工作 | 需要人工确认时由用户创建任务并带来源；也可打开助手带本轮范围，明确发送后处理；不自动生成任务，不设置问题转派或关闭流程 | 部分实现 | [E38](http-handoff/endpoints.md#e38)、[E19](http-handoff/endpoints.md#e19)。用户从结论手动创建任务并带来源；询问结果仍501且暂缓；普通任务创建保持，不自动转任务。 |
+| F16-03 目标、结论、发现与限制 | 先知道这一轮得到什么及哪些仍未查清 | 阅读原始范围、结论（含未解决问题）、依据、变化与案件影响；未解决问题保留在本轮结论中，无独立处理状态；系统收尾和模型判断分别标明 | 已映射，字段/展示缺口保留 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。正文、findings/questions及来源可读；I/Case的business_verdict已完成候选保存和指定轮次读回。 |
+| F15-03 执行、交付及用量 | 判断结果可用程度及停止原因 | 状态、完整性、覆盖、用量分别展示；unknown 保持待核实，有工件不代表成功 | 已映射，字段/展示缺口保留 | **接口/存储已映射**；[现行HTTP/字段/存取](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。Run状态/交付/用量沿原接口；S5候选任务/attempt入队、服务观察耗时已验，unknown本地结束不伪造Run完成。 |
+| F12-04 查看当轮原始输入 | 确认这轮究竟调查了谁 | 查看被冻结的告警版本、范围和人工事实；当前新增成员不并入旧轮 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F22-09 用户创建人工任务／询问结果 | 对结论中需要核实的内容开展后续工作 | 需要人工确认时由用户创建任务并带来源；也可打开助手带本轮范围，明确发送后处理；不自动生成任务，不设置问题转派或关闭流程 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 本行普通功能保留，问答部分暂缓。 |
 
 ### AI 分析与执行明细
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F17-01 已保存分析过程 | 理解结论如何从材料得到 | 阅读已保存分析、采用材料与引用；正式 AI 保存记录应显示当时问题及回答 | 部分实现；现有材料可组合读取 | [E12](http-handoff/endpoints.md#e12)、[E32](http-handoff/endpoints.md#e32)、[E15](http-handoff/endpoints.md#e15)、[E33](http-handoff/endpoints.md#e33)。按真实步骤/工件阅读已保存分析；Q记录未实现且暂缓。 |
-| F17-02 步骤账本 | 定位哪一步失败或未产出 | 按本轮顺序和父子层级展开步骤、错误、状态及来源；不把运行结束当分析全通过 | 完整分页已本地实现，待统一发布 | [E12](http-handoff/endpoints.md#e12)、[E32](http-handoff/endpoints.md#e32)已有按seq/parent_step_id组织的步骤；正式摘要仍有1000步骤上限；[新完整目录及单步定位](../../docs/integration/run-records-http.md)已验证1001步骤全读，摘要增加steps_url，待统一发布。 |
-| F18-01 步骤输入／输出原件 | 复核实际收到与返回的内容 | 打开所选工件，区分初始输入、步骤参数、复用原件；正文受限／缺失分别提示 | 完整目录已本地实现，待统一发布 | [E12](http-handoff/endpoints.md#e12)、[E32](http-handoff/endpoints.md#e32)、[E15](http-handoff/endpoints.md#e15)、[E33](http-handoff/endpoints.md#e33)可沿已知工件ID读正文，正式摘要仍有200工件上限；新原件目录已验证201项全读，并正确回查跨Run/无Run原件，摘要增加artifacts_url，待统一发布。大原件完整读取随阶段一统一发布，外部正文未加载仍须明示。 |
-| F17-03 当轮能力与投入 | 解释该轮能做什么和实际花费 | 阅读冻结能力摘要、调用和已知用量；未知费用不记零，不按当前配置回算旧轮 | 已实现，需组合接口 | [E12](http-handoff/endpoints.md#e12)、[E32](http-handoff/endpoints.md#e32)。execution_summary/usage/tool_calls保留未知值；能力快照不是质量证明。 |
+| F17-01 已保存分析过程 | 理解结论如何从材料得到 | 阅读已保存分析、采用材料与引用；正式 AI 保存记录应显示当时问题及回答 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 本行普通功能保留，问答部分暂缓。 完整目录读next_cursor及content_url，不以旧trace摘要上限代替全量。 |
+| F17-02 步骤账本 | 定位哪一步失败或未产出 | 按本轮顺序和父子层级展开步骤、错误、状态及来源；不把运行结束当分析全通过 | 已映射，字段/展示缺口保留 | **接口/存储已映射**；[现行HTTP/字段/存取](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。步骤目录完整分页；S5候选task.active_step只指当前实际执行Run/步骤，已验证保存与读取。完整目录仍读next_cursor及content_url。 |
+| F18-01 步骤输入／输出原件 | 复核实际收到与返回的内容 | 打开所选工件，区分初始输入、步骤参数、复用原件；正文受限／缺失分别提示 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 完整目录读next_cursor及content_url，不以旧trace摘要上限代替全量。 |
+| F17-03 当轮能力与投入 | 解释该轮能做什么和实际花费 | 阅读冻结能力摘要、调用和已知用量；未知费用不记零，不按当前配置回算旧轮 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 完整目录读next_cursor及content_url，不以旧trace摘要上限代替全量。 |
 
 ### 查询与证据
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F28-01 查询目录和结果 | 知道访问了哪些来源 | 按实际工具步骤查看来源、参数、状态、返回及错误，定位同轮请求／结果 | 已实现，需组合接口 | [E12](http-handoff/endpoints.md#e12)、[E32](http-handoff/endpoints.md#e32)、[E15](http-handoff/endpoints.md#e15)、[E33](http-handoff/endpoints.md#e33)。步骤中的工具调用与输入/输出工件组合查询目录。 |
-| F28-02 查询状态区分 | 避免“没查到”被误读为安全 | 分别显示未执行、跳过、失败、成功零行、复用；来源可用不代表本轮查过 | 已实现，需组合接口 | [E15](http-handoff/endpoints.md#e15)、[E33](http-handoff/endpoints.md#e33)。按真实工具回执分未查/失败/成功空/有结果；HTTP200不等于查询成功。 |
-| F18-02 摘要、原文与引用 | 让引用能够逐项复查 | 打开证据原件、冻结材料或引用路径；只有摘要就说明，不换其他轮材料 | 已实现，需组合接口 | [E15](http-handoff/endpoints.md#e15)、[E16](http-handoff/endpoints.md#e16)、[E18](http-handoff/endpoints.md#e18)、[E31](http-handoff/endpoints.md#e31)、[E33](http-handoff/endpoints.md#e33)、[E34](http-handoff/endpoints.md#e34)、[E35](http-handoff/endpoints.md#e35)。引用→所属原件读取，保留摘要与完整正文的差别。 |
+| F28-01 查询目录和结果 | 知道访问了哪些来源 | 按实际工具步骤查看来源、参数、状态、返回及错误，定位同轮请求／结果 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 完整目录读next_cursor及content_url，不以旧trace摘要上限代替全量。 |
+| F28-02 查询状态区分 | 避免“没查到”被误读为安全 | 分别显示未执行、跳过、失败、成功零行、复用；来源可用不代表本轮查过 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 完整目录读next_cursor及content_url，不以旧trace摘要上限代替全量。 |
+| F18-02 摘要、原文与引用 | 让引用能够逐项复查 | 打开证据原件、冻结材料或引用路径；只有摘要就说明，不换其他轮材料 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 完整目录读next_cursor及content_url，不以旧trace摘要上限代替全量。 |
 
 ### 调查关系图
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F19-03 历史图只读与来源 | 重现当轮实际关系范围 | 读所选 Result 的图、节点和边，聚焦／回查来源；缺图显示缺图 | 已实现，需组合接口 | [E14](http-handoff/endpoints.md#e14)、[E15](http-handoff/endpoints.md#e15)。graph_artifact_id→历史图，标冻结范围且只读。 |
-| F19-04 转入当前案件探索 | 继续查线索而不改历史 | 明确离开历史图进入案件关系图；历史图不扩展、不重写，关联线不证明攻击因果 | 需组合；切换由调用方处理 | [E30](http-handoff/endpoints.md#e30)核对当前对象后用[E66](http-handoff/endpoints.md#e66)查询；旧材料对象409，不改历史图。 |
+| F19-03 历史图只读与来源 | 重现当轮实际关系范围 | 读所选 Result 的图、节点和边，聚焦／回查来源；缺图显示缺图 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F19-04 转入当前案件探索 | 继续查线索而不改历史 | 明确离开历史图进入案件关系图；历史图不扩展、不重写，关联线不证明攻击因果 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 分区：由图来源取得alert_id，再读alerts/records/objects。 |
 
 ### 报告与响应
 
 | 功能 | 为什么需要 | 操作后结果与回查位置 | 后端实现状态 | 接口及实现说明 |
 | --- | --- | --- | --- | --- |
-| F16-04 阅读报告及收尾说明 | 向同事交接该轮结果 | 打开本轮报告；无正式 Result 时仍可读已保存系统说明及失败材料，不补造结论 | 已实现，需组合接口 | [E14](http-handoff/endpoints.md#e14)、[E15](http-handoff/endpoints.md#e15)。report_artifact_id及delivery正文→报告，系统closing_note独立显示。 |
-| F18-03 下载已有报告 | 便于离线交接和留存 | 下载已保存内容，保持轮次和来源；缺报告不能导出伪造的完整成果 | 读取已实现；下载由调用方处理 | [E14](http-handoff/endpoints.md#e14)、[E15](http-handoff/endpoints.md#e15)。读取已保存报告content_text→浏览器Blob下载；无单独文件下载API，不调用模型重写。 |
-| F27-02 响应建议卡片 | 让建议目标、理由和影响可评估 | 展示具体动作、目标、依据、审批要求；未记录审批要求与无需审批分开 | 已实现，需组合接口 | [E14](http-handoff/endpoints.md#e14)、[E15](http-handoff/endpoints.md#e15)、[E24](http-handoff/endpoints.md#e24)、[E25](http-handoff/endpoints.md#e25)。按本轮recommendations展示建议目标/依据，不能显示为已执行。 |
-| F27-03 审批与意见 | 明确是否允许某个动作 | 按具体目标批准／拒绝并说明；批准绑定动作／目标，改变须重审；拒绝后修改重提，批准仅变待执行，D06 已确认 | 未实现 | 暂无对应接口。审批和意见链由业务后端承接，本服务无批准或执行接口。 |
-| F27-04 执行记录与回执 | 确认实际做了什么 | 按动作身份关联回执；执行不明先核回执，不自动重复；明确失败后由人决定重试，无回执不宣称已处置 | 部分实现 | [E30](http-handoff/endpoints.md#e30)、[E15](http-handoff/endpoints.md#e15)、[E33](http-handoff/endpoints.md#e33)。responses及原件读取已有回执；Case真实执行闭环由业务后端，unknown不能自动重试。 |
+| F16-04 阅读报告及收尾说明 | 向同事交接该轮结果 | 打开本轮报告；无正式 Result 时仍可读已保存系统说明及失败材料，不补造结论 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F18-03 下载已有报告 | 便于离线交接和留存 | 下载已保存内容，保持轮次和来源；缺报告不能导出伪造的完整成果 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。现行HTTP及内部存取已定位；复用既有验收，本批未逐项重做业务验证。 |
+| F27-02 响应建议卡片 | 让建议目标、理由和影响可评估 | 展示具体动作、目标、依据、审批要求；未记录审批要求与无需审批分开 | 已映射，字段/展示缺口保留 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。A/Case读实际recommendations及范围/引用；正文已有HTTP，SF05为剩余展示接线。I现有待核问题不冒充响应动作，未保存建议保持空态。 |
+| F27-03 审批与意见 | 明确是否允许某个动作 | 按具体目标批准／拒绝并说明；批准绑定动作／目标，改变须重审；拒绝后修改重提，批准仅变待执行，D06 已确认 | 暂缓 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。负责人11-20确认继续暂缓；AI两个POST仅返回501，审批执行无本服务入口，不计已接通。 |
+| F27-04 执行记录与回执 | 确认实际做了什么 | 按动作身份关联回执；执行不明先核回执，不自动重复；明确失败后由人决定重试，无回执不宣称已处置 | 接口/存储已映射 | [现行HTTP、字段与存储映射](../../docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)。只读已有responses及工件；真实动作状态/回执由业务后端提供，新执行暂缓。 分区：按实际alert/incident归属读records/responses；Case由同源工件回查。 |
 
 ## 操作后的结果必须在哪看
 
 | 操作 | 保存或执行的结果 | 用户应能回查 | 当前边界 |
 | --- | --- | --- | --- |
-| 建案／加关联／移动 | 案件身份、成员范围和待启动记录 | 成员、资料、概览、活动 | 命令、详情、活动读取已实现，使用返回的真实ID回查 |
-| 准备／启动 | 前者保存待启动记录；后者冻结输入并执行 | 概览、历史、指定 Run | 当前需明确启动；未启用自动接续 |
+| 建案／加关联／移动 | 实际allocations、范围版本及新案initial_task | Case详情、任务GET、成员、活动 | 不假定单案，不使用pending_run_id；沿实际Case/task身份读取 |
+| 检查／再次调查 | POST investigations或diagnose持久受理任务；后台执行 | status_url、实际attempt/Run/Result | 202不等于完成；同操作键确认，不调用退役prepare/start |
 | 完成人工任务 | 同任务的新修订、结果及声明范围 | 任务当前／历史版本，后续 C 的冻结输入 | 任务版本传递已验；助手未实现且暂缓 |
 | 人工告警反馈 | 告警意见及按规则产生的处理变化 | 告警概况、时间线 | E48/E49已实现单条/批量反馈，按D02关闭或恢复；原模型判断保留 |
 | 保存助手回答 | 正式 AI 记录和当时依据 | 历史、故事、原问题与引用 | 接口返回501，未实现且暂缓 |
 | 保存探索／加入成员 | 前者保存画布；后者改变成员 | 探索恢复／成员及概览 | E67–E69保存恢复可用；明确加入用E08 |
-| 审批／执行响应 | 前者许可；后者真实动作及回执 | 同一建议卡和回执 | 真实链路未接，不能混为处置成功 |
+| 审批／执行响应 | 前者许可；后者真实动作及回执 | 已有建议/回执引用仍可读 | 用户确认继续暂缓，不计已接通 |
 
-## 已规划但尚未实施的更新行为
+## 后续更新行为与未完成边界
 
-负责人已明确先完成[固定范围调查](../../openspec/changes/complete-socai2-investigation-chain/fixed-flow-plan.md)，再推进[更新和流式](../../openspec/changes/schedule-streaming-investigation-updates/proposal.md)。下列是已有后置规划，不覆盖上表当前手动行为，也不列入本轮待批准规则。
+原流式规划已发生实施和发布，旧“统一队列未实现/跨task合并”不再是现行合同。每个已受理任务保留独立身份，读取真实尝试；主体串行、冻结输入、check/no_changes、唯一事件接收Case和有效H更新按[流式change当前范围](../../openspec/changes/schedule-streaming-investigation-updates/closeout-scope-20261118.md)及发布证据处理。最新写侧交付、自动运行是否启用与模型质量分别核实，不从HTTP可用推断。
 
-| 已确认的目标方向 | 将来影响的页面 | 当前实现状态 |
-| --- | --- | --- |
-| 新告警自身分诊，实质材料／成员／采用结果变化合并到相关 I／Case 待办 | 事件诊断、调查概览、历史 | 调度待办及自动接续未实施，Agents自动分析关闭；入站/Fusion/数据整理运行 |
-| 整事件关联的活动 Case 跟随事件新成员；单告警关联不扩大，人工移出不加回，已结束案不自动重开 | 成员、覆盖、概览 | 自动跟随未实施 |
-| 每对象单活跃、一个合并待办；运行输入冻结，后续变化进入下一轮 | 概览、历史、Run 输入 | 现有 Case 手动单活跃与冻结已实现；统一队列未实施 |
-| 只有有效 H 变化走 C6 综合复核，同时有材料／成员变化则完整调查 | 人工任务、当前判断、调查历史 | 自动反馈复核未实施，当前保存 H 后仍手动准备／启动 |
-| 复核复用原调查知识，历史知识维护进入低优先级待办 | 单轮材料及处理记录 | 现有知识读取／同步另有交付；上述队列化方式未实施 |
-
-## 功能范围和未完成项
-
-D01–D07已确认；未实现能力按上表及[接口实施计划](../../docs/investigation/http-implementation-plan-20261112.md)推进。资产、人员目录、外部日志等由业务后端提供，不复制旧AiSOC的平台功能和数据表。页面只用于测试，功能完成情况只按接口能力说明。
+本轮接通的实际缺口见[供给核对结果](../../docs/integration/product-api-data-requirements-20261114.md#11-20供给核对后的实际缺口)：S5/S6与SF05候选建议展示已有限定验收；SF06采用Result依据/原范围/未决项也已限定验收；人工版本/工件来源链也已候选验证；SF04业务判定也已候选验证。SF07移出本期，继续核告警取数与跳转参数，正式版本与新真实告警批合并验收。普通人工任务、现有建议/报告、评论、附件引用、探索等不因AI/响应暂缓被排除。新真实告警一轮放在直接缺口接通后，旧失败和旧Run保持。
 
 ## 跳转与关联规格
 
@@ -375,7 +363,7 @@ D01–D07已确认；未实现能力按上表及[接口实施计划](../../docs/
 
 ## 案例签收
 
-固定四案及逐字段样例保留在[技术附录案例签收](frontend-data-navigation-contract.md#案例签收)，仅用于复现原始读取、跳转和空态，不把旧案例更新成新通过结论。本轮只做文档整理，没有运行模型或业务写入，也没有完成新的产品页面验收。
+固定四案及逐字段样例保留在[技术附录案例签收](frontend-data-navigation-contract.md#案例签收)，仅用于复现原始读取、跳转和空态，不把旧案例更新成新通过结论。本次P1只做结构和代表读取；此前同批已修4173异步调用并通过29项夹具、5项真实浏览器接线检查，仍不等于完整产品或新模型批次验收。
 
 ## 实现状态依据
 

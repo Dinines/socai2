@@ -17,6 +17,7 @@ from .material_json import loads as exact_json_loads
 from .owner_directory import OwnerDirectoryScope, read_owner_directory
 from .page_contracts import (
     AlertFacts,
+    IncidentDetailView,
     IncidentFacts,
     IncidentSubjectPage,
     IncidentSubjectView,
@@ -81,7 +82,7 @@ class PageReader:
         return select(O).join(A, and_(A.c.tenant_id == O.c.tenant_id, A.c.id == O.c.alert_id,
             A.c.latest_material_id == O.c.material_id)).where(*self.store.where(O, O.c.alert_id.in_(self.member_ids())))
 
-    async def view(self, row):
+    async def view(self, row, *, include_saved_diagnosis=False):
         self.identity = row["id"]
         model = AlertFacts if self.kind == "alerts" else IncidentFacts
         name = None
@@ -125,11 +126,16 @@ class PageReader:
             agg = (await self.rows(select(func.count().label("members"), func.min(A.c.event_time).label("first_activity_at"),
                 func.max(A.c.event_time).label("last_activity_at"), func.max(A.c.business_updated_at).label("member_updated_at"),
                 func.max(rank).label("rank"), func.count().filter(A.c.event_time.is_(None)).label("unknown_times"),
-                func.count().filter(A.c.severity.is_(None)).label("unknown_severities")).where(
+                func.count().filter(A.c.severity.is_(None)).label("unknown_severities"),
+                func.count().filter(A.c.handling_status.in_(("new", "in_progress"))).label("active_members"),
+                func.count().filter(A.c.handling_status == "unknown").label("unknown_status_members"),
+                func.array_agg(func.coalesce(A.c.connector_type, A.c.source_namespace).distinct()).label("detection_sources")).where(
                 *self.store.where(A, A.c.id.in_(self.member_ids())))))[0]
             auto = REVERSE_RANK.get(agg["rank"])
             effective, source = incident_effective(row, auto)
-            derived = {"member_count": agg["members"], "first_activity_at": agg["first_activity_at"],
+            derived = {"member_count": agg["members"], "active_member_count": agg["active_members"],
+                "unknown_status_member_count": agg["unknown_status_members"],
+                "detection_sources": sorted(agg["detection_sources"] or []), "first_activity_at": agg["first_activity_at"],
                 "last_activity_at": agg["last_activity_at"], "unknown_event_time_count": agg["unknown_times"],
                 "unknown_severity_count": agg["unknown_severities"], "severity_auto": auto, "severity_effective": effective,
                 "severity_source": source,
@@ -156,9 +162,11 @@ class PageReader:
         if self.kind == "incidents":
             from .analysis_task_policy import AnalysisTaskPolicy
             from .case_relationship_reader import receiving_status
-            view_model = IncidentSubjectView
+            view_model = IncidentDetailView if include_saved_diagnosis else IncidentSubjectView
             extra["case_receiving"] = await receiving_status(self.store, row, AnalysisTaskPolicy.load())
-            if row["latest_diagnosis_id"] is not None:
+            if include_saved_diagnosis:
+                extra.update(await self.saved_diagnosis(row["latest_diagnosis_id"]))
+            elif row["latest_diagnosis_id"] is not None:
                 diagnosis = m.IncidentDiagnoses.__table__
                 extra["business_verdict"] = (await self.db.execute(select(diagnosis.c.business_verdict).where(
                     *self.store.where(diagnosis, diagnosis.c.incident_id == self.identity,
@@ -167,6 +175,46 @@ class PageReader:
             derived=derived, material=material, triage=triage, feedback=feedback, analysis_url=root + "/analysis",
             section_urls={key: root + "/records/" + key for key in SECTIONS
                 if not (key == "members" and self.kind == "alerts" or key == "incidents" and self.kind == "incidents")})
+
+    async def incident_detail(self):
+        return await self.view(await self.subject(), include_saved_diagnosis=True)
+
+    async def saved_diagnosis(self, pointer):
+        latest = await self.store.one(select(R.c.id.label("run_id"), R.c.state, R.c.delivery_state, R.c.stop_reason)
+            .where(*self.store.where(R, R.c.incident_id == self.identity, R.c.kind == "incident_diagnosis"))
+            .order_by(R.c.requested_at.desc(), R.c.id.desc()).limit(1))
+        detail = {"published_diagnosis": None, "latest_attempt": dict(latest) if latest is not None else None}
+        if pointer is None:
+            return detail
+
+        diagnosis = m.IncidentDiagnoses.__table__
+        source_run = and_(R.c.id == diagnosis.c.source_run_id, R.c.tenant_id == diagnosis.c.tenant_id,
+                         R.c.incident_id == diagnosis.c.incident_id, R.c.kind == "incident_diagnosis")
+        adopted = await self.store.one(select(diagnosis.c.id, R.c.id.label("source_run_id"), diagnosis.c.summary,
+            diagnosis.c.diagnosis["conclusion"].label("conclusion"), diagnosis.c.open_questions, diagnosis.c.business_verdict)
+            .select_from(diagnosis.outerjoin(R, source_run))
+            .where(*self.store.where(diagnosis, diagnosis.c.id == pointer, diagnosis.c.incident_id == self.identity,
+                diagnosis.c.state == "completed")))
+        if adopted is None:
+            return detail
+
+        detail["business_verdict"] = adopted["business_verdict"]
+        if adopted["source_run_id"] is None:
+            return detail
+
+        questions = []
+        for item in adopted["open_questions"] or []:
+            if isinstance(item, dict):
+                question = item.get("question")
+                item = item.get("text") if question is None else question
+            if isinstance(item, str) and item:
+                questions.append(item)
+        conclusion = adopted["conclusion"]
+        detail["published_diagnosis"] = {
+            "id": adopted["id"], "source_run_id": adopted["source_run_id"], "summary": adopted["summary"],
+            "conclusion": conclusion if isinstance(conclusion, str) else None, "open_questions": questions,
+        }
+        return detail
 
     def selection(self, query):
         """Shared SQL conditions/order for paging and complete exports."""

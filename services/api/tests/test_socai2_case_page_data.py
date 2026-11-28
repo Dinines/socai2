@@ -5,12 +5,43 @@ from unittest.mock import AsyncMock
 from uuid import UUID
 
 from app.socai2.baseline_store import StoreError, digest
-from app.socai2.case_data import evidence_view, validate_sources
+from app.socai2.case_data import evidence_view, export_page_data, validate_sources
 from app.socai2.case_data_contracts import EvidenceIndex
 from pydantic import ValidationError
 
 
 class PageDataHTTPTest(unittest.IsolatedAsyncioTestCase):
+    async def test_export_resolves_frozen_source_owners_without_mutating_rows(self):
+        cid, tenant, assessment, task, old, current, artifact, run = [UUID(int=n) for n in range(201, 209)]
+        case = {"id": cid, "tenant_id": tenant, "current_assessment_id": assessment,
+                "row_version": 1, "current_evidence_artifact_id": None}
+        revision = {"id": old, "tenant_id": tenant, "case_id": cid, "task_id": task}
+        saved = {"id": assessment, "tenant_id": tenant, "case_id": cid,
+                 "conclusion": "Unit adopted source", "origin": "human", "validity": "valid",
+                 "scope_revision": 1, "formed_at": "2026-01-01T00:00:00Z", "adopted_at": "2026-01-01T00:00:00Z"}
+        refs = [{"id": UUID(int=210), "tenant_id": tenant, "case_id": cid,
+                 "assessment_id": assessment, "task_revision_id": old},
+                {"id": UUID(int=211), "tenant_id": tenant, "case_id": cid,
+                 "assessment_id": assessment, "artifact_id": artifact}]
+        tables = {"cases": [case], "case_assessments": [saved], "case_assessment_sources": refs,
+                  "tasks": [{"id": task, "current_revision_id": current}],
+                  "task_revisions": [revision, {**revision, "id": current}],
+                  "artifacts": [{"id": artifact, "tenant_id": tenant, "case_id": cid,
+                                 "run_id": run, "schema_version": "unit.v1"}]}
+        before = copy.deepcopy(tables)
+        result = (await export_page_data(tables))[0]["page_data"]["assessment"]["sources"]
+        self.assertEqual(result[0]["task_revision_id"], str(old))
+        self.assertEqual(result[0]["task_id"], str(task))
+        self.assertIsNone(result[0]["run_id"])
+        self.assertEqual(result[1]["run_id"], str(run))
+        self.assertIsNone(result[1]["task_id"])
+        self.assertEqual(tables, before)
+        tables["task_revisions"][0]["case_id"] = UUID(int=212)
+        tables["artifacts"][0]["tenant_id"] = UUID(int=213)
+        result = (await export_page_data(tables))[0]["page_data"]["assessment"]["sources"]
+        self.assertIsNone(result[0]["task_id"])
+        self.assertIsNone(result[1]["run_id"])
+
     async def test_page_data_routes_use_authenticated_tenant_actor_and_permissions(self):
         from app.api.v1.deps import CurrentUser, get_current_user
         from app.api.v1.endpoints import socai2_cases as api

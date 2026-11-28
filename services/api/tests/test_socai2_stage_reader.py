@@ -9,7 +9,7 @@ from app.api.v1.endpoints import socai2_analysis as api
 from app.models import socai2 as m
 from app.socai2.baseline_contracts import Actor, Limits, Start
 from app.socai2.baseline_model_view import candidates
-from app.socai2.stage_read_contracts import StagePage
+from app.socai2.stage_read_contracts import IncidentStagePage, StagePage
 from app.socai2.stage_reader import StageReader, StageReadService
 from app.socai2.stage_result_contracts import AlertOutput, IncidentOutput
 from app.socai2.stage_results import AS, A, F, I, StageResultService
@@ -89,11 +89,21 @@ async def run_checks(engine, record, only=None):
         aid, iid, mid = await fixture()
         ac = await begin("alert_basic", aid); await finish("alert_basic", ac, mid)
         ic = await begin("incident_diagnosis", iid); await finish("incident_diagnosis", ic, mid)
-        for path in [f"alerts/{aid}/analysis", f"incidents/{iid}/analysis"]:
-            page = await get(path)
-            StagePage.model_validate(page)
-            assert page["current"]["valid_for_current_input"] and page["current"]["freshness"] == "current"
-            assert "request_hash" not in str(page) and "do-not-include-raw-in-C1-freshness" not in str(page)
+        entry = StageReader.entry
+        entry_calls = []
+
+        async def record_entry(view, row, subject):
+            entry_calls.append(row["id"])
+            return await entry(view, row, subject)
+
+        with patch.object(StageReader, "entry", record_entry):
+            for path, page_type in ((f"alerts/{aid}/analysis", StagePage), (f"incidents/{iid}/analysis", IncidentStagePage)):
+                page = await get(path)
+                page_type.model_validate(page)
+                assert page["current"]["valid_for_current_input"] and page["current"]["freshness"] == "current"
+                assert "request_hash" not in str(page) and "do-not-include-raw-in-C1-freshness" not in str(page)
+                assert page["entries"] == [page["current"]]
+        assert entry_calls.count(ic["run_id"]) == 1
         detail = await get(f"alerts/{aid}/analysis/runs/{ac['run_id']}")
         assert detail["explanation"]["available"] and detail["result"]["confidence"] is None
         assert detail["result"]["score_state"] == "not_computed"
@@ -133,6 +143,8 @@ async def run_checks(engine, record, only=None):
             cursor = page["next_before_run_id"]
         assert cursor is None and [e["run"]["state"] for e in pages] == ["unknown", "failed", "completed"]
         assert pages[0]["result"]["diagnosis"] is None and pages[1]["result"]["error_code"] == "synthetic_fail"
+        assert pages[1]["run"]["stop_reason"] == "synthetic_fail"
+        assert page["entries"] == [page["current"]]
         await get(f"alerts/{aid}/analysis?before_run_id={third['run_id']}", 404)
 
     async def test_read_tenant_subject_permission_and_disabled():

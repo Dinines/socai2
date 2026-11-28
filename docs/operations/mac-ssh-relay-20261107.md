@@ -2,7 +2,7 @@
 
 适用时间：2026-11-07。适用机器：用户 `lychee` 的这台 Mac，项目目录 `/Users/lychee/Documents/project/socai2`。这是本机开发与测试的连接说明，其他机器需要自己的 SSH 配置和身份。
 
-**现在可以直接使用 `ssh sting-infra21` 登录 21，或打开 <http://127.0.0.1:4177/> 查看远端调查工作台。** Mac 不需要拨业务 VPN；Windows `192.168.3.57` 需要保持开机、网络可达并连接该 VPN。当前常驻隧道只开放工作台；数据库、湖、模型网关等本地端口按本文命令临时开启。
+**现在可以直接使用 `ssh sting-infra21` 登录 21，或打开 <http://127.0.0.1:4177/> 查看远端调查工作台。** Mac 不需要拨业务 VPN；Windows `192.168.3.57` 需要保持开机、网络可达并连接该 VPN。常驻隧道转发工作台4177和灵枢网页8080；数据库、湖、模型网关等本地端口按本文命令临时开启。
 
 项目使用 21 的数据库分为两种情况：已有 SSH 读回工具继续使用 `sting-infra21`；Mac 当前源码的只读 API 现已支持显式远端 profile 和严格 TLS，读取正式 `aisoc.socai2`。用户随后明确要正式数据，历史/合成测试库不作为默认目标。已完成一次本机 API 只读验证，随后关闭临时进程；无数据库迁移、生产数据/权限修改、模型或 Fusion 启动。配置和命令见[只读 profile 用法](../../deploy/local-investigation/README.md#21-正式数据只读-profile)。
 
@@ -18,7 +18,7 @@ Windows 的 `2221` 是到 21 SSH 的入口，不是 PostgreSQL 或 HTTP 端口�
 | 已配置名称 | 用途 | 实际目标 |
 | --- | --- | --- |
 | `sting-infra21` | 日常登录、已有项目脚本、临时增加服务转发 | Windows `192.168.3.57:2221`，最终登录 21 的 `root` |
-| `sting-infra21-tunnel` | 后台工作台隧道，由 LaunchAgent 管理 | 同一条到 21 的连接，转发本机 `127.0.0.1:4177` |
+| `sting-infra21-tunnel` | 后台网页隧道，由 LaunchAgent 管理 | 同一条到 21 的连接，转发本机 `127.0.0.1:4177` 和 `127.0.0.1:8080` |
 | `sting-infra21-direct` | 本机以后能够直接访问 21 时使用 | `192.168.1.21:22`，不经过 Windows |
 | `sting-win57` | 维护 Windows 中转机 | `lychee@192.168.3.57:22` |
 
@@ -44,7 +44,7 @@ curl --noproxy '*' --fail --silent --show-error \
   -o /dev/null -w 'HTTP %{http_code}\n' http://127.0.0.1:4177/
 ```
 
-工作台入口为 [http://127.0.0.1:4177/](http://127.0.0.1:4177/)，自动进入 `/viewer/`。2026-11-16实际为21上的独立只读服务0.6.0，沿HTTP读取；历史测试业务数据已清空，当前展示真实空态，见[W5回执](evidence/streaming-w5-4177-20261116-01/README.md)。SSH将21服务送到本机，没有启动Mac业务服务。本机4173旧静态演示和58477临时预览已停止。当前保持原4177转发，旧工作台的Host/Origin端口校验不代表新版行为。
+工作台入口为 [http://127.0.0.1:4177/](http://127.0.0.1:4177/)，自动进入`/viewer/`。2026-11-18实际为21上的0.6.2/r9，沿HTTP读取；D6四异常代表及恢复日常两轮的正式读回见[本批回执](evidence/workbench-d6-release-20261118-01/README.md)。SSH将21服务送到本机，没有启动Mac业务服务；当前沿原4177/8080转发。其他预览端口由对应任务管理。11-16的0.6.0/空态结论仅见[历史W5回执](evidence/streaming-w5-4177-20261116-01/README.md)，不代表当前无数据。
 
 后台任务在当前 Mac 用户登录后启动，SSH 检测断线后由 LaunchAgent 重新拉起。Windows 断网、VPN 断开或 Mac 睡眠期间无法访问；网络恢复后会重试，恢复不是即时的。
 
@@ -67,6 +67,29 @@ launchctl bootstrap "gui/$(id -u)" \
 ```
 
 需要跨登录停用时，先执行 `launchctl disable "gui/$(id -u)/com.lychee.socai2-ssh-tunnel"`，再对已加载任务执行 `bootout`。恢复时先将 `disable` 换成 `enable`，再执行 `bootstrap`。不要用 `ssh -O exit` 作为长期停止方式，任务仍启用时会自动重连。
+
+### 从本机打开 21 的灵枢网页
+
+直接在浏览器打开 [本机 8080](http://127.0.0.1:8080/)。`sting-infra21-tunnel` 持久转发本机 `127.0.0.1:8080` 到 21 的 `127.0.0.1:8080`，浏览器已实测进入“登录灵枢”。中转机沿用原入口 `http://192.168.1.21:8080`，会话接口已核验。
+
+2026-11-18 经负责人授权更新 21 的 SpiritHub API。原站点地址照常使用，`SPIRITHUB_AUTH_LOOPBACK_ORIGIN` 为当前部署增加精确的本机地址，并要求请求来自同一页面来源。两条入口未登录时均按预期返回 401，其他来源返回 403。21 上的部署镜像、配置与核对结果见[验证回执](evidence/spirithub-loopback-origin-20261118-01/verification.json)。
+
+### 本机 5601 日志查看入口
+
+2026-11-20，5601已恢复为独立跳板转发：Mac → `sting-win57`（SSH 22）→ `sting-infra21-direct` → 21 的 `127.0.0.1:5601`。本次原2221入口拒绝连接，而21的Dashboards正常；未重启或修改远端服务。访问[Discover](http://127.0.0.1:5601/app/discover#/view/socai2-spirithub-ocsf-replay-20261118)。
+
+专用配置保存在本机`~/.ssh/socai2-dashboards-5601/`，由当前登录会话的`com.lychee.socai2-dashboards-5601`任务保持连接并自动重连；没有安装跨登录自启动。最初普通后台SSH未持续驻留，随后Documents目录内的任务配置被macOS拒绝读取，已改用上述专用目录；原SSH配置及4177/8080任务保持。本机首页/Discover均HTTP 200，健康状态和启动脚本通过，[验证回执](evidence/dashboards-access-20261120-01/verification.json)。
+
+```sh
+# 检查专用转发
+launchctl print "gui/$(id -u)/com.lychee.socai2-dashboards-5601"
+
+# 仅在本登录会话尚未加载任务时启动
+launchctl bootstrap "gui/$(id -u)" \
+  /Users/lychee/.ssh/socai2-dashboards-5601/tunnel.plist
+```
+
+2026-11-24，本机 5601 无监听，当前登录会话未加载专用任务。重新加载上述配置后，根链接跳转后返回 200。新版 Data Explorer 的搜索响应返回文档，选择 `_source` 时，结果表渲染遇到长整数错误。将列设为 `kafka.offset` 和 `ocsf.class_uid` 后浏览器显示文档行。历史回放保存视图同样已读到文档。该数据视图未配置时间字段。
 
 ## 三 按测试需要开启其他服务端口
 

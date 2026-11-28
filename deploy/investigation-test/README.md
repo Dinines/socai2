@@ -1,6 +1,10 @@
 # 测试服务部署与配置
 
-2026-11-17。4b发行版为0.6.1，增加报告精确主体/Run链接与按冻结来源识别测试数据。[本轮21配置](releases/workbench-4b-20261117-01/release.json)选择4177 r8，业务上游18024、环境标签acceptance-release-20261117-01及正式tenant保持；实际切换与验证以[发布回执](../../docs/operations/evidence/workbench-4b-release-20261117-01/README.md)和[当前进展](../../PROGRESS.md)为准。保留既有账本与数据，不重新投放。以下W1–W5各批说明保持历史时点，旧release-4177及候选18424示例不是本轮运行参数。
+S4候选查看器已接入当前风险属性、指定Run等级意见和只读变化记录，见[页面交接](../../docs/integration/subject-risk-pages-s4-20261120.md)。新增`web/subject_risk.mjs`由既有web目录挂载和整目录打包包含；不新增代理写操作、配置或监听，不据此宣称正式4177已更新。
+
+2026-11-18。当前工作台发行版为**0.6.2/r9**，已将D6局部读取保留、交付缺项、unknown收尾和无响应空态发布到21正式4177。[本轮发布配置](releases/workbench-d6-20261118-01/release.json)及[打包profile](releases/workbench-d6-20261118-01/package-build.json)是当前入口；[发布回执](../../docs/operations/evidence/workbench-d6-release-20261118-01/README.md)核四异常代表及恢复后的日常两轮。原18024、环境acceptance-release-20261117-01、正式tenant和账本保持。临时API直接沿用正式配置，仅换测试context，未加连接或方法限制，已全部停止。
+
+本版显式构建命令：`python deploy/investigation-test/build.py build --profile deploy/investigation-test/releases/workbench-d6-20261118-01/package-build.json`。该批目录用于追溯，已有产物不可覆盖；后续新发布须使用新的release名。根`package-build.json`及旧`release-4177.json`保留历史组合示例，不能作为当前部署默认值。4b验收工具及业务核心本轮不重建/替换；下文W1–W5保留原批时点。
 2026-11-17本机任务3a–3c已接入[验收材料与会话入口](../../tools/testdata/ACCEPTANCE.md)：转换、检查、冻结准备、显式首段/追加、只读状态/报告及交互菜单。3c.2真实两段和3c.3报告/菜单均已通过各自独审。3d另提供[专用Docker入口](acceptance-docker.md)、[Compose](acceptance.compose.yml)、[运行配置示例](acceptance.env.example)及[文件配置示例](acceptance-config.example/)；已实际构建linux/amd64镜像，材料/配置只读、结果持久挂载。镜像默认只显示帮助，运行不需宿主Python/源码。实际挂载验证和独审状态以[3d回执](../../docs/operations/evidence/acceptance-docker-20261117-01/README.md)为准；尚未替换21或运行任务4。下文原Dockerfile/serve属于查阅服务，与专用Dockerfile.acceptance入口分开。
 
 ## 配置文件与加载
@@ -98,7 +102,7 @@ PYTHONPATH=services .local/conda-envs/socai2/bin/python -m investigation_test pu
 | --- | --- | --- | --- |
 | `poll_interval_seconds` | 启用时必填 | 有限正数；5.0 | 仅当前可见活动记录自动刷新；终态/隐藏停止，目录正文查阅暂停父Run刷新 |
 | `request_timeout_seconds` | 启用时必填 | 有限正数；30.0 | 页面配置取得后的HTTP完整读取时限；超时明确报错并保留旧观察，不影响模型预算 |
-| `page_size` | 启用时必填 | 整数1–100；20 | 列表/目录页大小，必须≤账本max_limit；非法组合启动拒绝，分页使用原游标 |
+| `page_size` | 启用时必填 | 整数1–100；20 | 列表/目录页大小，必须≤账本max_limit及上游Run读取profile的max_limit；账本非法组合启动拒绝，上游上限需部署前显式核对，超限实际返回422；改页长从第一页开始 |
 
 示例启动在W2命令末尾增加：
 

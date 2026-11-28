@@ -38,3 +38,30 @@ CaseService新增内部读取预览、采用和判断历史用例，独立HTTP�
 路径前缀为`/api/v1/socai2`。GET沿用cases:read和现有读取开关/只读连接；POST沿用cases:write、Case写开关和认证用户actor/tenant。404表示目标不属于本Case/租户或不存在；409表示预览变化、不符合资格、未确认未完工作或幂等冲突，使用核心稳定错误码；422表示请求合同错误。E19/E20仍501，Q/局部结果不能借E21变成全案判断。
 
 直接验证只补：候选真实TCP预览→采用→Case/Result/历史/活动读回及SQL核对，采用前未完任务/待启动Run保持，幂等重试、预览变化及错误body拒绝。用一个新合成Case和一份程序Result，不重跑上批四Run的自动覆盖/H矩阵。复用既有认证/数据库配置；原61个非E21操作和现存告警Schema应保持。更新候选OpenAPI/交接，不把候选通过写成生产已发布；限定结束审计后按主change收口。
+
+## SpiritHub 采用弹窗合同预审 2026-11-28
+
+本轮只做源码与既有合同对照。主线依据本机 `origin/main` `1cd0ff1fd9f7d23c15503c9ef0f6f66812dda449`。原生以当前调查 HTTP 路由、合同源码和既有 OpenAPI 快照交叉核对。等前端概览组合完成，再安排平台合同和采用弹窗配对接线。
+
+| 方法 | 8181 普通平台注册、桥接、公开合同与类型 | main 与原生 |
+| --- | --- | --- |
+| E63 `GET /api/v1/socai2/cases/{case_id}/results/{result_id}/adoption-preview` | 四层均缺。当前弹窗从结果详情与案件成员自行推算覆盖、局部范围和可采用性。 | 原生已有 `ResultAdoptionPreview`。main 已有 `socai2_adoption_preview` 和 `Socai2ResultAdoptionPreview`。按 `case_id` 与 `result_id` 读取，无查询参数。 |
+| E21 `POST /api/v1/socai2/cases/{case_id}/results/{result_id}/adopt` | 注册已有。桥接、公开及类型仍用 `Socai2AdoptCaseAIResult` 和旧 `Socai2AdoptionReceipt`。弹窗发送旧 `expected_scope_revision`、`expected_assessment_id`、`confirm_partial`。 | 原生已有 `ResultAdoptionRequest`、`ResultAdoptionReceipt`。main 已有对应的 `Socai2ResultAdoptionRequest`、`Socai2ResultAdoptionReceipt`。沿用 `socai2_E21` 及正常 Case 更新授权。 |
+| E03 `GET /api/v1/socai2/cases/{case_id}` | 已有正常路由、合同和生成类型，包含 `case.current_assessment_id` 及 `current_assessment`。 | 继续用现有 E03 读取当前指针和判断。 |
+| E64 `GET /api/v1/socai2/cases/{case_id}/assessments` | 四层均缺。原有 `/history` 用途是结果及活动查阅，现有采用流程缺判断版本读回。 | 原生已有 `AssessmentHistory`。main 已有 `socai2_assessments` 和 `Socai2AssessmentHistory`。分页入参为 `limit`、`offset`，响应为 `items`、`total`、`next_offset`。 |
+
+源码入口见 [当前弹窗](/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/AdoptResultDialog.tsx:12)、[旧 E21 封装](/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/workbench-api.ts:34)、[普通注册](/Users/lychee/Projects/SpiritHub-web-8181/backend/src/spirithub/api/routes/socai2.py:84)、[原生 E63/E21/E64](/Users/lychee/Documents/project/socai2/services/api/investigation_http/external_routes/cases.py:236)、[原生类型](/Users/lychee/Documents/project/socai2/services/api/app/socai2/case_adoption_contracts.py:34) 和 [正式调用指南](/Users/lychee/Documents/project/socai2/docs/integration/result-adoption-http.md:7)。
+
+### 配对接线的最小范围
+
+1. 以统筹选定的 main 整合候选为准，保留 main 的 E63、E21、E64 路由、成功响应、现有 Case 读取及更新权限和桥接错误语义。若需将现行 8181 来源作为候选，只纳入本领域的两个 GET、E21 请求和响应投影及其依赖。E63、E64 沿用普通 GET 机制。E03 原有读取继续使用。
+2. 收口生成类型只涉及 `socai2_adoption_preview`、`socai2_E21`、`socai2_assessments` 的方法及必需引用。8181 相对 main 缺 `Socai2ResultAdoptionPreview`、`Socai2ResultAdoptionRequest`、`Socai2ResultAdoptionReceipt`、`Socai2AssessmentHistory`、`Socai2AdoptedAssessment`、`Socai2AssessmentSourceReference`。main 的原生成功及请求递归闭包已核同形。8181 的共享 `Socai2ResultView`、`Socai2RunView` 及其 `EvidenceRef`、`Finding`、`Impact`、`Question`、`Recommendation`、`Scope`、`Target` 也有版本差异。合入以 main 真实闭包为源逐项处理共享引用，生成范围以保留当前概览消费者为约束。
+3. 弹窗可继续使用已有结果列表选择候选。选定后从同一 Case/Result 的 E63 读取 `current_assessment`、`candidate`、`source_run`、`members`、`uncovered_alert_ids`、`outside_alert_ids`、`input_freshness` 和未完工作。由 `can_adopt`、`refusal_reasons` 和 `requires_pending_work_acknowledgement` 控制提交与确认。E21 发送 `operation_key`、从预览 `review_token` 原样取得的 `expected_review_token`、去除首尾空白后长度为 1–4000 的 `reason`，以及需要时的 `acknowledge_pending_work`。收到 `result_adoption_preview_changed` 时保留理由并重新预览，用户复核后才再次提交。成功回执为 `case_id`、`result_id`、`assessment_id`、`previous_assessment_id`、`assessment_revision`、`case_row_version`。读 E03 的当前指针，并在 E64 按回执 `assessment_id` 和 `assessment_revision` 核对判断版本。相同意图的受理重放仍按原键与原请求体走已有规则。
+
+### 可复用的直接检查
+
+- 复用原生采用用例检查失效预览、未完工作确认、同请求重放和判断版本读回。它证明调查核心合同，平台接线仍需对应普通路由验证。 [原生采用用例](/Users/lychee/Documents/project/socai2/services/api/tests/test_socai2_case_adoption_pg.py:24)
+- 复用普通路由 `case_proxy` 及既有原生错误映射用例，核 E63 的 GET、E21 的原 token 与请求体、E64 的 offset 透传及平台错误类型。对 E03 保留现有 Case 读取断言。 [平台替身与错误映射](/Users/lychee/Projects/SpiritHub-web-8181/backend/tests/soc/test_bridge.py:191)
+- 延用 `AdoptResultDialog.test.tsx` 的冲突保留理由场景，把局部覆盖模拟改为 E63 正式可采用和未完确认字段。定向核对预览拒绝时不提交、冲突时刷新 E63、成功后 E03/E64 读取。 [现有弹窗用例](/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/AdoptResultDialog.test.tsx:10)
+
+本次记录为预审和计划，现行源码及生成类型继续供前端概览使用。

@@ -152,6 +152,13 @@ def explicit_runtime_inputs(cfg):
     return env, volumes
 
 
+def check_endpoint_available(cfg):
+    with socket.socket() as s:
+        # Match server address reuse while retaining the bind conflict check.
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind((cfg['bind'],cfg['port']))
+
+
 def prepare(cfg, folder):
     verify_files(folder)
     explicit = 'runtime_environment_file' in cfg
@@ -165,7 +172,7 @@ def prepare(cfg, folder):
         bindings=current['HostConfig']['PortBindings'][str(cfg['container_port'])+'/tcp']
         assert bindings==[{'HostIp':cfg['bind'],'HostPort':str(cfg['port'])}], 'replacement_endpoint_changed'
     else:
-        with socket.socket() as s:s.bind((cfg['bind'],cfg['port']))
+        check_endpoint_available(cfg)
     if not explicit:
         env=dict(x.split('=',1) for x in ref['Config']['Env'])
         assert env.get('DATABASE_URL') and env.get('SOCAI2_CASE_DATABASE_URL'), 'existing_explicit_connections_required'
@@ -189,6 +196,7 @@ def prepare(cfg, folder):
             assert len(matches) == 1, 'explicit_existing_mount_required'
             assert sha(Path(replacement['source'])) == replacement['sha256'], 'mount_source_changed'
             matches[0]['source'] = replacement['source']
+    add_logging_volume(cfg, env, volumes)
     service={'container_name':cfg['container'],'image':cfg['image'],'platform':cfg['platform'],'pull_policy':'never',
         'command':['python','-m','uvicorn',cfg['entry'],'--host','0.0.0.0','--port',str(cfg['container_port']),'--workers','1'],
         'env_file':[{'path':str(private/'runtime.env'),'format':'raw'}],
@@ -200,6 +208,23 @@ def prepare(cfg, folder):
     save(folder/'before.json',snapshot(cfg['container']))
     return {'prepared':True,'database':cfg['database'],'new_endpoint':f"http://{cfg['bind']}:{cfg['port']}",
             'private_environment_exported':False,'existing_services_changed':False}
+
+
+def add_logging_volume(cfg, env, volumes):
+    """Only the explicit log directory is writable; profile stays read-only."""
+    path = env.get('SOCAI2_LOGGING_PROFILE_FILE')
+    mount = cfg.get('logging_directory_mount')
+    if not path and not mount:
+        return
+    assert path and mount and set(mount) == {'source', 'target'}, 'explicit_logging_profile_and_mount_required'
+    selected = [v for v in volumes if v['target'] == path and v['read_only']]
+    assert len(selected) == 1, 'logging_profile_readonly_mount_required'
+    profile = json.loads(Path(selected[0]['source']).read_text())
+    source, target = Path(mount['source']), Path(mount['target'])
+    assert source.is_absolute() and source.is_dir(), 'existing_logging_directory_required'
+    assert target.is_absolute() and target != Path('/') and str(target) == profile['directory'], 'logging_directory_profile_mismatch'
+    assert not any(v['target'] == str(target) for v in volumes), 'duplicate_runtime_mount_target'
+    volumes.append({'type': 'bind', 'source': str(source), 'target': str(target), 'read_only': False})
 
 
 def verify(cfg, folder):
@@ -228,7 +253,7 @@ def verify(cfg, folder):
 
 def local(cfg):
     root=Path(__file__).resolve().parents[2]
-    with socket.socket() as s:s.bind((cfg['bind'],cfg['port']))
+    check_endpoint_available(cfg)
     env=json.loads((root/cfg['private_environment']).read_text())
     env.update(cfg.get('environment', {}))
     env.update(SOCAI2_SERVICE_DATABASE_NAME=cfg['database'],SOCAI2_HTTP_RELEASE=cfg['release'])

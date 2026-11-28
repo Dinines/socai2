@@ -32,8 +32,15 @@ def fixture(sample):
 
 
 def final_answer(prepared, context, comparison):
+    from app.socai2.business_verdict import VERSION as VERDICT_VERSION
+    from app.socai2.severity_opinion import VERSION
+    from socai2_test_severity import opinion
+    prepared["severity_opinion_version"] = VERSION
+    prepared["business_verdict_version"] = VERDICT_VERSION
     answer = answer_for(prepared, context)
-    result = {"analysis": answer, "conclusion": {"text": "Synthetic uncertain conclusion.", "state": "uncertain",
+    result = {"severity_opinion": opinion([m["evidence_ids"][0] for m in answer["members"]]),
+        "business_verdict": "needs_review",
+        "analysis": answer, "conclusion": {"text": "Synthetic uncertain conclusion.", "state": "uncertain",
         "alert_ids": [prepared["case_boundary"]["member_aliases"][aid] for aid in context.alerts],
         "support_ids": [m["evidence_ids"][0] for m in answer["members"]], "limitations": ["Synthetic only."]},
         "closing_note": "Synthetic round.", "impact": {"summary": "No confirmed impact.", "alert_ids": [],
@@ -43,6 +50,53 @@ def final_answer(prepared, context, comparison):
     if outputs.restored_comparison(prepared, comparison) is None:
         result["comparison"] = {"kind": "not_comparable", "summary": "No selected comparison.", "support_ids": []}
     return result
+
+
+@pytest.mark.parametrize("verdict", ["malicious", "benign", "false_positive", "needs_review", None, "invalid", "duplicate"])
+def test_c6_verdict_survives_to_publication_without_replacing_conclusion(sample, verdict):
+    from app.socai2 import case_c6_delivery
+    from app.socai2.baseline_delivery_projection import make_publication
+    from app.socai2.business_verdict import CASE_RULE, PATH
+
+    context, base, prior = fixture(sample)
+    comparison = {"state": "initial", "result_id": None}
+    prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4(), extra={"comparison": comparison})
+    body = final_answer(prepared, context, comparison)
+    schema = outputs.final_format(prepared, context, comparison)["json_schema"]["schema"]
+    assert CASE_RULE in prepared["messages"][0]["content"]
+    assert "business_verdict" in schema["required"]
+    if verdict == "duplicate":
+        content = json.dumps(body)[:-1] + ', "business_verdict": "benign"}'
+    else:
+        if verdict is None:
+            body.pop("business_verdict")
+        else:
+            body["business_verdict"] = verdict
+        content = json.dumps(body)
+    valid = verdict not in {None, "invalid", "duplicate"}
+    received = case_c6_delivery.receive(content, prepared, context, comparison, uuid4())
+    assert received["delivery"]["state"] == ("complete" if valid else "partial")
+    if not valid:
+        assert any(gap["path"] == PATH for gap in received["missing_units"] + received["invalid_units"])
+    fields = received["retained_output"]["fields"]
+    final = case_c6_delivery.RetainedFinal(fields)
+    members = {UUID(aid): {"read_state": "read"} for aid in context.alerts}
+    pub, _ = make_publication(final, context, members, {**prepared, "c6_delivery": received}, comparison,
+                              {"delivery_state": "complete", "graph_artifact_id": uuid4()}, uuid4(), "test")
+    assert pub.conclusion == body["conclusion"]["text"]
+    assert pub.business_verdict == (verdict if valid else None)
+
+
+def test_c6_severity_prompt_uses_business_view_without_risk_ledger(sample):
+    from app.socai2.severity_opinion import PROMPT
+    sample["context"]["case"]["risk_metadata"] = {"manual_severity_revision": 9,
+        "priority_override": {"reason": "SYNTHETIC_BACKEND_RISK_SENTINEL"}}
+    context, base, prior = fixture(sample)
+    prepared = inputs.build("C6", context, base, {}, previous=prior, prior_id=uuid4())
+    assert PROMPT in prepared["messages"][0]["content"]
+    serialized = json.dumps(prepared["messages"])
+    assert "SYNTHETIC_BACKEND_RISK_SENTINEL" not in serialized
+    assert "manual_severity_revision" not in serialized and "priority_override" not in serialized
 
 
 def background_query_example(context):

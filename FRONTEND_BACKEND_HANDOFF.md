@@ -4,20 +4,27 @@
 
 告警本批：Q04 负责人目录、E48–E51 管理/反馈和 E54 勾选导出按已确认合同交付；无理由改派、单条标签、明确选中批量、最后成功保存及显式字段更新保持。固定 Run 的 Q27–Q29 已接平台代理；同轮 ATT&CK 随最近已发布 AI 分诊展示，新鲜度与采用资格单独返回。规则名称/ID、OCSF 源置信度、Fusion 分数和 AI 自评各保留来源及空值含义。现有 8181 业务验收复用，本次发布独立核版本、源码和接口状态，未采集正式页面业务正文。
 
-产品端接入 C173 时，从交接清单查看正式接口、页面跳转参数、调用示例、联调检查项，以及业务后端需要回填的依赖。[C173 后端联调交接清单](docs/integration/c173-backend-handoff-20261121.md)
+产品端接入C173仍沿[后端联调交接清单](docs/integration/c173-backend-handoff-20261121.md)查看入口。[五会话职责](openspec/changes/complete-socai2-investigation-chain/integration-coordination-audit-20261124.md#当前会话分工与任务对齐)保持。11-26事件反馈的正式E27/E29接线与8181独立验收已通过：列表统计来自真实成员，概览/摘要直接读取E29保存诊断与独立最近尝试；E23/E25按需历史入口保持。关系图默认视角、右侧资料和列表/摘要原生资产展示已收口，额外对象补资产逻辑已删除。[本批合同、部署及验收](docs/operations/evidence/incident-saved-diagnosis-read-20261126-01/README.md)。告警现有字段合同保持；不为测试或页面补值增加分支，具体长期规则见AGENTS.md。
 
-2026-11-17 历史记录。21 当时部署processing-20261117-r1、完整HTTP `acceptance-http-20261117-r1`、同版Swagger及4177 r8（0.6.1）。**当时正式 API 为[18024](http://192.168.1.21:18024)，Swagger为[18080](http://192.168.1.21:18080/)，80个业务操作，无登录或Token要求，公共告警字段合同不变。** 正式aisoc仍32表521列；调查历史按授权备份清理，账号/租户/来源配置保留。[发布与核零](docs/operations/evidence/acceptance-release-20261117-01/README.md)之后，已完成[新两段完整测试](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)。
+11-26后续截图已收口两项8181展示：关系图对象/分组右栏明确所选类型和材料引用关系，去除空资料及重复告警列表；概览涉及资产数沿已有E30缓存及 useIncidentAssets 完整集合按asset_id去重，不用匹配边total冒充数量。两项均经实际页面独验，无HTTP合同变更。最新战术原因核查已独验：事件 derived.tactics 只汇总检测源标签，批准原组未供；一笔A原答非空但因Schema/接收角色约束不一致被拒收，同Run解析/保存一致，另确认提示冲突及标准行为角色缺口。I输出无战术字段，事件页未接AI映射；不要把告警AI attck_mappings 混入检测源字段。原生OCSF映射随后已按明确授权用于21受控单次链路，唯一副本的保存/HTTP及8181检测标签与事件计数通过，原组保持；不宣称常驻服务全局换版或AI质量通过。负责人随后明确先理解4173整页功能与样式再迁移，当前以[调查功能/测试/迁移前规划](openspec/changes/complete-socai2-investigation-chain/investigation-test-plan-20261126.md)及88项矩阵为准；主机多行为数据包保留候选，尚未生成。[本轮方案与回执](openspec/changes/complete-socai2-investigation-chain/incident-integration-acceptance-plan-20261125.md#负责人追问现有数据为何一直没有战术标签)。
+
+2026-11-18 历史记录。21 当时部署processing-20261117-r1、完整HTTP `acceptance-http-20261117-r1`、同版Swagger及4177 r9（0.6.2）。**当时正式 API 为[18024](http://192.168.1.21:18024)，Swagger为[18080](http://192.168.1.21:18080/)，80个业务操作，无登录或Token要求，公共告警字段合同不变。** 正式aisoc仍32表521列；调查历史按授权备份清理，账号/租户/来源配置保留。[发布与核零](docs/operations/evidence/acceptance-release-20261117-01/README.md)之后，已完成[新两段完整测试](docs/operations/evidence/acceptance-fullflow-21-20261117-01/README.md)。
 
 本批2告警/3上下文形成1事件、1Case各两轮。477份HTTP成功回执、142份累计工件、真实首轮201建案和后轮202检查及比较身份已核；[HTTP模块11组独立复核](docs/operations/evidence/acceptance-fullflow-21-20261117-01/independent-http-review.json)通过。8次模型均stop，4项自动引用问题和1项人工比较正文问题仍保留，两轮Case均accepted/uncertain/partial。质量问题不阻断合法下游，程序通过不代表模型质量通过。
 
 [统一设计§12](openspec/changes/schedule-streaming-investigation-updates/test-service-and-4177-http-20261115.md#12-测试模块与调查工作台统一需求2026-11-17)的工作台任务1/2已发布：[4177](http://127.0.0.1:4177/viewer/)默认Case，事件/告警各自列表；Case及事件按实际轮次查看，告警显示单次分诊。Case“进程活动及后续外联调查”首轮冻结1条、后轮2条，上游沿用/新增、HTTP接入、C3具体领域、C4查询、C6原答及问题均可查。[实际浏览器](docs/operations/evidence/acceptance-fullflow-21-20261117-01/viewer-browser-01.json)与[代理读回](docs/operations/evidence/acceptance-fullflow-21-20261117-01/viewer-http-verification.json)通过。后台tenant/来源关联保存，8份模型输入无控制身份。
 
-[统一材料及Docker入口](tools/testdata/ACCEPTANCE.md)3a–3d已完成并用于本批：首段检查通过后显式append，同一Case续跑，程序按保存ID去重汇总并生成[输入/Schema/原答报告](docs/operations/evidence/acceptance-fullflow-21-20261117-01/results/report-01/report.md)。[测试模块10组限定独审](docs/operations/evidence/acceptance-fullflow-21-20261117-01/independent-test-review.json)通过；未新增业务路由/告警DTO。4b[来源识别子步](docs/operations/evidence/workbench-test-source-20261117-01/README.md)随后完成本机验证与限定独审：新来源配置以lyc开头，页面通过现有HTTP按所选Run冻结来源识别，全量/部分测试分别标识，无需先发布账本；后台来源/tenant保留，20项A/I/C3/Deep/C6消息检查无注入的控制标记。[报告指定主体/Run跳转](docs/operations/evidence/workbench-deeplink-20261117-01/README.md)随后通过本机验收与限定复核：report/session可选独立展示配置，Case首轮/后轮精确打开，缺失或错环境不回落latest；原HTTP合同不变。4b现已按负责人要求[发布21并读回](docs/operations/evidence/workbench-4b-release-20261117-01/README.md)：新页面、配置和验收工具已上线，辅助账本保持。[最终报告](docs/operations/evidence/workbench-4b-release-20261117-01/report-02/report.md)可直接打开同Case两轮，实际4177核冻结1/2、紫色逐轮来源、刷新/重载及错误目标不回latest。旧来源telemetry-channel-02显式兼容，新来源默认lyc；本批0新业务写/模型，[测试模块最终限定独审](docs/operations/evidence/test-workbench-4b-release-20261117-01/independent-release-review-01.json)7组通过、无未关闭发现。D5a异常PG/C6存取、D5/D6及整个change仍未完成；旧失败与原答保留离线，清理前记录见[历史快照](docs/handoff/history/2026-11-17-acceptance-release/FRONTEND_BACKEND_HANDOFF.md)。
+[统一材料及Docker入口](tools/testdata/ACCEPTANCE.md)3a–3d已完成并用于本批：首段检查通过后显式append，同一Case续跑，程序按保存ID去重汇总并生成[输入/Schema/原答报告](docs/operations/evidence/acceptance-fullflow-21-20261117-01/results/report-01/report.md)。[测试模块10组限定独审](docs/operations/evidence/acceptance-fullflow-21-20261117-01/independent-test-review.json)通过；未新增业务路由/告警DTO。4b[来源识别子步](docs/operations/evidence/workbench-test-source-20261117-01/README.md)随后完成本机验证与限定独审：新来源配置以lyc开头，页面通过现有HTTP按所选Run冻结来源识别，全量/部分测试分别标识，无需先发布账本；后台来源/tenant保留，20项A/I/C3/Deep/C6消息检查无注入的控制标记。[报告指定主体/Run跳转](docs/operations/evidence/workbench-deeplink-20261117-01/README.md)随后通过本机验收与限定复核：report/session可选独立展示配置，Case首轮/后轮精确打开，缺失或错环境不回落latest；原HTTP合同不变。4b现已按负责人要求[发布21并读回](docs/operations/evidence/workbench-4b-release-20261117-01/README.md)：新页面、配置和验收工具已上线，辅助账本保持。[最终报告](docs/operations/evidence/workbench-4b-release-20261117-01/report-02/report.md)可直接打开同Case两轮，实际4177核冻结1/2、紫色逐轮来源、刷新/重载及错误目标不回latest。旧来源telemetry-channel-02显式兼容，新来源默认lyc；本批0新业务写/模型，[测试模块最终限定独审](docs/operations/evidence/test-workbench-4b-release-20261117-01/independent-release-review-01.json)7组通过、无未关闭发现。D5a现已完成[11-18本机有效Deep答案存取及独立复核](docs/operations/evidence/deep-unit-continuation-d5a-20261118-01/README.md)：C3/Deep两次受控回放、真实C6一次，17步骤52工件及1Result经70次ASGI GET逐值读取；独立另70 GET通过。仅本机隔离库，正式HTTP合同及21/4177服务未改，不把ASGI或本机静态新增视作实际页面异常验收。[D5b第一步](docs/operations/evidence/c6-unit-continuation-d5b-20261118-01/README.md)随后完成C6截断接收/保存：两条本机代表、142 GET与90项直接检查通过，6次模型回放/0真实生成。新增C6 stage_delivery和有版本retained_output经既有工件接口读回；完整Delivery与部分字段分开，缺核心为null/unavailable，缺成员不借前序正文。静态55→57。[D5b第二步](docs/operations/evidence/c6-adoption-comparison-d5b-20261118-01/README.md)已用21正式库的独立测试租户完成三轮受控链、71+211次ASGI GET及采用HTTP：R3保留失败R2身份、comparison_result_id=null，R2有效片段进入R3 C3/C6；人工较新判断和过期token保护通过。新增previous_analysis_material冻结副本走现有工件读取，公开合同不变；本机静态58→59，代码未部署、实际4177异常展示未验，独立存取复核通过，另215 GET及19表只读核准。[D5c局部依赖](docs/operations/evidence/local-dependency-d5c-20261118-01/README.md)现已在21独立租户完成：已知可选失败后初答/Deep进入C6，graph_snapshot失败回执与graph_artifact_id=null的Result沿现有工件/结果接口读回；C1硬失败保留任务错误，无Run。当前代码还修复本机完成时间早于数据库起点时的自动收尾，原时间/失败原因保持。3task/1Run、19步骤53工件，主27+1/独立51+1 ASGI GET通过，本机静态59→61；公开DTO/告警合同不变，未部署或验实际4177。[D5c第二步](docs/operations/evidence/transport-continuation-d5c-20261118-01/README.md)随后完成调用中断/unknown：严格本地结束回执、原件和完整查询行沿既有工件接口读回；C6候选保留但unknown无Result且不可采用/比较，C6无正文明确系统兜底，N=1下一任务完成。主72/独立137 ASGI GET、静态61→65，原失败保留；公开DTO不变且未部署。[D6本轮候选展示](docs/operations/evidence/http-viewer-d6-20261118-01/README.md)已通过21已存四代表的117次真实TCP GET与浏览器：当前Run局部目录/原件失败保留成功内容、可GET重试；stage_delivery展示缺项，unknown经C6回执引用完整报告且不当作Result。42 JS/15 HTTP及限定独审通过；本批422页长错配与临时连接池超限已修验，0新任务/模型。随后[D6正式发布](docs/operations/evidence/workbench-d6-release-20261118-01/README.md)将工作台更新为0.6.2/r9，四异常代表117 GET/14浏览器检查通过，恢复日常后的13 GET与首轮/后轮冻结1/2输入通过。临时API只换测试context，按负责人要求沿用正式连接池及入口；三个临时服务已停止，日常上游/tenant/账本及核心保持。D5写侧新改动未随本次工作台发布替换核心；D6完整覆盖及change结束审计仍待。旧失败与原答保留离线，清理前记录见[历史快照](docs/handoff/history/2026-11-17-acceptance-release/FRONTEND_BACKEND_HANDOFF.md)。
 
 | 接入事项 | 当前入口 |
 | --- | --- |
+| 当前工作安排 | [工作清单、责任及依赖](openspec/changes/complete-socai2-investigation-chain/tasks.md#当前范围与顺序)：湖3a–3f及4a–4c限定步骤已验，5a取证工具[接线/查询验证设计](openspec/changes/complete-socai2-investigation-chain/lake-evidence-tools-design-20261119.md)进行中；已全量下载ES目标类JSON并完成本机校验；[结构扫描/报告读回](docs/operations/evidence/json-structure-design-5a-20261119-01/README.md)及6项合成检查通过，partial/数组与字段/查询方案已补，11-20负责人提供11类分布后，已[每类下载一条完整JSON并生成实际值审阅页](docs/operations/evidence/class-samples-tool-design-5a-20261120-01/README.md)；按最新要求已完成[实际值与字段需求/当前映射对照](docs/operations/evidence/sample-field-mapping-5a-20261120-01/README.md)，原件未变且报告保存读回；已增加直接显示原值、分开存储/取证环节的简明页；随后完成[5001单条精确湖查询与实际保存说明](docs/operations/evidence/class5001-storage-review-20261120-01/README.md)，负责人确认UID诊断后，已按授权[清理原目标测试湖旧记录并重入22580条历史消息](docs/operations/evidence/history-lake-reload-20261120-01/README.md)，同库整批及5001原UID/完整原文读回通过；旧查空保留，最新说明页沿新回执读取。设备资料由资产库提供；本轮[名称/主机名投影修正](docs/operations/evidence/device-name-mapping-5a-20261120-01/README.md)已在本机通过25项检查和同一5001实存快照前后保存读回，资产UID匹配合同仍待，未发布。当前发现类材料、哈希兼容、账号角色和partial规则差异已登记；本轮已获准每类读取1–2条，[11类各1条语义分析与23组自动映射预演](docs/operations/evidence/sample-semantics-5a-20261120-01/README.md)完成；[中文主机名查询及工具入口](docs/operations/evidence/unicode-hostname-query-5a-20261120-01/README.md)已通过40项定向检查和41项实际断言，同一已存5001经候选TCP查询命中并完整读回，旧冻结及告警字段不变。4001按负责人说明及同条实际样本定位为网络审计/访问控制记录；正常连接覆盖未证实。本轮已按11类实际行为、调查问题及映射缺口完善设计并复核当前投影；最新方向为共用配置解析与描述模块：按class_uid等配置提取结构化事实并套用条件描述模板，多类工具能力复用同一执行器；先共用模块/多类配置，再统一接线与适用汇总；该实现按最新要求顺延，先补S1–S5交接字段；当前运行文案仍旧，正式服务未发布。全局metadata.uid、无更新合同保持；对方直写与接口迁移、字段及各change收口分别推进 |
+| 11-19 独立接入审计 | [审计、双方沟通清单及推进顺序](openspec/changes/complete-socai2-investigation-chain/independent-integration-audit-20261119.md)：消息信封/分类、全量落湖、桥接旧鉴权、19个未接入口及19个退役代理、字段缺口；已按21现场85个SpiritHub入口校准，提供同版Swagger/请求响应Schema。对方直写指定Kafka、我方全量落湖；未改变已发布合同 |
+| 日志湖取数 | 21 已上线湖表 005 和两个读取接口。表结构为 62 列，包含 14 个公共列及 48 个旧列映射。正式湖查询与 ClickHouse 读回一致，产品查询及原文跳转见本版合同。中文主机名的规则及早期验证沿原回执查阅。[表结构设计](openspec/changes/complete-socai2-investigation-chain/clickhouse-lake-design-20261119.md) · [湖查询接口验证](docs/operations/evidence/lake-query-3f-20261119-01/README.md) · [主机名 Schema](docs/operations/evidence/unicode-hostname-query-5a-20261120-01/selector-openapi.json) · [正式读回](docs/operations/evidence/c173-bounded-json-20261121-01/README.md) |
+| 已有告警接收与完整材料 | [4b接收回执](docs/operations/evidence/lake-alert-receive-4b-20261119-03/README.md)、[4c持久交付回执](docs/operations/evidence/lake-alert-delivery-4c-20261119-01/README.md)及[配置/读取合同](deploy/aisoc21/lake-alert-receive-4b/README.md)：同批湖经持久登记、独立PG首次接收、数据库证明后确认及实际HTTP读回；全局metadata.uid、同文幂等、异文待核，失败/unknown阻断后项。明确is_alert=true时，可按显式initial_activity_ids接收Unknown/Create/Other，原活动值不改。原外部告警字段/路径不变，完整正文与lake_ref在既有ContentView中；初诊任务status=accepted，无分析attempt/Run，未执行模型。内部交付尝试另存131，不与初诊执行混同；正式服务尚未发布 |
+| 字段业务完整性（当前优先） | S1创建读取、S2独立意见及S3人工管理已通过候选真实隔离PG/TCP；[S3操作合同及同版OpenAPI](docs/integration/subject-risk-fields-s3-20261120.md)、[回执/限定独立复核](docs/operations/evidence/subject-risk-s3-20261120-01/README.md)。人工等级/优先级及撤销覆盖、版本幂等、批量原子性和后轮保护已接线；Case等级null拒绝，Incident null恢复必须带理由。`risk.current`与`latest_opinion`分开，系统建议不覆盖人工优先级，旧行GET不初始化。告警合同及候选82操作保持，正式18024/18080未更新，0真实模型。[S4页面候选](docs/integration/subject-risk-pages-s4-20261120.md)已完成直接验收及限定独审，旧记录保持（[回执](docs/operations/evidence/subject-risk-s4-20261120-01/README.md)）。负责人确认告警/事件/调查采用当前设计，下一步[现有HTTP接真实数据并新选真实告警跑一轮](openspec/changes/complete-socai2-investigation-chain/http-real-data-connection-20261120.md)；[S5任务时间/当前步骤](docs/operations/evidence/analysis-task-times-s5-20261120-01/README.md)已通过候选PG/Redis/TCP、两页四阶段及限定独审；133未发布；[S6文件日志](docs/operations/evidence/analysis-file-logs-s6-20261120-01/README.md)已通过独立Redis失败、任务/尝试落库关联及限定独审，0Run/模型，不新增脱敏专项。[SF05建议展示](docs/operations/evidence/recommendation-display-sf05-20261120-01/README.md)已通过候选页面/真实读取及限定独审，[SF06采用Result的依据/原范围/未决项](docs/operations/evidence/assessment-basis-sf06-20261120-01/README.md)也已通过限定验收；[人工版本/工件来源HTTP链](docs/operations/evidence/assessment-source-http-sf06-20261120-01/README.md)已候选存取/页面验证，[业务判定](docs/operations/evidence/subject-business-verdict-sf04-20261120-01/README.md)已候选验证。告警取数与跳转参数已通过候选 PG/TCP 验收。S7 真实模型整链在最终验收 |
 | HTTP接口、字段、示例、错误 | [21 Swagger](http://192.168.1.21:18080/)、[同版OpenAPI](http://192.168.1.21:18080/handoff/openapi.json)、[本轮合同](deploy/aisoc21/acceptance-release-20261117-01/contract/openapi.json) |
-| 完整部署配置 | [完整核心release](deploy/aisoc21/acceptance-release-20261117-01/release.json)、[4177/验收工具4b配置](deploy/investigation-test/releases/workbench-4b-20261117-01/release.json)、[HTTP profile](deploy/aisoc21/acceptance-release-20261117-01/http-profile.json)、[部署步骤](deploy/http-service/README.md) |
+| 完整部署配置 | [完整核心release](deploy/aisoc21/acceptance-release-20261117-01/release.json)、[当前4177 D6/r9配置](deploy/investigation-test/releases/workbench-d6-20261118-01/release.json)、[仍沿4b的验收工具配置](deploy/investigation-test/releases/workbench-4b-20261117-01/release.json)、[HTTP profile](deploy/aisoc21/acceptance-release-20261117-01/http-profile.json)、[部署步骤](deploy/http-service/README.md) |
 | 任务及执行读取 | [统一分析记录](docs/integration/run-directory-http.md)、[任务列表/详情](docs/integration/analysis-tasks-http.md)、[步骤/工件完整分页](docs/integration/run-records-http.md) |
 | 受理及Case关系 | [异步提交](docs/integration/analysis-submission-http.md)、[Case首轮](docs/integration/case-initial-http.md)、[分配与关联查询](docs/integration/case-allocation-http.md) |
 | 真实执行展示 | [4177](http://127.0.0.1:4177/viewer/)，经SSH隧道访问21，只读业务HTTP与测试账本；来源标识按本轮冻结告警识别，报告指定Run直达，紫色测试标识不进入分析模型 |
@@ -59,6 +66,8 @@ D1–D4c改变模型业务视图及异常材料接线，公开告警字段和租
 
 案件故事E65只读查询已发布本机和21并读回：`GET /cases/{case_id}/story`支持搜索、告警等级筛选和游标分页，返回原告警、调查及人工完成修订。字段、跳转及错误见[故事查询指南](docs/integration/case-story-http.md)。AI对话继续暂缓。
 
+2026-11-27 本机 Case 单页迁移（资料页保存来源阅读已补齐，聚合缺口仍待）：案件故事整页已独验；调查历史新增 Case 范围目录和精确 Run 定位两条普通 GET，前端已挂载卡片目录和固定轮入口，原 E10/R1/已有 POST/告警合同保持。原SSH转发已恢复，另存恢复后HTTP/PG读回与8181功能独验，卡片、原轮及返回已通过；新反馈的读取慢已完成一次只读定位，重复来源/范围读取与父Case串行仍待修正，未发布21。字段、范围和后续验收见[调查历史本步回执](docs/operations/evidence/case-history-migration-20261126-01/README.md)。 案件关系图 G1 随后完成本机 E67/E69 两 GET 接线及8181独验：原生来源/材料同源，默认读图不再走旧对象接口，三栏及窄容器折行、圆形图、选择和按需材料通过；已有接口/告警合同保持。[G1回执](docs/operations/evidence/case-graph-migration-20261127-01/README.md)。探索与保存未接入，本机只读服务不能冒充可写来源。案件资料随后完成只读单页迁移与独验：新增原生info-summary/平台Q36，仅供当前材料对象、源标签计数、活动范围及同目录Run数；E03保持。64875/28085和8181均已加载本机候选，统筹同源HTTP/PG及页面核对通过。[资料页回执](docs/operations/evidence/case-info-migration-20261127-01/README.md)。资料复核随后补齐原位依据/未决、原范围/状态/引用及有据定级，20项普通8181直接检查通过；跨轮覆盖/材料聚合和调查类别仍缺。按负责人明确授权，21核心计量修正及同案一笔新调查另批完成，模型Result已保存并自动采用，8181新判断及4177原轮输入/输出/原答经独验一致；整体仍partial，引用与材料限制保留，正文质量未检查。[重试独验](docs/operations/evidence/case-capacity-live-retry-20261127-01/README.md)。管理/手工采用真实写入、对象证据、概览、固定Run正文及历史提速仍未验完；十个子页按字段和接口逐项对照4173，不以通用404文案代替错误定位。
+
 [E70告警相似历史复核](docs/integration/alert-review-http.md)已发布：默认按当前告警发生时间回看30天，返回最近候选及对象/战术来源；用户核对后才用E48/E49反馈。23次本机功能GET通过，正式本机8GET命中3条，21既有记录5GET为空候选，均无业务写入或模型调用。同主机最近7条已由[E71](docs/integration/alert-host-http.md)提供，匹配不要求战术相同。
 
 ### 请求、版本和错误
@@ -77,7 +86,7 @@ Content-Type: application/json
 }
 ```
 
-成功返回 `{"case": <保存后的完整 CaseView>, "changed": true或false}`；从 `case.row_version` 取得下次管理写入的版本。省略字段保持原值；`description/owner_id/severity=null` 清空，`tags=[]` 清空标签。其他接口的请求结构不同，不能把此版本参数套用所有接口。
+成功返回 `{"case": <保存后的完整 CaseView>, "changed": true或false}`；从 `case.row_version` 取得下次管理写入的版本。省略字段保持原值；`description/owner_id=null` 清空，`tags=[]` 清空标签。S3候选的等级修改须带`severity_reason`且拒绝`severity=null`，详见[当前等级管理合同](docs/integration/subject-risk-fields-s3-20261120.md)；旧部署的null行为不能套用候选。其他接口的请求结构不同，不能把此版本参数套用所有接口。
 
 - `operation_key`：每次逻辑写入一个 UUID，同一意图重试沿用；改变输入后使用新 key。
 - `409`：版本冲突、运行阻塞或状态不允许等；保留用户输入，读取最新对象后按 `detail` 处理。不要直接无限重试。
@@ -95,6 +104,38 @@ Content-Type: application/json
 
 本项[分诊后历史知识同步](openspec/changes/archive/2026-11-12-sync-saved-alert-knowledge/validation.md)已完成本地直接流程、独审及 21 r5 发布读回；采用原 Run trace／工件读取表达同步状态，不新增告警 DTO 字段。历史卡片及同步字段见[知识交接](docs/investigation/historical-alert-knowledge-handoff.md)。
 
+本轮D6交接范围以[完整change范围核对](openspec/changes/schedule-streaming-investigation-updates/closeout-scope-20261118.md)为准：普通H更新/上一轮比较、任务/Run/结果及HTTP/4177读取属于本期；人工定向分析、手动全案综合、知识后台异步维护[后置且未实施](openspec/changes/schedule-streaming-investigation-updates/deferred-scope.md)。工作台独立发布不代表最新写侧同步交付；当前未归档；[独立结构及关键接线审计](openspec/changes/schedule-streaming-investigation-updates/audit.md)已完成，限定结论不新增业务验收。
+
+2026-11-20产品采用范围已对齐：[125项功能逐项现行HTTP/存取映射](docs/integration/product-api-data-requirements-20261114.md#7-125项逐项归属)及[结构清单](docs/integration/product-api-data-requirements-20261114.coverage.json)是本轮接入入口。稳定F编号保留；请求/返回Schema、端口和来源表可逐项追到，旧71操作包仅作历史参考。115项非整行暂缓功能已定位76个操作，不等于产品全部接好；风险132及任务时间133仍属未发布候选；S6文件日志候选已验；SF05候选建议展示已验，4173 Alert实时服务入口不在本步完成范围；SF06人工版本/工件来源已补task_id/run_id并候选验证；SF04已验证候选保存和返回。取数及跳转参数已通过候选验收。业务后端供给接口和最终版本联验见下节。正式80操作、候选82操作及同路径字段差异须按部署版本选择，不用候选字段宣称正式已支持。
+
+### 本期产品取数与跳转
+
+表内路径均为 `/api/v1/socai2` 下的 GET。使用响应中的业务 ID 和链接。告警、事件和 Case 的取数与跳转已在候选 HTTP 和隔离 PostgreSQL 对照验证。[告警取数与跳转验收](docs/operations/evidence/product-http-navigation-20261120-01/README.md)
+
+| 页面操作 | HTTP 取数 | 参数取自 |
+| --- | --- | --- |
+| 告警列表、点开告警 | `/alerts`、`/alerts/{alert_id}` | 列表行的 `facts.id` 给详情。续页用 `next_cursor`，保持筛选及排序条件。详情分别读 `triage`、`feedback`。 |
+| 告警原始材料、分区或关联主体 | `material.content_url`、`section_urls` | 当前原文按 `material.content_url`。事件、Case、关联告警分区的 `items[].id` 分别给相应详情。工件分区用工件行的 `content_url`。 |
+| 同主机、历史复核候选 | `/alerts/{alert_id}/same-host-alerts`、`/alerts/{alert_id}/review-candidates` | 查询用当前告警 ID。打开候选详情用 `items[].alert.id`。 |
+| 告警或事件分析轮次 | `analysis_url`、`/alerts/{alert_id}/analysis/runs/{run_id}`、`/incidents/{incident_id}/analysis/runs/{run_id}` | 当前显示沿目录的 `current`。指定轮次按所选 `run.id`。旧告警原文用这份分诊结果的 `result.input_material_id` 请求 `/alerts/{alert_id}/materials/{material_id}`。 |
+| 事件成员及接收 Case | `/incidents/{incident_id}`、`section_urls.members`、`section_urls.cases` | 打开成员告警或 Case 用对应分区 `items[].id`。接收案标记用 `is_active_receiver` 或事件的 `case_receiving.active_case_id`。 |
+| Case 详情及返回关联主体 | `/cases/{case_id}`、`/cases/{case_id}/page-data` | 返回事件用 `linked_incidents[].incident_id`，返回成员告警用 `members[].alert_id`。打开当前采用的模型结果用 `current_assessment.sources[].result_id`。 |
+| Case 历史、指定轮次和结果 | `/cases/{case_id}/history`、`/cases/{case_id}/runs/{run_id}`、`/cases/{case_id}/results/{result_id}` | 历史行按 `run.id` 和可用的 `result.id` 打开。指定轮次的 `result_ids` 给结果详情。比较用 `previous_run_url` 或 `comparison_result_url`，预览采用用 `/cases/{case_id}/results/{result_id}/adoption-preview`。 |
+| Case 冻结材料、图和报告 | `/cases/{case_id}/runs/{run_id}/materials/{material_id}`、`/cases/{case_id}/runs/{run_id}/artifacts/{artifact_id}` | 材料取所选轮次的 `members[].material_id`。图和报告取 `result.graph_artifact_id` 或 `result.report_artifact_id`，轮次取 `result.source_run_id`。 |
+| 21 调查服务统一 Run 目录及原件 | `/analysis-runs?subject_type={type}&subject_id={id}`、目录行的 `detail_url`、`results[].url` | 21 调查 HTTP 已提供，当前 Spirit Hub 没有统一目录、步骤及工件目录的转发。8181 先沿前述主体分析和 Case 历史接口读 Run。21 的告警或事件轮详情加 `/trace` 可取 `steps_url`、`artifacts_url`，Case 轮详情直接提供这两个字段。 |
+| 人工任务、指定反馈版本或附件 | `/cases/{case_id}/tasks/{task_id}`、`/cases/{case_id}/tasks/{task_id}/revisions/{revision_id}`、`/cases/{case_id}/attachments/{attachment_id}` | 任务和版本各用所选行的 `id`。附件记录用附件目录行的 `id`，附件内容由业务后端按 `file_id` 提供。 |
+| 分析任务进展 | 主体的 `analysis-tasks` 目录、任务的 `status_url` | 受理后沿 `status_url`，有 `latest_run_id` 时可打开该轮。 |
+
+本轮代表性反例中，资源归属不匹配返回 `404`，非法 UUID 或跨 Run 复用目录游标返回 `422`。目录返回空 `items` 时按空态处理。告警交付边界为现有取数接口，页面点击交付边界为正确参数对应的 HTTP 响应。
+
+2026-11-24 核对在运 18024 与 Spirit Hub 转发。旧 `/runs?alert_id=…` 在平台仍有入口，调查 HTTP 返回 404。统一 `/analysis-runs?subject_type=alert&subject_id=…` 在调查 HTTP 返回 200，在 8181 返回 404。告警的实际关联事件取 `section_urls.incidents`。案件取 `section_urls.cases` 的告警直接成员关系，以及关联事件的 `section_urls.cases` 中 `explicit_incident_link=true` 的显式关系。按 Case ID 去重，分别读其 `history.items[].run`。本次对照告警的 A 及关联 I 目录和指定轮次均返回 200，案件关联为空。
+
+人员选择、资产目录由业务后端提供。人员返回可写回的人员 ID 和显示名，资产返回库存 ID 及既有对象匹配键。实际入口、参数和错误由供给方明确。负责人 11-21 确认附件联调移出本期。正式版本统一和新真实告警一轮合并为最终验收。
+
+21 现场预检已确认正式 HTTP 与 Swagger 同一合同，共 80 个业务操作。HTTP 与调度连接同一 `aisoc.socai2`，32 张调查基础表与代码清单一致。历史清理后正式接口保持可用，告警、事件和 Case 列表均以真实空态通过。最终将 HTTP、Swagger 与交接文档统一到验收通过的版本，数据库在这套正式表上原位升级。[正式验收预检](docs/operations/evidence/product-acceptance-preflight-20261121-01/README.md)
+
+本版事件诊断和 Case Result 已提供 `business_verdict`。旧记录与未获有效判定的记录返回 `null`，模型明确待复核返回 `needs_review`。当前 Case 只沿唯一已采用的模型 Result 读判定。接口字段位置和验证见[业务判定合同](docs/integration/product-api-data-requirements-20261114.md#sf04事件与case业务判定)及[正式读回](docs/operations/evidence/c173-bounded-json-20261121-01/README.md)。
+
 ## 1 接手入口
 
 | 内容 | 权威资料 |
@@ -106,19 +147,19 @@ Content-Type: application/json
 | HTTP字段审计来源 | [基于原三份资料的核对结论](deliverables/investigation-validation-20261106/http-handoff-audit/README.md)：先按告警22/事件15/调查88项，原43操作/522字段已审，Case管理增加4操作/10字段，前批告警/事件管理增加6操作/8字段，前批列表封套增加2字段，前批新增3个CSV操作，前批新增E57归并统计，前批E58/E59普通评论、本批E60–E62附件引用；该历史批次为71操作，原JSON有542个固定字段出现位置，E57新增12个、评论新增22个、附件引用新增37个、采用新增42个、故事查询新增13个、候选查询新增35个、保存恢复新增22个、告警相似复核新增27个、同主机近期查询新增12个（合计764）与35组既有动态说明；新graph/view_state展示JSON见E67–E69指南，CSV另说明104个允许列；字段说明已合入当前Swagger |
 | HTTP逐项对接与在线文档 | 调查 HTTP 18024 为 83 操作，Swagger 18080 仍为旧 82 操作。[告警发布回执](docs/operations/evidence/alert-git-21-release-20261125-01/README.md) |
 | HTTP功能验证与后续实施 | [本机路由/真实隔离库验证](openspec/changes/complete-socai2-investigation-chain/http-functional-validation-20261112.md)：31项检查、43操作回执，模型为替身，真实质量未核销；[未实现功能计划](docs/investigation/http-implementation-plan-20261112.md)。[统一独立入口验收](openspec/changes/archive/2026-11-12-serve-investigation-api/validation-20261112.md)已完成本机/21 TCP Case/H与SQL读回，详见下表 |
-| JSON 与 HTTP 合同 | 本批现网合同取调查 HTTP 18024 的 `/openapi.json`；旧 Swagger 快照仅作历史参考。[告警发布回执](docs/operations/evidence/alert-git-21-release-20261125-01/README.md) |
+| JSON 与 HTTP 合同 | HTTP 请求和响应以在运 OpenAPI 为准。数据库与原件可以查阅既有 JSON Schema。[在运 OpenAPI](http://192.168.1.21:18024/openapi.json) · [前版合同快照](deploy/aisoc21/c173-release-20261121-04/contract/openapi.json) · [原件 JSON Schema](docs/design/socai2-json-contracts-20261103.schema.json) |
 | 对外与内部接口边界 | [架构说明](docs/design/investigation-http-boundary.md)：列表/详情和显式业务提交属于独立对外HTTP，调查步骤/组件调用单独维护。当前提交合同为异步diagnose/investigations；旧analyze及prepare/start外部入口已退役，内部能力按自身归属保留 |
 | 有值、空值与原件 | [字段取数样例](deliverables/investigation-validation-20261106/page-field-samples.md)、[运行记录及离线材料](deliverables/investigation-validation-20261106/README.md) |
 | 程序流程和模型职责 | [执行账本](docs/investigation/current-execution-ledger.md)、[每个模型环节的输入输出](docs/investigation/model-input-output-current-20261109.md) |
 | 模型输入字段选择 | [第32节C3程序分工](docs/operations/evidence/case-c3-coverage-20261113-01/README.md)与[10批发布基线固定链路](docs/operations/evidence/fixed-investigation-20261113-10/README.md)已本地直接核验：C3模型五项业务问题，程序补coverage，保存/HTTP读取仍六问；Deep/C6按各自任务取材料。1新Run/5次生成，C6一次纠错后accepted/uncertain/partial并成为第3版current，4次ASGI/SQL读回一致；原A/I、H、失败及旧结果保持。HTTP字段和数据库表不变，调用方无需改合同；10批验收后已发布核心r1，独立18024已同步并完成两端既有记录读回。正文质量NOT_PASSED。11-14按负责人要求新跑[三案展示](docs/operations/evidence/fixed-investigation-20261114-01/README.md)，1案待复核并采用、2案拒收未采用；当时两端4177和4173显示三案快照；现已撤出活动展示，按页首清理回执处理。不以输入预览或结构接收追认质量。 |
-| 当前固定流程与流式更新 | [第1–7步及当前任务](openspec/changes/schedule-streaming-investigation-updates/tasks.md)沿各批证据；D1–D4c已发布r4，新02正常完整链已通过，8–10后置，D5a异常PG/C6目标未完成，D5/D6整体及change结束审计仍待 |
+| 当前固定流程与流式更新 | [第1–7步及当前任务](openspec/changes/schedule-streaming-investigation-updates/tasks.md)沿各批证据；D1–D4c已发布r4，新02正常完整链已通过，8–10后置，D5a存取完成、D5b接收/保存及21独立三轮采用/比较直接通过；限定独审通过，D5c局部依赖、时钟及调用中断/unknown两步已通过21直接/限定独审；D6候选及正式0.6.2/r9实际TCP/浏览器四代表、日常两轮均通过；完整覆盖及change结束审计仍待 |
 | 已有问题与完成边界 | [问题清单](docs/investigation/current-issues.md)、[OpenSpec 任务](openspec/changes/complete-socai2-investigation-chain/tasks.md) |
 
 ## 2 当前运行环境
 
-21 当前 HTTP 18024、Swagger 18080 与联合调度运行 `c173-release-20261121-04`。业务路径前缀为 `/api/v1/socai2`。正式调查库为 `aisoc.socai2`，Fusion 和 4177 分别使用当前配置。[正式读回](docs/operations/evidence/c173-escalation-release-20261121-04/README.md)
+2026-11-27核对：21当前HTTP 18024为`socai2-http-incident-saved-diagnosis-read-20261126-01`（83操作），唯一联合调度为`socai2-analysis-incident-diagnosis-live-20261125-01`；Swagger 18080仍使用旧`c173-release-20261121-04`（82操作）。业务前缀为`/api/v1/socai2`，正式调查库为`aisoc.socai2`。本轮先出[21调查服务手工部署与恢复手册](docs/operations/investigation-manual-deployment-21-20261127.md)，经现有SSH跳板接入；新库、候选和人工停启尚未执行，平台只交代码。实际模块边界及未验项见[发布评估](docs/operations/evidence/investigation-release-readiness-20261127-01/README.md)。
 
-### 2026-11-17 环境记录
+### 2026-11-18 环境记录
 
 | 项目 | 当前值与用途 |
 | --- | --- |
@@ -162,7 +203,9 @@ Content-Type: application/json
 
 下列路径均以 `/api/v1/socai2` 为前缀。前端优先沿响应中的身份和内容链接取数；完整参数、返回类型和限制以 OpenAPI 为准。
 
-告警列表和详情的 `triage.attck_mappings` 返回当前有效 AI 分诊的 ATT&CK 映射（本地已验）。每项含 `tactic_id`、`tactic_name`、`technique_id`、`technique_name` 和 `source_refs`，战术和技术各自可空。显式无映射为 `[]`，旧结果、映射不可用或当前分诊失效为 `null`。前端按有效 AI 战术优先、`derived.tactics` 检测标签兜底取类别，来源标识由前端展示。[字段和验证](openspec/changes/complete-socai2-investigation-chain/alert-attck-mappings-20261123.md)
+告警 `triage` 为最新已发布 AI 分诊，`feedback` 独立提供人工判定、理由与记录人。候选接口的 `triage.attck_mappings` 返回同一已完成 Run 保存的映射，即使该轮 `freshness` 为 `stale` 也继续提供。每项含 `tactic_id`、`tactic_name`、`technique_id`、`technique_name` 和 `source_refs`。显式无映射为 `[]`，旧工件缺字段或映射不可用为 `null`。前端按已保存 AI 战术优先、`derived.tactics` 检测标签兜底，独立展示人工判定。21 现网仍按原有效性限制返回映射，两条发布用例的落库、同 ID 读回及 8181 页面已核对。新口径通过本地验收，待配套发布。[最新展示口径和验证](openspec/changes/complete-socai2-investigation-chain/alert-attck-mappings-20261123.md#最新分诊与人工判定的展示)
+
+Q04 `/people` 已向本批两名启用的 Spirit Hub 测试人员接通。列表用 `q`、`offset`、`limit`，按 ID 读取用 `user_id`。`items[].id` 即现有管理 PATCH 的 `owner_id`。保存时沿用详情的 `facts.row_version` 和独立 `operation_key`。正式首次分配、改派及按负责人筛选通过，8181 从右侧预览保存改派后，列表、概况和时间线读回一致。[范围及验收](openspec/changes/complete-socai2-investigation-chain/design.md#告警资产与负责人供给核对)
 
 | 页面需要的数据 | GET 路径与说明 |
 | --- | --- |
@@ -178,6 +221,10 @@ Content-Type: application/json
 | 人工任务及版本 | `/cases/{case_id}/tasks`、`/cases/{case_id}/tasks/{task_id}`、`/cases/{case_id}/tasks/{task_id}/revisions`、`/cases/{case_id}/tasks/{task_id}/revisions/{revision_id}` |
 
 “相关告警”按**同租户、同类型、同命名空间、同对象键**匹配当前材料，可跨 Case；它不表示因果关系。错误父主体返回404，正文不可用按实际状态处理。Case Run 的成员、步骤、工件和结果集合分别检查总数及截断标志。
+
+标准化页签沿告警详情的 `material.content_url` 读取 `content_json.ocsf_json`，历史轮用 `result.input_material_id` 定位当时的材料。2026-11-24 用已有 OCSF 联调样本核对 21 详情和同版材料，均返回 200。`availability=available`，OCSF 对象与留存入站正文一致，`metadata.uid` 与该版材料的 `alert_source_refs.source_event_id` 一致。接口按租户、告警 ID、材料 ID 读取 `aisoc.socai2.alert_materials`。`content_text` 对应单独保存的 `raw_text`。只有 `raw_json` 的对照材料仍可返回 200，其中 `ocsf_json=null` 表示该版没有已保存的标准化正文。已发布的 21 湖原文入口按精确 `record_ref` 读取指定 `aisoc.raw_events` 版本，当前平台未转发此入口。
+
+处理建议读告警分析 `current.explanation.content.recommendations`，空数组表示该轮没有保存建议。`/alerts/{id}/records/responses` 的空 `items` 表示该告警当前没有已关联的响应记录。该接口参数是 `limit`、`offset`，`include_related` 不会把事件或 Case 的响应纳入该结果。查无材料由相应资料接口的 404 表达，读取失败按服务状态展示。
 
 ## 5 状态、交付和空态
 
@@ -214,7 +261,7 @@ Case C3 v3/Deep v2/C6 v2已通过[步骤2保存、读回及采用验收](docs/op
 
 ## 6 Case 与人工反馈操作
 
-既有操作路径、入参及存储关系见 [Case/H 操作交接](openspec/changes/archive/2026-11-11-enable-case-human-http-flow/handoff.md)。按创建 Case 返回的 pending_run_id 显式启动首轮；人工任务通过 POST 创建、PUT 修订，使用返回的 row_version 和 current_revision_id；再次调查先 prepare 再 start。保存反馈不会自动启动调查。
+当前创建/关联Case按[分配与首轮任务合同](docs/integration/case-initial-http.md)读取 `allocations` 中每个实际Case及其 `initial_task.status_url`；新案首轮已持久受理，不再调用旧prepare/start。后续通过 `POST /cases/{case_id}/investigations` 明确提交 `operation_key` 与 `mode=check/rerun`，再独立GET任务状态和实际Run。人工任务仍通过POST创建、PUT修订，使用返回的 `row_version/current_revision_id`；保存反馈不等于调查已完成。[4173接线验证](docs/operations/evidence/http-real-data-20261120-01/README.md)只覆盖本次现有调用链，真实批次与模型质量按各自回执判断。
 
 人工采用与未完任务、后续调查及结案的规则见[AD01–AD06](docs/investigation/result-adoption-and-pending-work.md)。调查核心统一资格、未完工作确认、预览时效、幂等和判断历史；HTTP复用核心提供E21/E63/E64，两端服务及Swagger已同步。[后端调用指南](docs/integration/result-adoption-http.md)。采用只改变当前判断，不结束任务、Run或案件；无数据库迁移或告警字段变化。
 
@@ -222,7 +269,7 @@ Case C3 v3/Deep v2/C6 v2已通过[步骤2保存、读回及采用验收](docs/op
 
 前批本地完整路径及21原登录方式下的Case/H写读已通过；本轮可信方式另见新验收记录；产品页面交互仍需对应前端承接。[配置示例](deploy/aisoc21/case-http.env.example)说明功能写入连接，普通 API 的 DATABASE_URL 保持；不增加权限设计或确认环节。
 
-Case基本管理现新增E44–E47：GET/PATCH `/cases/{case_id}/management`、POST `/close`与`/reopen`。局部修改省略保持；description/owner_id/severity为null清空，tags=[]清空。结案拦截running/unknown；未完人工任务须确认并填写理由，任务保留。重开恢复in_progress，不自动调查；当前结案字段清空，旧理由和前后值可从E17活动读取。所有写入带行版本及幂等键，已在本机/21各20次TCP及SQL验证。页面修改不在当前交接范围。见[本项验收](openspec/changes/archive/2026-11-12-manage-investigation-cases/validation.md)。
+Case基本管理现新增E44–E47：GET/PATCH `/cases/{case_id}/management`、POST `/close`与`/reopen`。局部修改省略保持；description/owner_id为null清空，tags=[]清空；等级按[S3候选合同](docs/integration/subject-risk-fields-s3-20261120.md)带理由且不允许null，旧批次的清空等级行为不代表当前候选。结案拦截running/unknown；未完人工任务须确认并填写理由，任务保留。重开恢复in_progress，不自动调查；当前结案字段清空，旧理由和前后值可从E17活动读取。所有写入带行版本及幂等键，已在本机/21各20次TCP及SQL验证。该历史批次未验页面；S4候选风险属性页面见[当前页面交接](docs/integration/subject-risk-pages-s4-20261120.md)。见[本项验收](openspec/changes/archive/2026-11-12-manage-investigation-cases/validation.md)。
 
 ## 7 知识能力与当前交付范围
 
@@ -237,6 +284,8 @@ API功能测试和模型结论质量分别验收：Case及告警/事件管理分
 ### 三类列表完整导出
 
 E54告警、E55事件、E56调查均为`GET /api/v1/socai2/{alerts|incidents|cases}/export`。输入沿用对应列表筛选和排序，加可选`columns`字段路径；不传分页参数。结果为全部命中的CSV附件、实际数量与观察时间，超过配置上限明确报错，不截断。三类公开列分别39/34/31项，逐列含义与默认列、空值/转义规则、下载例子见[HTTP指南](deliverables/investigation-validation-20261106/http-handoff/README.md#完整列表导出)。资产维护及模型流程不受影响。
+
+E54 的勾选导出接受 `?ids=<UUID>&ids=<UUID>`。每个值取自选中行 `facts.id`，输出为当前租户中这些 ID 与已有筛选的交集，按原排序下载。省略 `ids` 时运行完整筛选导出。两种正式下载均已读回，8181 正式勾选下载的实际文件仅含所选告警。[发布及验收](openspec/changes/complete-socai2-investigation-chain/design.md#勾选告警-csv-导出)
 
 ### 事件顶部归并统计
 

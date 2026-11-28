@@ -123,7 +123,8 @@ class Harness:
         aid, sid = uuid4(), uuid4()
         async with self.service.transaction(self.tenant) as store:
             await store.db.execute(insert(m.Alerts).values(id=aid, tenant_id=self.tenant,
-                source_namespace="dispatch-validation", source_identity_key=str(aid), title="Synthetic dispatcher alert"))
+                source_namespace="lyc-dispatch-validation", connector_type="lyc-dispatch-validation",
+                source_identity_key=str(aid), title="Synthetic dispatcher alert"))
             if st == "alert":
                 sid = aid
             elif st == "case":
@@ -132,7 +133,7 @@ class Harness:
                     case_id=sid, alert_id=aid, membership_source="manual", source_operation_id=uuid4()))
             else:
                 await store.db.execute(insert(m.Incidents).values(id=sid, tenant_id=self.tenant,
-                    source_namespace="dispatch-validation", source_incident_id=str(sid), title="Synthetic dispatcher event"))
+                    source_namespace="lyc-dispatch-validation", source_incident_id=str(sid), title="Synthetic dispatcher event"))
                 await store.db.execute(insert(m.IncidentAlerts).values(id=uuid4(), tenant_id=self.tenant,
                     incident_id=sid, alert_id=aid, membership_source="manual", correlation_basis={},
                     basis_version="fixture.v1", source_operation_id=uuid4()))
@@ -249,7 +250,8 @@ async def run_checks(engine, admin, redis, config, record):
         await h.dispatcher.tick()
         await h.finish_active()
         assert (await h.read(third))["reason_code"] == "no_changes"
-        assert not (await h.read(third))["attempts"]
+        checked = (await h.read(third))["attempts"]
+        assert len(checked) == 1 and checked[0]["local_state"] == "ended" and checked[0]["run_id"] is None
         record("latest_before_start_frozen_during_run_and_completed_digest", True,
             {"tenant": h.tenant, "tasks": [first, second, third], "calls": h.executor.calls})
 
@@ -278,7 +280,9 @@ async def run_checks(engine, admin, redis, config, record):
         done = await h.read(t1)
         assert done["status"] == "failed" and done["reason_code"] == "retry_exhausted" and done["retry_count"] == 1
         await h.finish_active()
-        assert len(done["attempts"]) == 2 and not (await h.read(t2))["attempts"]
+        checked = (await h.read(t2))["attempts"]
+        assert len(done["attempts"]) == 2 and len(checked) == 1
+        assert checked[0]["outcome"] == "completed" and checked[0]["run_id"] is None
         assert (await h.read(t2))["reason_code"] == "automatic_attempts_stopped"
         same = await h.submit(ca)
         await h.dispatcher.tick()
@@ -372,7 +376,8 @@ async def run_checks(engine, admin, redis, config, record):
         await h.dispatcher.tick()
         await h.finish_active()
         assert (await h.read(still_missing))["reason_code"] == "automatic_attempts_stopped"
-        assert not (await h.read(still_missing))["attempts"]
+        checked = (await h.read(still_missing))["attempts"]
+        assert len(checked) == 1 and checked[0]["outcome"] == "completed" and checked[0]["run_id"] is None
         del h.executor.load_errors[cb]
         h.executor.materials[cb]["version"] += 1
         available = await h.submit(cb)
@@ -418,8 +423,9 @@ async def run_checks(engine, admin, redis, config, record):
         await h.finish_active()
         read = await h.read(ta)
         assert read["status"] == "skipped" and read["reason_code"] == "no_changes"
-        assert len(read["attempts"]) == 1 and read["attempts"][0]["outcome"] == "failed"
-        assert read["retry_count"] == 0 and len(h.executor.calls) == 2
+        assert len(read["attempts"]) == 2 and read["attempts"][0]["outcome"] == "failed"
+        assert read["attempts"][1]["outcome"] == "completed" and read["attempts"][1]["run_id"] is None
+        assert read["retry_count"] == 1 and len(h.executor.calls) == 2
         record("covered_waiting_retry_skips_without_erasing_old_failure", True,
             {"tenant": h.tenant, "waiting_task": read, "explicit_task": explicit})
 

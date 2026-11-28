@@ -7,13 +7,17 @@ def run_url(kind, identity, run_id):
     return base + ("/runs/" if kind == "case" else "/analysis/runs/") + str(run_id)
 
 
+def result_urls(results, subject_id, detail_url):
+    return [{**result, "url": (
+        f"/api/v1/socai2/cases/{subject_id}/results/{result['id']}"
+        if result["result_type"] == "case_result" else detail_url)} for result in results]
+
+
 def directory_view(page):
     items = []
     for row in page["items"]:
         detail = run_url(row["subject_type"], row["subject_id"], row["run_id"])
-        results = [{**result, "url": (
-            f"/api/v1/socai2/cases/{row['subject_id']}/results/{result['id']}"
-            if result["result_type"] == "case_result" else detail)} for result in row["results"]]
+        results = result_urls(row["results"], row["subject_id"], detail)
         items.append({**row, "detail_url": detail, "results": results})
     return {**page, "items": items}
 

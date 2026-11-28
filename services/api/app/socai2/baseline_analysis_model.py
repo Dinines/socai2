@@ -1,16 +1,22 @@
 """Tenant model adapter and budget accounting; never persist credentials."""
-import os
 import logging
-from app.core.operational_logging import log_exception
+import os
 
 import httpx
 
 from app.core.airgap import enforce_airgap_for_url
+from app.core.operational_logging import log_exception
 from app.services.llm_resolver import resolve_llm_config
-from app.services.llm_safety import safe_chat_completions_request
+from app.services.llm_safety import LLMContractViolation, safe_chat_completions_request
 from app.services.model_aliases import completions_url_for_base
 
-from .model_errors import ModelCallError, provider_error
+from .model_errors import (
+    DEADLINE_BEFORE_DISPATCH,
+    INPUT_CONTRACT_REJECTED,
+    ModelCallError,
+    decode_response,
+    provider_error,
+)
 from .model_protocol import (
     DEEPSEEK_BASE,
     DEEPSEEK_PROTOCOL,
@@ -43,7 +49,9 @@ class TenantChatGateway:
         from .runtime_policy import active_policy
         timeout = min(timeout, active_policy().single_model_timeout_seconds)
         if timeout <= 0:
-            raise TimeoutError("baseline_analysis_deadline_elapsed")
+            from .analysis_dispatch_types import ExecutionFailure
+            raise ExecutionFailure(DEADLINE_BEFORE_DISPATCH, stage="execute",
+                not_executed=True, temporary=False)
         try:
             if self.provider == DEEPSEEK_PROTOCOL:
                 return await complete_deepseek(self.config, body, timeout)
@@ -51,8 +59,15 @@ class TenantChatGateway:
             enforce_airgap_for_url(url)
             return await safe_chat_completions_request(api_key=self.config.api_key, url=url,
                 model=body["model"], messages=body["messages"], timeout=timeout,
+                response_decoder=lambda response: decode_response(response, self.config.api_key),
                 max_tokens=body["max_tokens"], response_format=body["response_format"],
                 **({"temperature": body["temperature"]} if "temperature" in body else {}))
+        except LLMContractViolation:
+            from .analysis_dispatch_types import ExecutionFailure
+            # Both protocol adapters run this guard before their HTTP POST.
+            # Never carry its evidence or free-form message into receipts/logs.
+            raise ExecutionFailure(INPUT_CONTRACT_REJECTED, stage="execute",
+                not_executed=True, temporary=False) from None
         except httpx.HTTPError as exc:
             log_exception(logging.getLogger(__name__), "model_http_call_failed", extra={
                 "operation": "model_complete", "dependency": "model_http", "error_code": "model_transport_error"})

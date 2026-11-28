@@ -62,7 +62,8 @@ def main():
     owner = initial['case']['created_by']
     patch = {'operation_key': str(uuid4()), 'expected_row_version': initial['case']['row_version'],
         'title': cfg['title']+'-已修改', 'description': '本批验证Case管理保存读回，不表示真实调查结论。',
-        'owner_id': owner, 'severity': 'high', 'tags': ['接口验收'], 'handling_status': 'in_progress'}
+        'owner_id': owner, 'severity': 'high', 'severity_reason': '本批人工等级设置验收',
+        'tags': ['接口验收'], 'handling_status': 'in_progress'}
     updated = request('PATCH', path+'/management', patch)
     assert updated['changed'] and updated['case']['severity_source'] == 'manual'
     assert request('PATCH', path+'/management', patch) == updated
@@ -91,13 +92,15 @@ def main():
         'expected_row_version': closed['case']['row_version'], 'reason': '继续验收读取，不启动调查。'})
     assert reopened['case']['handling_status'] == 'in_progress' and reopened['case']['reopened_at']
     assert reopened['case']['resolved_at'] is None and reopened['case']['resolution_note'] is None
+    request('PATCH', path+'/management', {'operation_key': str(uuid4()),
+        'expected_row_version': reopened['case']['row_version'], 'severity': None}, 422)
     cleared = request('PATCH', path+'/management', {'operation_key': str(uuid4()),
         'expected_row_version': reopened['case']['row_version'], 'description': None, 'owner_id': None,
-        'severity': None, 'tags': []})
+        'tags': []})
     case = cleared['case']
     assert case['title'] == patch['title'] and case['handling_status'] == 'in_progress'
     assert case['owner_id'] is None and case['assignment_state'] == 'unassigned'
-    assert case['severity'] is None and case['severity_source'] is None and case['tags'] == []
+    assert case['severity'] == 'high' and case['severity_source'] == 'manual' and case['tags'] == []
     detail = request('GET', path)
     assert detail['case'] == case and detail['member_count'] == 1
     assert detail['case']['scope_revision'] == 1 and detail['case']['current_assessment_id'] is None

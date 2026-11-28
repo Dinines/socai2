@@ -12,6 +12,7 @@ from investigation_http.case_allocation_contracts import (
     CaseReplacementReceipt,
     RelatedCasePage,
 )
+from investigation_http.case_info_contracts import CaseInfoSummary
 from investigation_http.contracts import (
     ArtifactContent,
     AssessmentHistory,
@@ -120,6 +121,16 @@ async def case_queue(
 @router.get("/{case_id}", response_model=CaseDetail)
 async def case_detail(case_id: UUID, user: ReadUser, service: Service):
     return await invoke(service.read_case(user.tenant_id, case_id))
+
+
+@router.get("/{case_id}/info-summary", response_model=CaseInfoSummary, responses={
+    404: {"model": RecordError, "description": "案件不存在"},
+    422: {"model": RecordError | RecordValidationError, "description": "请求无效"},
+    503: {"model": RecordError, "description": "案件资料摘要读取服务不可用"},
+}, summary="读取案件资料摘要")
+async def case_info_summary(request: Request, case_id: UUID, user: ReadUser, service: Service):
+    check_query(request, set())
+    return await invoke_record(service.read_info_summary(user.tenant_id, case_id))
 
 
 @router.get("/{case_id}/related-cases", response_model=RelatedCasePage, responses={

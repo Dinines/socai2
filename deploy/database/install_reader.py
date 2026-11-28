@@ -26,6 +26,7 @@ CASE_MIGRATION = "../../services/api/migrations/129_socai2_case_allocation.sql"
 LAKE_MIGRATION = "../../services/api/migrations/130_socai2_lake_alert_receipts.sql"
 LAKE_DELIVERY_MIGRATION = "../../services/api/migrations/131_socai2_lake_alert_deliveries.sql"
 RISK_MIGRATION = "../../services/api/migrations/132_socai2_subject_risk.sql"
+RISK_INGRESS_MIGRATION = "../../services/api/migrations/136_socai2_subject_risk_ingress.sql"
 TASK_TIMES_MIGRATION = "../../services/api/migrations/133_socai2_analysis_task_times.sql"
 VERDICT_MIGRATION = "../../services/api/migrations/134_socai2_business_verdict.sql"
 ESCALATION_MIGRATION = "../../services/api/migrations/135_socai2_run_escalation_decision.sql"
@@ -34,7 +35,8 @@ ESCALATION_MIGRATION = "../../services/api/migrations/135_socai2_run_escalation_
 def render(name, parents=()):
     """Inline repository-owned includes so local/SSH/container psql sees identical SQL."""
     increments = {GRAPH_MIGRATION, ANALYSIS_MIGRATION, CASE_MIGRATION, LAKE_MIGRATION,
-                  LAKE_DELIVERY_MIGRATION, RISK_MIGRATION, TASK_TIMES_MIGRATION, VERDICT_MIGRATION, ESCALATION_MIGRATION}
+                  LAKE_DELIVERY_MIGRATION, RISK_MIGRATION, RISK_INGRESS_MIGRATION,
+                  TASK_TIMES_MIGRATION, VERDICT_MIGRATION, ESCALATION_MIGRATION}
     if (not re.fullmatch(r"[a-z0-9_]+\.sql", name) and name not in increments) or name in parents:
         raise ValueError("invalid_sql_include")
     lines = []

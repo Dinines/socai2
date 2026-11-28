@@ -1,0 +1,3735 @@
+{
+  "purpose": "M0g 同批调查 HTTP 与 PostgreSQL 只读核对清单",
+  "status": "prepared_only",
+  "plan": "openspec/changes/complete-socai2-investigation-chain/case-input-capacity-20261128.md#M0g",
+  "frontend_checklist": "openspec/changes/complete-socai2-investigation-chain/case-m0g-frontend-audit-20261128.md",
+  "source_basis": {
+    "investigation_checkout": "/Users/lychee/Documents/project/socai2",
+    "frontend_checkout": "/Users/lychee/Projects/SpiritHub-web-8181",
+    "basis": "当前工作区静态源码；不据此认定当前运行服务已包含这些代码。",
+    "private_manifest": ".local/validation/m0g-http-read-audit-preparation-20261128/source-basis.json",
+    "live_runtime_and_batch_binding": "pending_core_handoff",
+    "target": "现有数据库、既有 8181 页面链路；沿本批受审配置定位，不新建或改接隔离库。"
+  },
+  "execution_boundary": {
+    "owner": "调查 HTTP 负责字段与正式读取；调查核心唯一投递和业务执行；统筹独立复核。",
+    "allowed_here": [
+      "源码与合同阅读",
+      "收到受控批次身份及运行绑定后，执行本清单需要的 GET 和只读数据库查询"
+    ],
+    "business_requests": "本清单不提交 POST/PATCH/PUT/DELETE，不补发调查，不主动重试未知执行。",
+    "cleanup": "本清单只列依赖；定向清理由核心准备、统筹审后执行。",
+    "private_output_root": ".local/validation/m0g-http-read-audit-preparation-20261128/readback",
+    "public_output": "仅操作完成状态、结构、源码位置、私密文件路径。身份、值、正文、实际统计、差异及数据派生结论须留受控文件，经负责人本批脱敏确认后才可回传。"
+  },
+  "handoff_required": [
+    "本批受控身份清单路径：租户、已确认原件身份、新 Kafka 回执和偏移、湖引用、告警/材料、事件、Case、initial_task。",
+    "本批普通读取连接配置路径、8181 到 SpiritHub 到调查 HTTP 的实际路由配置，以及各段实际加载源码/镜像清单；不得从当前工作区脏改推定部署。",
+    "定向清理已结束及发送窗口的受控记录路径；新批次身份必须由新投递回执串联，旧湖记录和旧 Run 不作为本批起点。",
+    "核心给出的阶段边界及可读状态；身份未知、执行未知或服务版本未绑定时保持未验，不自行生成替代数据。"
+  ],
+  "read_protocol": [
+    "将身份、凭据、连接地址和读取上限从已有受控配置加载；公开清单不填写实际参数。",
+    "先由平台模块核 8181 转发链及配置，由 HTTP 模块对照同一租户/数据库/profile 和实际版本。现有链路不同源时记录缺口，不换库完成演示。",
+    "数据库使用现有普通读取角色和租户上下文，在 READ ONLY 事务内按本批明确 ID 查询，结束回滚；不扫全库、不改变消费者或调度器。",
+    "先记录一组稳定锚：当前材料/发布指针、Case scope_revision/row_version、任务与 Run 身份。读取后复读锚；读取期间锚变更应标时间不一致，不能直接判字段映射错误。",
+    "HTTP 优先读取核心回执中指定的主体/任务/Run/Result。涉及分页时沿返回的游标或 offset 读取本批所需范围，遵守现有上限；未读完时保留截断或未验状态。",
+    "依次比对原生保存、用例投影、直接调查 HTTP、平台转发响应和浏览器实际请求/显示；每层原件和差异仅落私密文件。正文按保存内容核对，不让程序补结论或改写原答。",
+    "字段缺失、null、有效零、false、空数组、未读全和错误分别记录；不把成功响应或有工件视为业务、采用或模型质量通过。"
+  ],
+  "checks": [
+    {
+      "id": "alert_material_and_detection",
+      "http_get": [
+        "/api/v1/socai2/alerts/{alert_id}",
+        "/api/v1/socai2/alerts/{alert_id}/materials/{material_id}",
+        "/api/v1/socai2/alerts/{alert_id}/records/sources"
+      ],
+      "native_fields": {
+        "alerts": [
+          "id",
+          "tenant_id",
+          "source_namespace",
+          "source_alert_id",
+          "latest_material_id",
+          "event_time",
+          "ingested_at"
+        ],
+        "alert_materials": [
+          "id",
+          "tenant_id",
+          "alert_id",
+          "revision",
+          "raw_text",
+          "raw_json",
+          "ocsf_json",
+          "detection",
+          "material_state",
+          "enrichment",
+          "source_scope"
+        ],
+        "alert_source_refs": [
+          "tenant_id",
+          "alert_id",
+          "material_id",
+          "source_namespace",
+          "source_event_id",
+          "relation_kind",
+          "source_path"
+        ]
+      },
+      "joins": [
+        "alerts.latest_material_id = alert_materials.id，同时匹配 tenant_id 和 alert_id。",
+        "来源引用按同租户、告警和明确 material_id；历史材料使用 URL 中的 material_id，不改查最新材料。"
+      ],
+      "compare": [
+        "详情 facts 对原生 alerts；material.id/revision/detection 对被指向材料；原件响应 metadata 和 content_json/content_text 对相同材料保存字段。",
+        "规则 material.detection.rule_id/rule_name；正常湖接收映射来自 finding_info.analytic.uid/name。前端使用原件回读时须先核材料版本和原件来源。",
+        "material.detection.confidence_state/confidence_value/confidence_label/confidence_rationale/score_source 属于 Fusion 保存投影；confidence_value 在 available 时已乘 100。原始 OCSF confidence_id/confidence/confidence_score 是另一类原始字段，不能互换或再次缩放。",
+        "detection.tactics/techniques 与原始材料保存值分别核对；缺标签、原件保留不完整和读取失败不填默认标签。",
+        "records/sources 是当前材料来源目录；若前端带 material_id 查询，应核实际接口是否支持该参数，不能仅因 200 认定读到了历史材料。"
+      ],
+      "source_files": [
+        "services/fusion/app/services/lake_alert_receiver.py",
+        "services/fusion/app/services/socai2_projection.py",
+        "services/api/app/socai2/page_reader.py",
+        "services/api/investigation_http/external_routes/pages.py"
+      ],
+      "frontend": [
+        "web/src/features/socai2-alerts/AlertWorkbenchDetail.tsx",
+        "web/src/features/soc-alerts/AlertWorkbenchRaw.tsx",
+        "web/src/features/soc-workbench/api.ts"
+      ]
+    },
+    {
+      "id": "alert_published_triage",
+      "http_get": [
+        "/api/v1/socai2/alerts/{alert_id}",
+        "/api/v1/socai2/alerts/{alert_id}/analysis/runs/{run_id}"
+      ],
+      "native_fields": {
+        "alerts": [
+          "tenant_id",
+          "id",
+          "latest_material_id",
+          "latest_triage_id",
+          "latest_feedback_id",
+          "latest_explanation_id"
+        ],
+        "alert_assessments": [
+          "tenant_id",
+          "id",
+          "alert_id",
+          "kind",
+          "input_material_id",
+          "source_run_id",
+          "verdict",
+          "rationale",
+          "confidence",
+          "score_state",
+          "recommendations"
+        ],
+        "runs": [
+          "tenant_id",
+          "id",
+          "alert_id",
+          "kind",
+          "state"
+        ],
+        "artifacts": [
+          "tenant_id",
+          "id",
+          "alert_id",
+          "run_id",
+          "kind",
+          "material_state",
+          "blob_ref",
+          "content_json"
+        ]
+      },
+      "joins": [
+        "latest_triage_id 对同租户同告警且 kind=triage 的 assessment；反馈使用 latest_feedback_id 和 kind=human_feedback。",
+        "source_run_id 对同租户同告警且 kind=alert_basic 的 Run；latest_explanation_id 对同 Run 的 alert_explanation。"
+      ],
+      "compare": [
+        "triage.verdict/rationale/recommendations/score_state 对保存值；confidence_percent 仅在 available 且非 null 时等于 confidence × 100，null 不显示为零。",
+        "valid_for_current_input 同时要求 freshness=current、Run completed、input_material_id=latest_material_id；已发布评估、当前输入有效性和最新尝试分开。",
+        "triage.attck_mappings 只来自对应 Run 已完成且 complete、无 blob_ref 的 explanation.content_json.attck_mappings；derived.tactics 来自材料源标签，两者不互补冒充。"
+      ],
+      "source_files": [
+        "services/api/app/socai2/page_reader.py",
+        "services/api/app/socai2/stage_reader.py",
+        "services/api/investigation_http/external_routes/analysis.py"
+      ],
+      "frontend": [
+        "web/src/features/socai2-alerts/alertTriageApi.ts",
+        "web/src/features/socai2-alerts/alertAttck.ts"
+      ]
+    },
+    {
+      "id": "incident_members_sources_assets",
+      "http_get": [
+        "/api/v1/socai2/incidents/{incident_id}",
+        "/api/v1/socai2/incidents/{incident_id}/records/members",
+        "/api/v1/socai2/incidents/{incident_id}/records/objects",
+        "/api/v1/socai2/incidents/{incident_id}/records/assets"
+      ],
+      "native_fields": {
+        "incident_alerts": [
+          "tenant_id",
+          "incident_id",
+          "alert_id"
+        ],
+        "alerts": [
+          "tenant_id",
+          "id",
+          "handling_status",
+          "connector_type",
+          "source_namespace",
+          "latest_material_id",
+          "event_time",
+          "severity"
+        ],
+        "alert_objects": [
+          "tenant_id",
+          "id",
+          "alert_id",
+          "material_id",
+          "namespace",
+          "object_type",
+          "object_key",
+          "normalized_value",
+          "source_path"
+        ]
+      },
+      "joins": [
+        "incident_alerts 按同租户及 incident_id 连接 alerts；对象只选成员当前 latest_material_id。",
+        "资产关系来自读取 profile 指定的 inventory relation，不假定任何固定资产库或表。"
+      ],
+      "compare": [
+        "member_count 为全量当前成员，active_member_count 只计 handling_status=new/in_progress；unknown_status_member_count 单列。不能用浏览器当前页长度替代服务统计。",
+        "detection_sources 对全量成员 connector_type；仅 null 时取 source_namespace，去重稳定排序。null 缺供、[] 无成员与正常列表分别保留。",
+        "对象资产关联按现有规则：host 对 name/fqdn 不区分大小写的精确匹配，ip 对 ip_addresses 精确匹配。接口 total 是对象到资产的关系数量，前端唯一资产数须读全后按 asset_id 去重。",
+        "tactics 按当前材料标签统计不同告警；活动时间取成员 event_time，缺时间单独统计；不补造事件时间或威胁判定。"
+      ],
+      "source_files": [
+        "services/api/app/socai2/page_contracts.py",
+        "services/api/app/socai2/page_reader.py",
+        "services/api/app/socai2/read_sources.py"
+      ],
+      "frontend": [
+        "web/src/features/security-events/IncidentPreview.tsx",
+        "web/src/features/security-events/IncidentAssets.tsx",
+        "web/src/features/security-events/IncidentRelations.tsx"
+      ]
+    },
+    {
+      "id": "incident_published_diagnosis",
+      "http_get": [
+        "/api/v1/socai2/incidents/{incident_id}",
+        "/api/v1/socai2/incidents/{incident_id}/analysis/runs/{run_id}"
+      ],
+      "native_fields": {
+        "incidents": [
+          "tenant_id",
+          "id",
+          "latest_diagnosis_id",
+          "active_case_id"
+        ],
+        "incident_diagnoses": [
+          "tenant_id",
+          "id",
+          "incident_id",
+          "source_run_id",
+          "state",
+          "summary",
+          "diagnosis",
+          "open_questions",
+          "business_verdict"
+        ],
+        "runs": [
+          "tenant_id",
+          "id",
+          "incident_id",
+          "kind",
+          "requested_at",
+          "state",
+          "delivery_state",
+          "stop_reason"
+        ]
+      },
+      "joins": [
+        "latest_diagnosis_id 对同租户同事件且 state=completed 的 diagnosis；source_run_id 对同事件 kind=incident_diagnosis 的 Run。"
+      ],
+      "compare": [
+        "published_diagnosis 以发布指针为锚，conclusion 来自 diagnosis.conclusion，open_questions 仅按既有 question/text 字段格式投影；business_verdict 来自保存判断。",
+        "latest_attempt 独立按 requested_at/id 找最近诊断 Run；不能用最新尝试覆盖已发布正文。指针为空、保存行缺失、Run 引用缺失和读取失败分别定位。",
+        "case_receiving 用正式关系口径核 active_case_id；不按浏览器最后打开的 Case 推定接收案。"
+      ],
+      "source_files": [
+        "services/api/app/socai2/page_reader.py",
+        "services/api/app/socai2/stage_reader.py",
+        "services/api/investigation_http/external_routes/pages.py"
+      ],
+      "frontend": [
+        "web/src/features/security-events/IncidentDetailContext.tsx"
+      ]
+    },
+    {
+      "id": "case_current_scope_and_info",
+      "http_get": [
+        "/api/v1/socai2/cases/{case_id}",
+        "/api/v1/socai2/cases/{case_id}/info-summary",
+        "/api/v1/socai2/cases/{case_id}/page-data"
+      ],
+      "native_fields": {
+        "cases": [
+          "tenant_id",
+          "id",
+          "scope_revision",
+          "row_version",
+          "current_assessment_id",
+          "current_evidence_artifact_id",
+          "classification",
+          "due_at"
+        ],
+        "case_alerts": [
+          "tenant_id",
+          "case_id",
+          "alert_id",
+          "membership_source",
+          "added_at"
+        ],
+        "case_incidents": [
+          "tenant_id",
+          "case_id",
+          "incident_id"
+        ],
+        "alerts": [
+          "tenant_id",
+          "id",
+          "latest_material_id",
+          "event_time"
+        ],
+        "alert_objects": [
+          "tenant_id",
+          "id",
+          "alert_id",
+          "material_id",
+          "namespace",
+          "object_type",
+          "object_key",
+          "raw_value",
+          "source_path"
+        ]
+      },
+      "joins": [
+        "当前成员按 case_alerts；关联事件按 case_incidents；对象按成员当前材料。冻结 Run 范围另核 run_members，不替代当前关系。"
+      ],
+      "compare": [
+        "Case detail 的 case/members/member_count/linked_incidents 逐项核原生关联；members_truncated 和 linked_incidents_truncated 保留，不能把截断误记少成员。",
+        "info-summary 的 activity_time_from/to 按当前成员 event_time，member_object_count 按 namespace/object_type/object_key 去重，object_preview 只是有限预览。",
+        "tactics 来自当前成员材料；investigation_count 与正式关联调查目录同口径，不能仅统计本案 Run 或已保存 Result。"
+      ],
+      "source_files": [
+        "services/api/app/socai2/case_reader.py",
+        "services/api/app/socai2/case_info.py",
+        "services/api/app/socai2/case_story_relations.py",
+        "services/api/investigation_http/external_routes/cases.py"
+      ],
+      "frontend": [
+        "web/src/features/soc-cases/CaseInfo.tsx",
+        "web/src/features/soc-cases/CaseWorkbenchDetail.tsx"
+      ]
+    },
+    {
+      "id": "case_current_adopted_judgment",
+      "http_get": [
+        "/api/v1/socai2/cases/{case_id}",
+        "/api/v1/socai2/cases/{case_id}/page-data",
+        "/api/v1/socai2/cases/{case_id}/results/{result_id}"
+      ],
+      "native_fields": {
+        "cases": [
+          "tenant_id",
+          "id",
+          "current_assessment_id",
+          "scope_revision"
+        ],
+        "case_assessments": [
+          "tenant_id",
+          "id",
+          "case_id",
+          "origin",
+          "validity",
+          "conclusion",
+          "scope_revision",
+          "adopted_at"
+        ],
+        "case_assessment_members": [
+          "tenant_id",
+          "case_id",
+          "assessment_id",
+          "alert_id"
+        ],
+        "case_assessment_sources": [
+          "tenant_id",
+          "case_id",
+          "assessment_id",
+          "result_id",
+          "task_revision_id",
+          "artifact_id"
+        ],
+        "results": [
+          "tenant_id",
+          "id",
+          "case_id",
+          "kind",
+          "conclusion_origin",
+          "validation_state",
+          "conclusion_state",
+          "business_verdict",
+          "source_run_id"
+        ]
+      },
+      "joins": [
+        "cases.current_assessment_id 对同租户同案 assessment；覆盖及来源分别用 assessment_id+case_id+tenant_id。",
+        "来源使用保存的 result_id/task_revision_id/artifact_id，不用任务当前修订替换冻结来源。"
+      ],
+      "compare": [
+        "page-data.determination/assessment.conclusion 来自当前 assessment；最新 Run/Result 不代表已采用。",
+        "business_verdict 仅在 model+accepted assessment 唯一引用 Result、未混 task_revision/artifact，且 Result 同案、baseline、model、accepted、结论非 unavailable 时投影；其他情况保持 null。",
+        "当前范围与采用范围分别核 scope_revision、覆盖成员、input_freshness 和截断；覆盖未知保持未知。悬空 current_assessment 指针按错误记录，不补造判断。"
+      ],
+      "source_files": [
+        "services/api/app/socai2/case_reader.py",
+        "services/api/app/socai2/case_data.py",
+        "services/api/app/socai2/case_assessment_sources.py"
+      ],
+      "frontend": [
+        "web/src/features/soc-cases/CaseInfoAssessment.tsx",
+        "web/src/features/soc-cases/CaseInfoAssessmentSource.tsx"
+      ]
+    },
+    {
+      "id": "analysis_task_attempt_run",
+      "http_get": [
+        "/api/v1/socai2/{subjects}/{subject_id}/analysis-tasks/{task_id}",
+        "/api/v1/socai2/{subjects}/{subject_id}/analysis-tasks",
+        "/api/v1/socai2/analysis-runs?subject_type={subject_type}&subject_id={subject_id}"
+      ],
+      "subjects": [
+        "alerts",
+        "incidents",
+        "cases"
+      ],
+      "native_fields": {
+        "analysis_tasks": [
+          "tenant_id",
+          "id",
+          "subject_type",
+          "subject_id",
+          "kind",
+          "intent",
+          "state",
+          "merged_into_task_id",
+          "reason_code",
+          "submitted_at",
+          "started_at",
+          "ended_at"
+        ],
+        "analysis_attempts": [
+          "tenant_id",
+          "task_id",
+          "attempt_no",
+          "subject_type",
+          "subject_id",
+          "run_id",
+          "input_artifact_id",
+          "local_state",
+          "outcome",
+          "error_code",
+          "error_stage"
+        ],
+        "analysis_subject_state": [
+          "tenant_id",
+          "subject_type",
+          "subject_id",
+          "last_attempt_id",
+          "last_completed_attempt_id",
+          "stopped_task_id"
+        ],
+        "runs": [
+          "tenant_id",
+          "id",
+          "alert_id",
+          "incident_id",
+          "case_id",
+          "kind",
+          "state",
+          "delivery_state",
+          "input_artifact_id"
+        ]
+      },
+      "joins": [
+        "优先从建案回执 initial_task 查原 task_id；merged 任务按 merged_into_task_id 读实际执行根，同时保留请求任务身份。",
+        "attempt 以 task_id+tenant_id，按 attempt_no；Run 同主体、同 kind，结果按真实 attempt.run_id 连接各自 source_run_id。"
+      ],
+      "compare": [
+        "外部 accepted 包含原生 accepted/waiting；execution_shared 标示合并。无 Run 是合法未启动状态，不伪造 Run。",
+        "latest_run_id 是最近实际 attempt 的 Run，不等于任务已完成或已采用；分别核 task.status、attempt.local_state/outcome、Run.state/delivery_state。",
+        "active_step 只在 task/attempt/Run 均 running 且步骤未结束时返回；动态 timing/observed_at 不作字节相等断言。",
+        "results 的 result_type/id/source_run_id 和外部 URL 对到同主体真实记录；只读目录不得受理新任务。"
+      ],
+      "source_files": [
+        "services/api/app/socai2/analysis_tasks.py",
+        "services/api/app/socai2/analysis_task_store.py",
+        "services/api/investigation_http/adapters/analysis_tasks.py",
+        "services/api/investigation_http/external_routes/analysis_tasks.py",
+        "services/api/investigation_http/external_routes/run_directory.py"
+      ],
+      "frontend": [
+        "按实际页面网络请求核本批 task status_url；页面未消费时记请求未发生，不推断 UI 已通过。"
+      ]
+    },
+    {
+      "id": "case_run_result_delivery",
+      "http_get": [
+        "/api/v1/socai2/cases/{case_id}/runs/{run_id}",
+        "/api/v1/socai2/cases/{case_id}/results/{result_id}",
+        "/api/v1/socai2/analysis-runs/{run_id}/steps",
+        "/api/v1/socai2/analysis-runs/{run_id}/steps/{step_id}",
+        "/api/v1/socai2/analysis-runs/{run_id}/artifacts"
+      ],
+      "native_fields": {
+        "runs": [
+          "tenant_id",
+          "id",
+          "case_id",
+          "input_artifact_id",
+          "scope_revision",
+          "state",
+          "delivery_state",
+          "stop_reason"
+        ],
+        "run_members": [
+          "tenant_id",
+          "run_id",
+          "case_id",
+          "alert_id",
+          "material_id",
+          "triage_id",
+          "feedback_id",
+          "read_state",
+          "analysis_state",
+          "omission_reason"
+        ],
+        "run_steps": [
+          "tenant_id",
+          "id",
+          "run_id",
+          "stage_code",
+          "state",
+          "input_artifact_id",
+          "output_artifact_id",
+          "reused_artifact_id",
+          "error",
+          "usage"
+        ],
+        "results": [
+          "tenant_id",
+          "id",
+          "case_id",
+          "source_run_id",
+          "input_artifact_id",
+          "source_answer_id",
+          "graph_artifact_id",
+          "report_artifact_id",
+          "delivery_state",
+          "conclusion_state",
+          "conclusion_origin",
+          "validation_state",
+          "business_verdict"
+        ],
+        "result_members": [
+          "tenant_id",
+          "case_id",
+          "result_id",
+          "alert_id"
+        ],
+        "artifacts": [
+          "tenant_id",
+          "id",
+          "case_id",
+          "run_id",
+          "kind",
+          "material_state",
+          "content_json",
+          "content_text",
+          "source_refs"
+        ],
+        "messages": [
+          "tenant_id",
+          "id",
+          "case_id",
+          "source_run_id",
+          "input_artifact_id"
+        ]
+      },
+      "joins": [
+        "Run/Result 必须同租户同案且 result.source_run_id=run.id；输入、材料、分诊按冻结 ID，不读当前指针替代。",
+        "source_answer_id 同时匹配 case_id/source_run_id/input_artifact_id；步骤复用工件按返回的真实源 Run/主体核，不假定属于当前 Run。"
+      ],
+      "compare": [
+        "分别核冻结输入、run_members、result_members、步骤状态和 Result 原文；执行失败、结果保存、交付完整性、待复核、业务判断、采用状态和模型质量各自记录。",
+        "baseline Result 的 delivery 核 C6 output_artifact_id、receipt.outcome.result_id、report_artifact_id 和 detail_artifact_id 对应关系；有报告文件不代表调查通过。",
+        "返回目录的 next_cursor/truncated/limitations 与实际已读范围一起保留；工具未查、查空、失败、unknown 分开，不从 returned_rows 或 HTTP 成功推定业务安全。"
+      ],
+      "source_files": [
+        "services/api/app/socai2/case_reader.py",
+        "services/api/app/socai2/run_records.py",
+        "services/api/investigation_http/adapters/run_records.py",
+        "services/api/investigation_http/external_routes/run_records.py"
+      ],
+      "frontend": [
+        "web/src/features/soc-cases/CaseInvestigationOverview.tsx",
+        "web/src/features/investigations/RunWorkspace.tsx"
+      ]
+    },
+    {
+      "id": "case_story_history_and_member_relations",
+      "http_get": [
+        "/api/v1/socai2/cases/{case_id}/story?view=related",
+        "/api/v1/socai2/cases/{case_id}/members/{alert_id}/relations",
+        "/api/v1/socai2/cases/{case_id}/investigations",
+        "/api/v1/socai2/cases/{case_id}/investigations/{run_id}",
+        "/api/v1/socai2/cases/{case_id}/history"
+      ],
+      "readback": [
+        "Q34/Q35 使用 CaseInvestigationService 和 StoryRelations。目录包括本案 baseline、同案保存结果的 Run、已保存显式来源以及经冻结输入证明与当前成员有交集的 A/I Run；一轮只计一次。",
+        "冻结输入必须与 schema/version、主体、input_snapshot 工件归属和成员集合吻合；未知范围保留 frozen_input_membership_unverified。不能仅因事件当前有关联就添加整个历史诊断。",
+        "故事 ?view=related 与不带 view 的旧故事分别核调用；条目的源时间、调查主体、Run、result_refs 和 source_refs 必须保留原归属。",
+        "成员关系先核 case_alerts 中本案成员；shared_objects 对同 namespace/object_type/object_key、不同告警的当前材料对象，objects/runs 使用独立游标。",
+        "Q35 对不存在于本案关联目录的 Run 返回 run_not_found，不能从通用 Run 可读推定案内归属；旧 history 与 Q34 的目录范围不同，不互相替代。"
+      ],
+      "source_files": [
+        "services/api/app/socai2/case_story.py",
+        "services/api/app/socai2/case_story_relations.py",
+        "services/api/app/socai2/case_investigations.py",
+        "services/api/investigation_http/adapters/case_story.py",
+        "services/api/investigation_http/external_routes/case_investigations.py"
+      ],
+      "frontend": [
+        "web/src/features/soc-cases/CaseStory.tsx",
+        "web/src/features/soc-cases/CaseInvestigationHistory.tsx"
+      ]
+    },
+    {
+      "id": "case_graph_objects_and_evidence",
+      "http_get": [
+        "/api/v1/socai2/cases/{case_id}/exploration",
+        "/api/v1/socai2/cases/{case_id}/exploration-base",
+        "/api/v1/socai2/cases/{case_id}/exploration-base?run_id={run_id}",
+        "/api/v1/socai2/cases/{case_id}/page-data"
+      ],
+      "readback": [
+        "exploration.snapshot 来自同案 run_id 为空、kind=source_snapshot、schema=socai2.case-exploration.v1 的保存工件；只有返回 snapshot=null 才按前端合同读默认底图，读取错误不能当无快照。",
+        "默认 exploration-base 选最近 completed baseline；指定 run_id 必须为本案 completed baseline。来源材料来自 run_members；没有此类 Run 才按当前 case_alerts/latest_material_id 生成成员底图。",
+        "graph 通过 Result.graph_artifact_id 匹配同租户、同案、同 Run 及允许图类型；分别核 graph_state、delivery_state、sources 和 fingerprint，图缺供不等于没有关系。",
+        "证据使用 cases.current_evidence_artifact_id，核 kind/schema、保存 digest、源引用及 material_id+object_key；evidence.state 为 not_recorded/invalid_reference/unavailable/partial/available 时分别保留。",
+        "Q12 /cases/{case_id}/objects 的当前原生路由待解决部署归属，不能用 E05 证据或逐条告警对象暗中替代后宣称 Q12 通过。"
+      ],
+      "source_files": [
+        "services/api/app/socai2/exploration_state.py",
+        "services/api/app/socai2/exploration_state_sources.py",
+        "services/api/app/socai2/case_data.py",
+        "services/api/app/socai2/case_data_contracts.py",
+        "services/api/investigation_http/external_routes/exploration_state.py"
+      ],
+      "frontend": [
+        "web/src/features/soc-cases/CaseGraph.tsx",
+        "web/src/features/soc-cases/case-graph-api.ts",
+        "web/src/features/soc-cases/CaseEvidence.tsx"
+      ]
+    }
+  ],
+  "route_ownership_checks": [
+    {
+      "contract": "Q34/Q35",
+      "paths": [
+        "GET /api/v1/socai2/cases/{case_id}/investigations",
+        "GET /api/v1/socai2/cases/{case_id}/investigations/{run_id}"
+      ],
+      "source_observation": "前端请求和当前 investigation_http/external_routes/case_investigations.py 存在，main.py 挂载；8181 工作区 backend/src/spirithub/api/routes/socai2.py 的静态转发表未列两个 GET。",
+      "runtime_check": "保留受控 OpenAPI 路由登记依据，由平台模块绑定实际版本和转发目标；取得同批身份后逐段 GET。路由已登记不等于本批读回通过。",
+      "runtime_schema_receipt": {
+        "path": ".local/validation/m0g-spirithub-readonly-20261128-01/platform-routing-target.private.json",
+        "structure_fields": [
+          "runtime.platform.openapi.routes",
+          "runtime.case_read_native.openapi.routes"
+        ],
+        "note": "受控回执中的 OpenAPI 结构包含 Q34/Q35。当前转发表源码与实际运行版本有差异；尚未用本批身份验证转发及业务响应。",
+        "independent_structure_report": ".local/validation/m0g-coordinator-20261128-01/running-route-contracts.json",
+        "layer_note": "统筹三段结构回执区分平台、本机 Case native 与 21 formal native：Q34/Q35 在平台和 Case native 登记，formal native 未登记；必须沿页面实际转发层核。"
+      }
+    },
+    {
+      "contract": "Q12",
+      "paths": [
+        "GET /api/v1/socai2/cases/{case_id}/objects"
+      ],
+      "source_observation": "8181 workbench-api.ts 的 objects 和平台转发表存在；当前调查 HTTP 对外路由未见同路径。",
+      "runtime_check": "查实际路由归属。若未注册，记录接口接线缺口；若注册，绑定其用例及原生表后核 material_id/object_key/分页。不得归因为当前案没有对象。",
+      "runtime_structure_note": "统筹三段 OpenAPI 结构回执中，两原生均未登记 Q12；若平台转发到这些层，按路由缺口定位，不能称为空对象数据。"
+    },
+    {
+      "contract": "Q10 与旧 Q08",
+      "paths": [
+        "GET /api/v1/socai2/runs/{run_id}/artifact-references/{artifact_id}",
+        "GET /api/v1/socai2/runs"
+      ],
+      "source_observation": "8181 通用 artifact 读取先走旧 artifact-references 再读 context.read_path；当前调查 HTTP 原生目录使用 analysis-runs 与主体内工件路径。",
+      "runtime_check": "核旧路径当前由谁注册及转发。工件引用须按真实源主体/Run 取，不因新目录可读就认定旧引用链路可用；旧 runs 查询和新 analysis-runs 分开验。",
+      "runtime_structure_note": "统筹结构回执中，两原生均未登记旧 artifact-references 路径；保留旧入口与原生工件读取的归属差异。"
+    }
+  ],
+  "cleanup_dependency_reference": {
+    "status": "reference_only_no_cleanup_executed",
+    "scope_rule": "只以本轮确认原组身份生成新定向清单；共享事件、Case、Run、引用或其他来源记录进入保留/阻断核对，不以扩大删除闭包解决共享引用。",
+    "source_entries": [
+      "services/api/app/models/socai2.py：当前 ORM 字段与 V1 显式 RESTRICT 外键、当前指针和循环引用。",
+      "services/api/migrations/128_socai2_analysis_lifecycle.sql：analysis_tasks/analysis_attempts/analysis_subject_state 真实外键及主体/状态触发器；ORM 不展开这些完整约束。",
+      "services/api/migrations/129_socai2_case_allocation.sql：Case continuation/previous/receiving 链、incident.active_case_id 及 case_alert_exclusions。",
+      "services/api/migrations/130_socai2_lake_alert_receipts.sql：source_subject_id 身份去重及 alert/material 引用。",
+      "services/api/migrations/131_socai2_lake_alert_deliveries.sql：投递与 attempts 台账、状态和 alert/material 引用。",
+      "services/fusion/app/services/socai2_sink.py：source_identity_key、首投递 source_snapshot、material_id、source refs 和 objects；旧首投递不会因再次接收而改写。",
+      "services/fusion/app/services/lake_alert_receiver.py：receipt 按 tenant_id/source_subject_id 核绑定；湖引用和投递记录必须与本组原件一致。"
+    ],
+    "historical_private_reference": {
+      "root": ".local/validation/history-test-retirement-21-20261124-01",
+      "functions": [
+        "classify.py: graph / subject_members / unsettled / classify",
+        "collect_remote.py: bind_sources / pg_sources / inventory",
+        "apply_remote.py: scoped_predicate / back_up / retained_fingerprints / transaction / verify_reads"
+      ],
+      "limitation": "旧批范围，不是本轮可直接运行入口；apply_remote.py 包含 session_replication_role=replica，不直接复制执行。当前清单不提供 DELETE 或触发器绕过脚本。"
+    },
+    "core_review_items": [
+      "在现有运行数据库读取实际 pg_constraint/触发器/迁移结构，不能仅用 ORM 或 V1 29 表推定全部依赖。",
+      "冻结定向删除身份、指针/链接改动、恢复快照及需保留的共享引用；无未知在途执行时才按核心受审步骤处理。",
+      "Case/incident/alert 当前指针、run retry/comparison、artifact/step 循环、result/message、assessment sources/members、activities/targets、comments/response links/task revisions 逐项按范围核查。",
+      "湖接收 receipt/delivery/attempt 及实际 Redis/消费去重按已确认身份核；只有 PostgreSQL 业务行消失不能证明下一次是全新 Kafka 入站。",
+      "清理后沿新投递 ACK/偏移核本批身份，不清全库/全表/全 Redis/topic，不改原始 OCSF。"
+    ]
+  },
+  "private_receipt_shape": {
+    "binding": [
+      "batch_manifest_path",
+      "runtime_manifest_path",
+      "tenant",
+      "database",
+      "source_identity",
+      "subject_ids",
+      "task_ids",
+      "run_ids",
+      "result_ids"
+    ],
+    "per_read": [
+      "check_id",
+      "stage",
+      "anchor_before",
+      "requested_path",
+      "request_parameters",
+      "http_status",
+      "response_file",
+      "pg_snapshot_file",
+      "anchor_after",
+      "compared_fields",
+      "diff_file",
+      "verification_state",
+      "failure_layer",
+      "limitations"
+    ],
+    "verification_states": [
+      "not_started",
+      "waiting_for_binding",
+      "read_completed",
+      "matched",
+      "mismatch",
+      "time_inconsistent",
+      "not_generated",
+      "not_covered",
+      "read_failed"
+    ],
+    "failure_layers": [
+      "original_source",
+      "mapping",
+      "persistence",
+      "usecase_projection",
+      "investigation_http_route_or_contract",
+      "platform_forwarding",
+      "authentication_or_network",
+      "frontend_request",
+      "frontend_rendering",
+      "unresolved"
+    ],
+    "rule": "这是私密回执的字段结构，不是本批已执行结果。matched 等数据派生状态也只能保存在受控文件中。"
+  },
+  "source_locations": [
+    {
+      "path": "services/api/app/socai2/page_reader.py",
+      "entries": {
+        "PageReader.view": 85,
+        "PageReader.saved_diagnosis": 182,
+        "PageReader.records": 312,
+        "PageReader.assets": 394,
+        "PageReader.material_content": 413,
+        "PageReadService.read": 491
+      }
+    },
+    {
+      "path": "services/api/app/socai2/stage_reader.py",
+      "entries": {
+        "StageReader.entry": 58,
+        "StageReadService.read_entry": 146
+      }
+    },
+    {
+      "path": "services/api/app/socai2/case_service.py",
+      "entries": {
+        "CaseService.read_case": 149,
+        "CaseService.read_info_summary": 154,
+        "CaseService.read_run": 163,
+        "CaseService.read_result": 168
+      }
+    },
+    {
+      "path": "services/api/app/socai2/case_reader.py",
+      "entries": {
+        "CaseReader.case": 245,
+        "CaseReader.run": 359,
+        "CaseReader.result": 453
+      }
+    },
+    {
+      "path": "services/api/app/socai2/case_info.py",
+      "entries": {
+        "read_info_summary": 26
+      }
+    },
+    {
+      "path": "services/api/app/socai2/case_data.py",
+      "entries": {
+        "evidence_view": 189,
+        "read_page_data": 254
+      }
+    },
+    {
+      "path": "services/api/app/socai2/case_assessment_sources.py",
+      "entries": {
+        "source_query": 11,
+        "adopted_result_id": 26,
+        "adopted_verdict": 35
+      }
+    },
+    {
+      "path": "services/api/app/socai2/analysis_tasks.py",
+      "entries": {
+        "project_task": 33,
+        "AnalysisTaskService.read_task": 106
+      }
+    },
+    {
+      "path": "services/api/app/socai2/run_records.py",
+      "entries": {
+        "RunRecordService._steps": 111
+      }
+    },
+    {
+      "path": "services/api/app/socai2/case_story_relations.py",
+      "entries": {
+        "explicit_run_sources": 74,
+        "frozen_input_ids": 133,
+        "StoryRelations.__init__": 178
+      }
+    },
+    {
+      "path": "services/api/app/socai2/case_story.py",
+      "entries": {
+        "CaseStoryService.read": 227,
+        "CaseStoryService.read_member_relations": 266
+      }
+    },
+    {
+      "path": "services/api/app/socai2/case_investigations.py",
+      "entries": {
+        "CaseInvestigationService.read": 124,
+        "CaseInvestigationService.lookup": 142
+      }
+    },
+    {
+      "path": "services/api/app/socai2/exploration_state.py",
+      "entries": {
+        "ExplorationStateService.read": 48,
+        "ExplorationStateService.read_base": 53
+      }
+    },
+    {
+      "path": "services/api/app/socai2/exploration_state_sources.py",
+      "entries": {
+        "base": 29
+      }
+    },
+    {
+      "path": "services/api/investigation_http/adapters/services.py",
+      "entries": {
+        "case_sessions": 87,
+        "pages": 125,
+        "analysis": 131,
+        "analysis_tasks": 149
+      }
+    },
+    {
+      "path": "services/api/investigation_http/adapters/analysis_tasks.py",
+      "entries": {
+        "task_view": 10
+      }
+    },
+    {
+      "path": "services/api/investigation_http/external_routes/case_investigations.py",
+      "entries": {
+        "read_case_investigations": 30,
+        "lookup_case_investigation": 43
+      }
+    },
+    {
+      "path": "services/fusion/app/services/lake_alert_receiver.py",
+      "entries": {
+        "adapt_alert": 80,
+        "LakeAlertReceiver.lookup_receipt": 209
+      }
+    },
+    {
+      "path": "services/fusion/app/services/socai2_projection.py",
+      "entries": {
+        "project": 85
+      }
+    },
+    {
+      "path": "services/fusion/app/services/socai2_sink.py",
+      "entries": {
+        "Socai2AlertSink._write": 105
+      }
+    }
+  ],
+  "http_m0f_dependency_review": {
+    "scope": "本批正常 POST /cases（E01）、initial_task 查询和原生 Run/Result/工件只读路径。",
+    "structural_conclusion": "这些路径不构建 C3/Deep/C6 模型输入，不执行 unmapped 筛选；无需仅为 M0f 两侧源码同版而额外切换 HTTP。运行归档入口由统筹按实际版本复核，本批业务读回仍待执行。",
+    "create_path": [
+      {
+        "path": "services/api/investigation_http/external_routes/cases.py",
+        "symbol": "create_case",
+        "line": 79,
+        "role": "E01 只调用业务用例"
+      },
+      {
+        "path": "services/api/app/socai2/case_service.py",
+        "symbol": "CaseService.create_case",
+        "line": 56,
+        "role": "加载案件分配/任务 policy 并开启事务"
+      },
+      {
+        "path": "services/api/app/socai2/case_relations.py",
+        "symbol": "create",
+        "line": 35,
+        "role": "原生建案、成员分配、返回回执"
+      },
+      {
+        "path": "services/api/app/socai2/case_allocation.py",
+        "symbol": "Allocator.receipt",
+        "line": 195,
+        "role": "AnalysisTaskStore.accept 受理 initial task；没有 capture/claim/model-view 构建"
+      },
+      {
+        "path": "services/api/app/socai2/baseline_service.py",
+        "symbol": "BaselineService.transaction",
+        "line": 20,
+        "role": "租户事务边界，不加载执行输入 policy"
+      }
+    ],
+    "execution_owner": [
+      {
+        "path": "services/api/app/socai2/analysis_case_executor.py",
+        "symbol": "CaseTaskExecutor.load_in_store",
+        "role": "dispatcher 侧 capture、business_view 和容量/输入版本判断",
+        "line": 42
+      },
+      {
+        "path": "services/api/app/socai2/analysis_case_executor.py",
+        "symbol": "CaseTaskExecutor.prepare",
+        "role": "创建 Run、active_policy、claim 冻结输入与执行 policy",
+        "line": 83
+      },
+      {
+        "path": "services/api/app/socai2/analysis_case_executor.py",
+        "symbol": "CaseTaskExecutor.execute",
+        "role": "进入 BaselineExecutor 的实际 C1–C6",
+        "line": 122
+      }
+    ],
+    "read_path": [
+      {
+        "path": "services/api/app/socai2/case_reader.py",
+        "symbol": "CaseReader.run/result/artifact/execution_summary",
+        "role": "读取已保存关系、冻结执行计划和输出工件，不按 HTTP 当前输入策略重建模型输入"
+      },
+      {
+        "path": "services/api/app/socai2/case_comparison.py",
+        "symbol": "frozen/project_comparison",
+        "role": "读取 input_snapshot 内已保存 comparison_context 并校验关联，未调用输入筛选"
+      },
+      {
+        "path": "services/api/investigation_http/adapters/runtime.py",
+        "symbol": "lifespan",
+        "role": "初始化日志、业务上下文、导出限制及库连接，未启动 dispatcher 或调用 Case 输入构建"
+      }
+    ],
+    "limits": [
+      "保留统筹指出的 HTTP 与 M0f 源码差异，不声明 HTTP 已全量更新。",
+      "此结论不覆盖旧 baseline/prepare 或 runs/start 等页面遗留请求；本批只沿 E01 已受理任务。",
+      "新结果读取仍须按部署版本和原生保存合同核同批身份，结构结论不代替本批业务验收。"
+    ]
+  },
+  "g1_dependency_preparation": {
+    "operation_status": "read_only_collection_and_private_handoff_completed",
+    "private_attempt": ".local/validation/m0g-http-pg-dependencies-20261128-01/attempt-03",
+    "scripts": [
+      "collect_dependencies.py",
+      "maintenance_psql.py",
+      "build_handoff.py"
+    ],
+    "receipts": [
+      "dependencies.private.json",
+      "core-handoff.private.json",
+      "query-ledger.private.json",
+      "database-identity.private.json",
+      "execution-source.private.json",
+      "handoff-source.private.json"
+    ],
+    "channel_binding": ".local/validation/m0g-spirithub-readonly-20261128-01/g1-postgresql-maintenance-binding.private.json",
+    "method": "按已确认原件身份及关联键定向读取；一个 REPEATABLE READ READ ONLY 事务，结束回滚；基础表只保留引用。",
+    "handoff_fields": [
+      "membership_exclusive_subject_candidates",
+      "shared_or_unverified_subjects_to_retain",
+      "lifecycle_by_subject_membership",
+      "exact_inspected_table_keys",
+      "primary_key_columns",
+      "external_shared_references_to_retain",
+      "foundation_references_to_retain",
+      "blocking_review_items",
+      "scope_limitations"
+    ],
+    "interpretation": "独占候选按已读成员口径划分，不是删除许可。冻结 A/I 范围、材料版本、JSON/外部引用及湖/Redis范围仍由核心和统筹核定。",
+    "prior_attempts": "原读取通道的未完成尝试及原执行代码均保留；维护收集未覆盖旧记录。",
+    "business_readback": "这一步是旧测试记录的清理前依赖准备；本批新投递及前后端业务读回尚未执行。"
+  },
+  "g1_exact_pg_preparation": {
+    "scope": "Existing approved original roots and their structurally exclusive historical dependencies; shared and foundation rows retained.",
+    "handoff_manifest": ".local/validation/m0g-http-pg-delete-preparation-20261128-01/handoff-manifest.private.json",
+    "source_files": [
+      "pg_scope.py",
+      "prepare_plan.py",
+      "apply_exact.py"
+    ],
+    "plan_structure": [
+      "targets",
+      "primary_key_columns",
+      "lock_tables",
+      "guards",
+      "zero_reference_guards",
+      "retained",
+      "external_incoming",
+      "foundations_retained",
+      "complete_original_alert_scope"
+    ],
+    "method": "Private read-only scoped preparation; exact-key full-row backup inside the future transaction; explicit local replica trigger setting for RESTRICT cycles; restore origin and verify target/incoming references before commit.",
+    "validation_scope": "Source compilation, Ruff, strict OpenSpec validation and read-only preparation. No DELETE or rollback-delete rehearsal.",
+    "execution_responsibility": "Coordinator independently reviews frozen plan/source. Core alone verifies stopped services and quiescence, then executes the one-shot apply. Unknown commit is recorded without retry.",
+    "data_boundary": "Actual keys, values, statistics, digests, configuration and validation outcomes stay in controlled private receipts."
+  },
+  "g3_same_batch_readback": {
+    "private_root": ".local/validation/m0g-http-ai-prerequisites-20261128-01/",
+    "current_ai_gate": "follow-current.private.json",
+    "http_pg_comparison": "http-pg-02/comparison-summary.private.json",
+    "source_manifest": "source-manifest-v2.private.json",
+    "operation_scope": "Existing batch only: received alert/material identity; original OCSF preservation; A/I tasks, attempts, Runs and saved pointers; incident members/statistics/sources; native GET responses bracketed by PG read-only snapshots.",
+    "gate_contract": {
+      "decision": [
+        "ready",
+        "waiting",
+        "blocked"
+      ],
+      "pending_is_failure": false,
+      "separate_fields": [
+        "subjects[].saved_result",
+        "subjects[].task_views[].latest_attempt",
+        "subjects[].task_views[].latest_run"
+      ],
+      "meaning": "Batch A/I-to-Case workflow prerequisite; native E01 itself checks membership/source scope and accepts an initial task, without an A/I-terminal prerequisite.",
+      "no_changes": "Only native skipped/no_changes for initial/check with no new Run may pass the skipped-check branch; initial saved analysis and current saved provenance remain mandatory. Failed, unknown, automatic_attempts_stopped and missing results are not exempt."
+    },
+    "operation_boundary": "No task submission, retry, model generation, Case creation, service switch, cleanup or schema change. Actual values and data-derived checks stay private. HTTP collection does not certify model quality.",
+    "final_handoff": "handoff-final.private.json"
+  },
+  "g4_case_native_metadata_readback": {
+    "status": "readonly_collection_and_comparison_saved_for_private_review",
+    "scope": "仅本笔正常 E01 的 Case、回执 initial_task 及其真实执行链；沿既有只读协议核对保存与 HTTP 页面字段，不修改已收口门控。",
+    "entry": "统筹交来的私密身份和配置路径是唯一入口；路径交付前仅查源码，不读取本笔数据。合并任务保留原始 initial_task 并解析实际执行任务，Run/Result 从该执行链取得，不按最新全局记录猜测。",
+    "collection_boundary": [
+      "本节优先于本清单中针对 A/I 的完整响应与工件采集约定；不得直接运行旧 audit_http_pg.py 作为本笔 Case 采集器。",
+      "不请求 artifacts/{artifact_id}、materials/{material_id} 或模型消息正文，不采集模型请求、模型原答、完整 input、报告或图谱工件；不 SELECT *。",
+      "数据库和 HTTP 仅留明确字段投影，身份、实际状态、数值、页面字段值和差异均保存本机私密；工具输出只报告操作状态与文件路径。",
+      "必要阶段与过滤状态只在数据库侧投影 run_steps 和 artifacts 元数据；若确需 JSON 形状或字段存在性，以 SQL 标量表达式返回布尔/类型，不取 content_json/content_text 原件或完整子树。",
+      "不触发生成、重试、采用、补算、回填或服务切换；不以本轮 Case 结果追改 A/I 原失败和缺失前序。"
+    ],
+    "http_get_projection": [
+      {
+        "path": "/api/v1/socai2/cases/{case_id}",
+        "fields": [
+          "case.id",
+          "case.source_namespace",
+          "case.handling_status",
+          "case.scope_revision",
+          "case.current_assessment_id",
+          "case.classification",
+          "case.due_at",
+          "case.current_evidence_artifact_id",
+          "case.created_at",
+          "case.business_updated_at",
+          "members.alert_id",
+          "members.latest_material_id",
+          "members.membership_source",
+          "member_count",
+          "members_truncated",
+          "linked_incidents.incident_id",
+          "linked_incident_count",
+          "linked_incidents_truncated",
+          "current_assessment.value.id",
+          "current_assessment.value.origin",
+          "current_assessment.value.validity",
+          "current_assessment.value.scope_revision",
+          "current_assessment.members.alert_id",
+          "current_assessment.sources",
+          "page_data.classification",
+          "page_data.due_at",
+          "page_data.determination",
+          "page_data.assessment.id",
+          "page_data.assessment.origin",
+          "page_data.assessment.validity",
+          "page_data.assessment.business_verdict",
+          "page_data.evidence.state",
+          "page_data.evidence.artifact_id"
+        ]
+      },
+      {
+        "path": "/api/v1/socai2/cases/{case_id}/analysis-tasks/{task_id}",
+        "fields": [
+          "请求与实际 task 身份",
+          "status",
+          "execution_shared",
+          "attempt 的身份、Run 关联与状态",
+          "result 引用身份与类型",
+          "timing 元数据"
+        ]
+      },
+      {
+        "path": "/api/v1/socai2/cases/{case_id}/runs/{run_id}",
+        "fields": [
+          "run.id",
+          "run.case_id",
+          "run.kind",
+          "run.state",
+          "run.delivery_state",
+          "run.input_artifact_id",
+          "run.requested_at",
+          "run.started_at",
+          "run.ended_at",
+          "run.stop_reason",
+          "result_ids",
+          "result_count",
+          "results_truncated",
+          "members.alert_id",
+          "members.read_state",
+          "members.analysis_state",
+          "input_member_count",
+          "members_truncated",
+          "read_counts",
+          "analysis_counts",
+          "steps 的身份、stage_code、state、工件引用及时间",
+          "artifacts 的身份、kind、material_state 及时间"
+        ],
+        "omit": [
+          "execution_summary",
+          "模型参数",
+          "任意工件正文"
+        ]
+      },
+      {
+        "path": "/api/v1/socai2/cases/{case_id}/investigations/{run_id}",
+        "fields": [
+          "Case/主体/Run 身份",
+          "Run 状态与交付状态",
+          "result_refs",
+          "开始结束时间",
+          "固定输入成员数"
+        ],
+        "omit": [
+          "preview.text"
+        ]
+      }
+    ],
+    "pg_projection_groups": {
+      "current_case": [
+        "cases 的身份、来源、范围版本、页面业务状态及当前采用指针",
+        "case_alerts 的同租户当前成员及 membership_source",
+        "case_incidents 的明确事件关联"
+      ],
+      "execution_chain": [
+        "analysis_tasks 的请求/合并身份、kind、intent、state、reason_code 与时间",
+        "analysis_attempts 的 task_id、subject_id/type、attempt_no、run_id、local_state、outcome、error_code、error_stage 与时间",
+        "runs 的同主体身份、kind、state、delivery_state、input_artifact_id 与时间",
+        "run_members 的冻结成员及 read_state/analysis_state"
+      ],
+      "saved_result": [
+        "results 的同案身份、source_run_id、kind、conclusion_state/origin、validation_state、delivery_state、business_verdict 与保存时间",
+        "result_members 的同案同结果成员身份"
+      ],
+      "adoption": [
+        "cases.current_assessment_id",
+        "case_assessments 的同案身份、origin、validity、scope_revision、conclusion 与采用时间",
+        "case_assessment_members 的覆盖成员",
+        "case_assessment_sources 的冻结 result_id/task_revision_id/artifact_id；通过同租户键确认来源，不替换当前修订"
+      ],
+      "stage_metadata": [
+        "run_steps 的同 Run 身份、seq、stage_code、kind、state、input/output_artifact_id 与时间",
+        "artifacts 的同案同 Run 身份、kind、schema_version、material_state 与时间；必要时 SQL 投影 JSON 类型/字段存在性，禁止正文"
+      ]
+    },
+    "direct_validation": [
+      "先按本笔私密回执绑定 tenant/Case/initial_task；相同 Case 当前成员、Run 冻结成员和 Result 成员分别核对，不互相替代。",
+      "HTTP 读取前后以同一只读连接配置取得当前指针和状态锚；读窗内变化单列为时间不一致，未完成或截断如实保留。",
+      "同源映射分别记录任务/attempt/Run 执行、Result 完整性与交付、采用指针与来源、页面字段；HTTP 200 或存在 Result 均不是模型质量通过。",
+      "可选前序缺失和既有 A/I 失败继续引用原证据；不为 Case 显示补造成功前序。",
+      "前端负责页面实际请求/显示证据，本模块交付对应原生字段比较文件；正式结论由统筹合并独审。"
+    ],
+    "source_files": [
+      "services/api/app/socai2/case_reader.py",
+      "services/api/app/socai2/case_contracts.py",
+      "services/api/app/socai2/case_data.py",
+      "services/api/app/socai2/case_data_contracts.py",
+      "services/api/app/socai2/case_assessment_sources.py",
+      "services/api/app/socai2/case_investigations.py",
+      "services/api/investigation_http/external_routes/cases.py",
+      "services/api/investigation_http/external_routes/analysis_tasks.py",
+      "services/api/investigation_http/external_routes/case_investigations.py",
+      "services/api/investigation_http/case_investigation_contracts.py"
+    ],
+    "execution_adjustment": "源码核对发现普通 Run 详情的 steps 可能含 actual_args；本轮不取该完整响应，使用固定 investigations/{run_id} 摘要与 initial_task 结果引用核 HTTP Run/Result 身份和状态；步骤与工件只查 PG 元数据。",
+    "private_evidence": {
+      "source": ".local/validation/m0g-http-case-readback-20261128-01/audit_case_metadata.py",
+      "minimal_report": ".local/validation/m0g-http-case-readback-20261128-01/read-01/minimal-readonly-report.private.json",
+      "detailed_comparison": ".local/validation/m0g-http-case-readback-20261128-01/read-01/minimal-readonly-audit.private.json",
+      "pg_before": ".local/validation/m0g-http-case-readback-20261128-01/read-01/pg-before.private.json",
+      "pg_after": ".local/validation/m0g-http-case-readback-20261128-01/read-01/pg-after.private.json",
+      "interpretation": "这里只记录只读操作已完成和证据路径，不公开身份、值、差异或数据派生结论，不据此认定验收或模型质量通过。"
+    }
+  },
+  "model_exception_read_contract_audit": {
+    "scope": "M0g 后续模型异常处理源码核对的 HTTP/读取子项；不替代核心调用/纠正/续答能力审计。",
+    "basis": "当前 socai2 与 SpiritHub-web-8181 工作区源码、声明合同和静态路由注册；不推断已部署版本或在线可用性。",
+    "actions": "只读源码和结构；未发网络请求、未读模型正文、未改产品接口/合同。",
+    "plan": "openspec/changes/complete-socai2-investigation-chain/case-input-capacity-20261128.md#m0g-后续模型异常处理与事件输出审计",
+    "shared_task_read": {
+      "paths": [
+        "GET /api/v1/socai2/{alerts|incidents|cases}/{subject_id}/analysis-tasks",
+        "GET /api/v1/socai2/{alerts|incidents|cases}/{subject_id}/analysis-tasks/{task_id}"
+      ],
+      "fields": [
+        "task_id",
+        "subject_type",
+        "subject_id",
+        "kind",
+        "intent",
+        "source",
+        "status",
+        "reason_code",
+        "latest_run_id",
+        "execution_shared",
+        "attempts[].attempt_no",
+        "attempts[].run_id",
+        "attempts[].local_state",
+        "attempts[].local_ended_at",
+        "attempts[].interruption_observed_at",
+        "attempts[].outcome",
+        "attempts[].error_code",
+        "attempts[].error_stage",
+        "attempts[].error_detail",
+        "attempts[].retryable",
+        "results[]"
+      ],
+      "semantics": "accepted 包含原生 waiting；unknown attempt 可对应本地 task.status=failed，必须结合 attempts.outcome 和 Run.state；latest_run_id=null 是无已关联 Run，不是无失败或成功；completed 只表示流程结束。",
+      "sources": [
+        "task_projection",
+        "task_end",
+        "task_schema",
+        "attempt_schema",
+        "native_tasks"
+      ]
+    },
+    "abnormal_paths": [
+      {
+        "case": "输入或准备阶段未发出即拒绝",
+        "fields": [
+          "analysis_tasks.state/reason_code",
+          "analysis_attempts.run_id/local_state/outcome/error_code/error_stage/error_detail",
+          "runs.state/stop_reason",
+          "run_steps.state/error.code",
+          "run_steps.error.request_dispatched（Case已有相应异常路径）"
+        ],
+        "reading": "未创建 Run 时以任务/attempt 为入口；已创建 Run 的预检拒绝沿 Run/步骤错误读取。仅有 null Run 或 failed 不能断言请求是否已经发出。",
+        "sources": [
+          "input_load",
+          "failure_classification",
+          "a_rejection",
+          "i_rejection",
+          "case_transport"
+        ]
+      },
+      {
+        "case": "输出截断或没有有效核心结论",
+        "fields": [
+          "stage-delivery.execution.call_state/finish_reason",
+          "stage-delivery.parse.state/truncated/reasons",
+          "stage-delivery.delivery.state/reasons",
+          "stage-delivery.missing_units/invalid_units",
+          "stage-delivery.use.conclusion_available/adoption_eligible/comparison_eligible/reasons",
+          "stage-delivery.quality.state/prose_quality",
+          "runs.state/delivery_state/stop_reason",
+          "run_steps.state/error",
+          "results.conclusion_state/conclusion_origin/validation_state/delivery_state",
+          "StageEntry.result/partial_analysis/valid_for_current_input"
+        ],
+        "reading": "收到响应可以 call_state=completed 而结论不可用或仅部分交付；A/I 无有效核心结论使用 stage_core_conclusion_unavailable 等已保存错误。Case C3/Deep/C6 的 length 接收与有效单元保留见各自来源。Result 存在、Run completed、validation_state 或 partial 均不等于正文质量通过。",
+        "sources": [
+          "ai_received",
+          "ai_receipt_save",
+          "delivery_schema",
+          "delivery_use",
+          "c3_length",
+          "deep_length",
+          "c6_length",
+          "stage_reader",
+          "case_result_contract"
+        ]
+      },
+      {
+        "case": "请求后 timeout 或执行结果 unknown",
+        "fields": [
+          "analysis_attempts.local_state/local_ended_at/interruption_observed_at/outcome/error_code/error_stage",
+          "runs.state/ended_at/stop_reason",
+          "run_steps.state/ended_at/error.code",
+          "run_steps.error.request_dispatched",
+          "stage-delivery.execution.call_state/local_state/local_ended_at/request_dispatched/retry_allowed",
+          "stage-delivery.use.conclusion_available/adoption_eligible"
+        ],
+        "reading": "本地 ended 与远端 unknown 分别保存；Run/步骤 unknown 的 ended_at 可为 null。Case 已有本地结束回执；不能仅从 task failed/结束时间推断远端执行失败，也不能从 GET 超时推断模型状态。",
+        "sources": [
+          "failure_classification",
+          "task_end",
+          "a_unknown",
+          "i_unknown",
+          "case_transport",
+          "case_local_receipt"
+        ]
+      }
+    ],
+    "run_and_receipt_reads": {
+      "paths": [
+        "GET /api/v1/socai2/alerts/{alert_id}/analysis/runs/{run_id}",
+        "GET /api/v1/socai2/incidents/{incident_id}/analysis/runs/{run_id}",
+        "GET /api/v1/socai2/cases/{case_id}/runs/{run_id}",
+        "GET /api/v1/socai2/cases/{case_id}/results/{result_id}",
+        "GET /api/v1/socai2/analysis-runs/{run_id}/steps",
+        "GET /api/v1/socai2/analysis-runs/{run_id}/steps/{step_id}",
+        "GET /api/v1/socai2/analysis-runs/{run_id}/artifacts"
+      ],
+      "receipt_path": "工件目录 schema_version=socai2.stage-delivery.v1 对应的 content_url；工件读取路径沿实际主体/Run，不能硬猜 Case 路径用于 A/I。",
+      "exposed_step_fields": [
+        "state",
+        "error",
+        "input_artifact_id",
+        "output_artifact_id",
+        "reused_artifact_id",
+        "artifact_refs",
+        "actual_args"
+      ],
+      "metadata_limit": "RunStepView.error 已可保留 Case request_dispatched；截断/use 等细分字段主要在 stage-delivery 工件正文。目录只给元数据及 content_url。stage-delivery.retained_units[].value 可含保留正文，故不能为了只查状态整包导入；本轮未请求这些接口或正文。",
+      "sources": [
+        "native_records",
+        "step_contract",
+        "artifact_contract",
+        "stage_contract",
+        "delivery_schema",
+        "delivery_use"
+      ]
+    },
+    "registered_routes": [
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/alerts/{subject_id}/analysis-tasks",
+        "native_source_declares": true,
+        "platform_operations_registered": false,
+        "platform_contract_declares": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/alerts/{subject_id}/analysis-tasks/{task_id}",
+        "native_source_declares": true,
+        "platform_operations_registered": false,
+        "platform_contract_declares": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/incidents/{subject_id}/analysis-tasks",
+        "native_source_declares": true,
+        "platform_operations_registered": false,
+        "platform_contract_declares": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/incidents/{subject_id}/analysis-tasks/{task_id}",
+        "native_source_declares": true,
+        "platform_operations_registered": false,
+        "platform_contract_declares": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{subject_id}/analysis-tasks",
+        "native_source_declares": true,
+        "platform_operations_registered": true,
+        "platform_contract_declares": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{subject_id}/analysis-tasks/{task_id}",
+        "native_source_declares": true,
+        "platform_operations_registered": true,
+        "platform_contract_declares": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{case_id}/investigations",
+        "native_source_declares": true,
+        "platform_operations_registered": false,
+        "platform_contract_declares": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{case_id}/investigations/{run_id}",
+        "native_source_declares": true,
+        "platform_operations_registered": false,
+        "platform_contract_declares": false
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/analysis-runs/{run_id}/steps",
+        "native_source_declares": true,
+        "platform_operations_registered": true,
+        "platform_contract_declares": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/analysis-runs/{run_id}/steps/{step_id}",
+        "native_source_declares": true,
+        "platform_operations_registered": true,
+        "platform_contract_declares": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/socai2/analysis-runs/{run_id}/artifacts",
+        "native_source_declares": true,
+        "platform_operations_registered": true,
+        "platform_contract_declares": true
+      }
+    ],
+    "surface_reads": {
+      "8181": {
+        "route_registration_source": "bridge_registration",
+        "task_banner_sources": [
+          "case_task_consumer",
+          "case_task_view"
+        ],
+        "run_history_sources": [
+          "case_history_consumer",
+          "case_history_empty"
+        ],
+        "transport_sources": [
+          "bridge_error",
+          "bridge_timeout",
+          "client_error"
+        ]
+      },
+      "4177_existing_processing_audit": {
+        "paths": [
+          "GET /_workbench/status",
+          "GET /_workbench/cases",
+          "POST /_workbench/refresh（本轮未调用）",
+          "已生成 Case/主体详情 HTML 与固定 Run 锚点"
+        ],
+        "source": "快照/数据库导出经 update_processing_audit 生成；不是把 8181 的 /api/v1 路由直接当作 4177 原生路由。",
+        "fields": [
+          "runs.state/delivery_state/stop_reason/started_at/ended_at",
+          "run_steps.state/error",
+          "analysis_tasks",
+          "analysis_attempts",
+          "阶段交付和采用来源"
+        ],
+        "sources": [
+          "offline_4177_source",
+          "offline_4177_run",
+          "offline_4177_task",
+          "offline_4177_routes",
+          "offline_4177_error",
+          "offline_4177_export"
+        ],
+        "boundary": "生成缺失表/阶段与当前服务读取失败分开；refresh 路径会读取完整 scoped tables，不属于本轮仅元数据核对可调用范围。"
+      },
+      "separate_investigation_test_viewer": {
+        "meaning": "源码另有可按 /api/v1/socai2 GET 的 viewer；readPart/readPagePart 保留 error/partial，localEndLabel 区分本地结束与远端 unknown。未核其实际监听端口，不能把这一实现等同已部署4177。",
+        "sources": [
+          "viewer_optional",
+          "viewer_local_unknown"
+        ]
+      }
+    },
+    "findings": [
+      {
+        "id": "HTTP-EX-01",
+        "kind": "platform_route_registration_gap",
+        "finding": "原生 all-subject analysis-tasks 已声明/注册，8181 当前 _OPERATIONS 与 bridge_contract 只列 Case 任务读取，缺 A/I 的任务列表/详情。A/I 尚无 Run 的输入失败不能靠 Run 目录补充追溯；不得把这类路由缺失写成没有执行或真实空。",
+        "sources": [
+          "native_tasks",
+          "native_registration",
+          "bridge_registration"
+        ]
+      },
+      {
+        "id": "HTTP-EX-02",
+        "kind": "platform_route_registration_gap",
+        "finding": "原生 Case investigations 列表与固定 Run lookup 已注册；8181 当前页面请求这两个路径，但 _OPERATIONS 与 bridge_contract 未声明。静态不齐不等于本轮部署探测。页面 History 仅 isSuccess 且零条才显示空，错误经 ErrorNotice 保留。",
+        "sources": [
+          "native_history",
+          "native_registration",
+          "bridge_registration",
+          "case_history_consumer",
+          "case_history_empty"
+        ]
+      },
+      {
+        "id": "HTTP-EX-03",
+        "kind": "reader_consumer_detail_gap",
+        "finding": "Case 首轮任务消费者只声明 status/reason_code/latest_run_id 等摘要，未消费 attempts.outcome/local_state。服务端保留 unknown，横幅 failed=执行失败 会丢掉本地已结束但远端结果未知的细分；不是后端把 unknown 改成 completed。",
+        "sources": [
+          "task_end",
+          "task_schema",
+          "case_task_consumer",
+          "case_task_view"
+        ]
+      },
+      {
+        "id": "HTTP-EX-04",
+        "kind": "404_cause_conflation",
+        "finding": "原生 invoke 与 invoke_record 的错误体分别可能是 detail 字符串或 code/message/context 对象；桥接保持非2xx并提取合法 code，但把404通用消息写为记录不存在或不可访问。Case详情/告警分诊页进一步只按HTTP404显示主体或轮次未找到，未辨 route missing 与 domain not found。没有证据表明该路径把错误转换为200空列表。",
+        "sources": [
+          "native_errors",
+          "native_legacy_errors",
+          "bridge_error",
+          "case_404_view",
+          "alert_404_view"
+        ]
+      },
+      {
+        "id": "HTTP-EX-05",
+        "kind": "cross_stage_receipt_coverage_for_core_audit",
+        "finding": "Case 传输异常路径保存 local_receipt 及步骤 error.request_dispatched；A/I rejection/unknown 分支保存 Run/步骤失败或unknown，但这些分支未调用同一 local_receipt，ai_delivery_store.save 在收到响应后的路径执行。因此不能要求所有A/I异常都从 stage-delivery.execution 判断发送与本地结束；需保留任务/attempt/Run字段作为已有读取依据，具体补齐范围交核心异常审计。",
+        "sources": [
+          "a_rejection",
+          "a_unknown",
+          "i_rejection",
+          "i_unknown",
+          "ai_receipt_save",
+          "case_transport",
+          "case_local_receipt"
+        ]
+      },
+      {
+        "id": "HTTP-EX-06",
+        "kind": "source_paths_keep_read_failure_distinct",
+        "finding": "抽查原生记录服务、8181桥接/client、4177工作台 run_query，存储/连接/超时分别保留503/504或领域404，未发现catch后返回200及[]/{}冒充成功的实现。结论只覆盖列出源码路径；不据此宣称全部接口或部署验证通过。",
+        "sources": [
+          "native_errors",
+          "record_storage_error",
+          "bridge_error",
+          "bridge_timeout",
+          "client_error",
+          "offline_4177_error"
+        ]
+      }
+    ],
+    "next_boundary": "仅交核心和统筹并入异常处理首步设计；本记录不授权接口改动、不勾选整个M0g后续完成。",
+    "source_references": {
+      "task_projection": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/analysis_tasks.py",
+        "line": 33,
+        "anchor": "async def project_task"
+      },
+      "task_end": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/analysis_task_store.py",
+        "line": 227,
+        "anchor": "async def finish_attempt"
+      },
+      "task_schema": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/analysis_task_contracts.py",
+        "line": 54,
+        "anchor": "class AnalysisTaskDetail"
+      },
+      "attempt_schema": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/analysis_task_contracts.py",
+        "line": 36,
+        "anchor": "class AnalysisAttemptView"
+      },
+      "failure_classification": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/analysis_dispatch_types.py",
+        "line": 55,
+        "anchor": "def classify_failure"
+      },
+      "input_load": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/analysis_dispatcher.py",
+        "line": 91,
+        "anchor": "async def _run_attempt"
+      },
+      "a_rejection": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/alert_basic_executor.py",
+        "line": 130,
+        "anchor": "except ModelCallError as exc:"
+      },
+      "a_unknown": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/alert_basic_executor.py",
+        "line": 178,
+        "anchor": "except (Exception, asyncio.CancelledError) as exc:"
+      },
+      "i_rejection": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/incident_diagnosis_executor.py",
+        "line": 139,
+        "anchor": "except ModelCallError as exc:"
+      },
+      "i_unknown": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/incident_diagnosis_executor.py",
+        "line": 182,
+        "anchor": "except (Exception, asyncio.CancelledError) as exc:"
+      },
+      "ai_received": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/ai_delivery_store.py",
+        "line": 16,
+        "anchor": "def receive_payload"
+      },
+      "ai_receipt_save": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/ai_delivery_store.py",
+        "line": 47,
+        "anchor": "async def save("
+      },
+      "case_transport": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/baseline_reasoning.py",
+        "line": 246,
+        "anchor": "from .baseline_failure import local_receipt"
+      },
+      "case_local_receipt": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/baseline_failure.py",
+        "line": 63,
+        "anchor": "async def local_receipt"
+      },
+      "delivery_schema": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/stage_delivery.py",
+        "line": 37,
+        "anchor": "class Execution("
+      },
+      "delivery_use": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/stage_delivery.py",
+        "line": 91,
+        "anchor": "class Use("
+      },
+      "c3_length": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/case_c3_delivery.py",
+        "line": 192,
+        "anchor": "if finish_reason == \"length\":"
+      },
+      "deep_length": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/case_deep_delivery.py",
+        "line": 65,
+        "anchor": "if finish_reason == \"length\":"
+      },
+      "c6_length": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/case_c6_delivery.py",
+        "line": 205,
+        "anchor": "truncated = scanned[\"truncated\"]"
+      },
+      "stage_reader": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/stage_reader.py",
+        "line": 58,
+        "anchor": "async def entry("
+      },
+      "stage_contract": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/stage_read_contracts.py",
+        "line": 13,
+        "anchor": "class StageRunView"
+      },
+      "case_result_contract": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/case_contracts.py",
+        "line": 206,
+        "anchor": "class ResultSummary"
+      },
+      "native_registration": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/main.py",
+        "line": 62,
+        "anchor": "app.include_router"
+      },
+      "native_tasks": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/external_routes/analysis_tasks.py",
+        "line": 26,
+        "anchor": "def subject_routes"
+      },
+      "native_records": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/external_routes/run_records.py",
+        "line": 24,
+        "anchor": "router = APIRouter"
+      },
+      "native_history": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/external_routes/case_investigations.py",
+        "line": 43,
+        "anchor": "async def lookup_case_investigation"
+      },
+      "step_contract": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/run_record_contracts.py",
+        "line": 32,
+        "anchor": "class RunStepView"
+      },
+      "artifact_contract": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/run_record_contracts.py",
+        "line": 57,
+        "anchor": "class RunArtifactView"
+      },
+      "native_errors": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/errors.py",
+        "line": 65,
+        "anchor": "async def invoke_record"
+      },
+      "native_legacy_errors": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/investigation_http/errors.py",
+        "line": 39,
+        "anchor": "async def invoke(call):"
+      },
+      "record_storage_error": {
+        "path": "/Users/lychee/Documents/project/socai2/services/api/app/socai2/run_records.py",
+        "line": 135,
+        "anchor": "except DBAPIError:"
+      },
+      "bridge_registration": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/backend/src/spirithub/api/routes/socai2.py",
+        "line": 365,
+        "anchor": "for _id, _method, _path in sorted"
+      },
+      "bridge_error": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/backend/src/spirithub/soc/bridge.py",
+        "line": 144,
+        "anchor": "code = detail.get(\"code\")"
+      },
+      "bridge_timeout": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/backend/src/spirithub/soc/bridge.py",
+        "line": 163,
+        "anchor": "except httpx.TimeoutException:"
+      },
+      "client_error": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/web/src/shared/api/client.ts",
+        "line": 193,
+        "anchor": "if (!response.ok)"
+      },
+      "case_task_consumer": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/case-entry-api.ts",
+        "line": 35,
+        "anchor": "type CaseAnalysisTask"
+      },
+      "case_task_view": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/CaseWorkspaceFrame.tsx",
+        "line": 147,
+        "anchor": "function CaseInitialTask"
+      },
+      "case_404_view": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/CaseWorkbenchDetail.tsx",
+        "line": 62,
+        "anchor": "query.error.status === 404"
+      },
+      "alert_404_view": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/socai2-alerts/AlertTriageRunPage.tsx",
+        "line": 72,
+        "anchor": "directory.error.status === 404"
+      },
+      "case_history_consumer": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/CaseInvestigationHistory.tsx",
+        "line": 22,
+        "anchor": "const historyPath"
+      },
+      "case_history_empty": {
+        "path": "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/CaseInvestigationHistory.tsx",
+        "line": 114,
+        "anchor": "directory.isSuccess && items.length === 0"
+      },
+      "offline_4177_source": {
+        "path": "/Users/lychee/Documents/project/socai2/docs/operations/update_processing_audit.py",
+        "line": 22,
+        "anchor": "OUTPUT ="
+      },
+      "offline_4177_run": {
+        "path": "/Users/lychee/Documents/project/socai2/docs/operations/processing_audit_detail.py",
+        "line": 290,
+        "anchor": "def render_run"
+      },
+      "offline_4177_task": {
+        "path": "/Users/lychee/Documents/project/socai2/docs/operations/processing_audit_subjects.py",
+        "line": 145,
+        "anchor": "for table, label in TABLE_LABELS.items()"
+      },
+      "offline_4177_error": {
+        "path": "/Users/lychee/Documents/project/socai2/docs/operations/serve_processing_workbench.py",
+        "line": 197,
+        "anchor": "def run_query"
+      },
+      "offline_4177_routes": {
+        "path": "/Users/lychee/Documents/project/socai2/docs/operations/serve_processing_workbench.py",
+        "line": 155,
+        "anchor": "def do_GET"
+      },
+      "offline_4177_export": {
+        "path": "/Users/lychee/Documents/project/socai2/docs/operations/processing_workbench_source.py",
+        "line": 37,
+        "anchor": "def detail_query"
+      },
+      "viewer_optional": {
+        "path": "/Users/lychee/Documents/project/socai2/services/investigation_test/web/viewer_state.mjs",
+        "line": 62,
+        "anchor": "export async function readPart"
+      },
+      "viewer_local_unknown": {
+        "path": "/Users/lychee/Documents/project/socai2/services/investigation_test/web/delivery_view.mjs",
+        "line": 32,
+        "anchor": "export function localEndLabel"
+      }
+    },
+    "verification": "静态 AST 解析平台 _OPERATIONS，与 bridge_contract.paths 逐路径核对；源码锚点存在性检查。无服务导入、网络、模型或业务数据读取。"
+  },
+  "frozen_material_native_reference_check": {
+    "status": "private_readback_saved_for_independent_review",
+    "scope": "One existing Case initial_task and its actual attempt.run_id references; no business execution or model call.",
+    "source_correction": "Run.input_artifact_id selects a page-model input_snapshot manifest. Follow its source_materials artifact references to the same tenant, Case and Run baseline-context source_snapshot; compare alerts material identity, revision and saved nullable sha256 against run_members.material_id and the exact original alert_materials row.",
+    "constraints": [
+      "Read-only transaction and database/role/tenant binding",
+      "Comparisons stay in PostgreSQL; only Boolean checks are stored locally",
+      "No material/context/body export and no latest-material pointer",
+      "Old checker and reports remain unchanged",
+      "This comparison does not rehash raw materials or evaluate model quality"
+    ],
+    "native_source_files": [
+      "services/api/app/socai2/baseline_store.py",
+      "services/api/app/socai2/baseline_context.py"
+    ],
+    "checker_source": "/Users/lychee/Documents/project/socai2/.local/validation/m0g-http-frozen-material-check-20261128-01/check_frozen_material.py",
+    "private_report": "/Users/lychee/Documents/project/socai2/.local/validation/m0g-http-frozen-material-check-20261128-01/read-02/frozen-material-chain-check.private.json",
+    "preserved_initial_attempt": "/Users/lychee/Documents/project/socai2/.local/validation/m0g-http-frozen-material-check-20261128-01/read-01",
+    "execution_adjustment": "The existing read-only transport accepts SELECT as the outer command. The read-only CTE was wrapped as a SELECT subquery; the transport itself is unchanged.",
+    "source_validation": "Python syntax, Ruff and the existing strict OpenSpec validation completed.",
+    "conclusion_boundary": "No data-derived check values are reproduced in this public record. Saving the report is not an independent acceptance conclusion."
+  },
+  "s1_s2_s3_release_case_readback_preparation": {
+    "status": "source_and_method_prepared_no_new_batch_read",
+    "purpose": "Prepare one independent Case storage and HTTP readback for the coordinator-approved S1/S2/S3 release test; only the subsequently supplied controlled local batch reference can bind execution.",
+    "design_reference": "openspec/changes/complete-socai2-investigation-chain/model-failure-contract-audit-20261128.md",
+    "delivery_boundary": "This is source/method preparation, not a release plan, deployment receipt, executable new-batch runner or business acceptance result. No old batch runtime values were used as expectations.",
+    "existing_scripts": [
+      {
+        "path": "/Users/lychee/Documents/project/socai2/.local/validation/m0g-http-case-readback-20261128-01/audit_case_metadata.py",
+        "reuse": [
+          "identity-file cross-check method",
+          "MaintenancePsql read-only transaction and rollback",
+          "bounded GET without retries or redirects",
+          "pick/rows field projection",
+          "compare timestamp normalization",
+          "PG-before/HTTP/PG-after window comparison"
+        ],
+        "restriction": "Do not run main or collect_pg unchanged: they assume the old initial-allocation identity shape and read broader Case/member/business fields than this test needs. Apply this whitelist in a small batch-specific entry after the controlled reference arrives; preserve the old file."
+      },
+      {
+        "path": "/Users/lychee/Documents/project/socai2/.local/validation/m0g-http-frozen-material-check-20261128-01/check_frozen_material.py",
+        "reuse": [
+          "actual attempt.run_id binding",
+          "native page-model manifest to baseline-context reference path"
+        ],
+        "restriction": "Reference only by default. No repeated material scan or raw-material rehash is required for the receipt release. Invoke a narrowed native-reference check only if this same test directly exposes a frozen-input identity problem."
+      },
+      {
+        "path": "/Users/lychee/Documents/project/socai2/.local/validation/case-input-unmapped-live-prep-20261128-01/case_saved_checks_remote.py",
+        "restriction": "Historical evidence only; do not execute or modify. Its direct input_snapshot.alerts frozen-material assumption was corrected by the separate native-reference checker."
+      }
+    ],
+    "controlled_reference_fields": {
+      "identity": [
+        "case_id",
+        "task_id",
+        "subject_type",
+        "kind",
+        "intent",
+        "source",
+        "identity_file_paths"
+      ],
+      "connection": [
+        "read_config_path",
+        "pg_config_path",
+        "channel_path",
+        "session_file"
+      ],
+      "bounds": [
+        "http_timeout_seconds",
+        "max_response_bytes",
+        "page_limit",
+        "max_pages"
+      ],
+      "binding_rules": [
+        "Take all IDs, origins, tenant/database/role and credentials from the new controlled local reference/configuration; no old batch defaults.",
+        "Compare all supplied identity files locally; only actual attempts of the accepted task or its persisted effective merge root select runs.",
+        "Do not use task.source_run_id, attempt.source_run_id, latest material, latest history or previous output as a substitute for attempt.run_id.",
+        "The existing initial_task/allocation assertions apply only when the new reference actually identifies an initial allocation. A rerun must use its actual acceptance receipt; never fabricate the missing old identity files."
+      ]
+    },
+    "minimum_pg_projection": {
+      "analysis_tasks": [
+        "id",
+        "tenant_id",
+        "subject_type",
+        "subject_id",
+        "kind",
+        "intent",
+        "source",
+        "state",
+        "reason_code",
+        "merged_into_task_id",
+        "started_at",
+        "ended_at",
+        "retry_count",
+        "next_retry_at"
+      ],
+      "analysis_attempts": [
+        "id",
+        "task_id",
+        "attempt_no",
+        "subject_type",
+        "subject_id",
+        "run_id",
+        "local_state",
+        "outcome",
+        "started_at",
+        "local_ended_at",
+        "interruption_observed_at",
+        "failed_at",
+        "error_code",
+        "error_stage",
+        "retryable"
+      ],
+      "runs": [
+        "id",
+        "tenant_id",
+        "case_id",
+        "kind",
+        "state",
+        "delivery_state",
+        "input_artifact_id",
+        "started_at",
+        "ended_at",
+        "stop_reason"
+      ],
+      "run_steps": [
+        "id",
+        "run_id",
+        "parent_step_id",
+        "stage_code",
+        "kind",
+        "state",
+        "input_artifact_id",
+        "output_artifact_id",
+        "started_at",
+        "ended_at",
+        "error.code",
+        "error.request_dispatched",
+        "error.not_executed"
+      ],
+      "artifacts": [
+        "id",
+        "tenant_id",
+        "case_id",
+        "run_id",
+        "step_id",
+        "kind",
+        "schema_version",
+        "material_state",
+        "sha256"
+      ],
+      "local_response_sql_projection": [
+        "direction",
+        "payload.validation_error",
+        "payload.raw key presence",
+        "payload.raw is JSON null"
+      ],
+      "stage_delivery_sql_projection": [
+        "schema_version",
+        "type",
+        "run_id",
+        "step_id",
+        "stage",
+        "input_artifact_id",
+        "originals[].artifact_id",
+        "originals[].kind",
+        "originals[].sha256",
+        "execution.kind",
+        "execution.call_state",
+        "execution.local_state",
+        "execution.local_ended_at",
+        "execution.request_dispatched",
+        "execution.finish_reason",
+        "execution.error.code",
+        "execution.error.retryable",
+        "execution.retry_allowed",
+        "parse.state",
+        "parse.truncated",
+        "delivery.state",
+        "use.conclusion_available",
+        "use.adoption_eligible",
+        "use.comparison_eligible",
+        "quality.prose_quality",
+        "retained_units is an empty array"
+      ],
+      "results": [
+        "id",
+        "tenant_id",
+        "case_id",
+        "kind",
+        "source_run_id",
+        "conclusion_state",
+        "conclusion_origin",
+        "validation_state",
+        "delivery_state"
+      ],
+      "cases": [
+        "id",
+        "tenant_id",
+        "current_assessment_id",
+        "current_evidence_artifact_id"
+      ],
+      "case_assessments": [
+        "id",
+        "case_id",
+        "origin",
+        "validity",
+        "scope_revision",
+        "adopted_at"
+      ],
+      "case_assessment_sources": [
+        "assessment_id",
+        "case_id",
+        "result_id",
+        "artifact_id",
+        "task_revision_id"
+      ],
+      "exclusions": [
+        "No SELECT star, content_json/text as a whole, request messages/input, model raw body, actual_args, free-form error messages, retained_units.value, material/context body, title/description/member pages, global task history, global table reconciliation or provider/model/config values.",
+        "JSON field extraction and raw/null/type tests execute on the storage side; only the whitelisted metadata goes into local private evidence."
+      ]
+    },
+    "minimum_http_reads": [
+      {
+        "route": "GET /api/v1/socai2/cases/{case_id}/analysis-tasks/{task_id}",
+        "projection": [
+          "task_id",
+          "subject_type",
+          "subject_id",
+          "kind",
+          "intent",
+          "source",
+          "status",
+          "reason_code",
+          "execution_shared",
+          "latest_run_id",
+          "started_at",
+          "ended_at",
+          "retry_count",
+          "next_retry_at",
+          "attempts[].attempt_no/run_id/local_state/outcome/started_at/local_ended_at/interruption_observed_at/failed_at/error_code/error_stage/retryable",
+          "results[].id/result_type/kind/source_run_id"
+        ],
+        "when": "Always for the accepted task; both native and its configured platform route."
+      },
+      {
+        "route": "GET /api/v1/socai2/cases/{case_id}/investigations/{run_id}",
+        "projection": [
+          "case_id",
+          "item.run_id/subject_type/subject_id/run_kind/state/delivery_state/started_at/ended_at/result_refs"
+        ],
+        "when": "Only actual bound runs. Omit preview text, usage and unrelated history."
+      },
+      {
+        "route": "GET /api/v1/socai2/analysis-runs/{run_id}/artifacts?step_id={step_id}",
+        "projection": [
+          "run_id",
+          "subject_type",
+          "subject_id",
+          "next_cursor",
+          "items[].id/run_id/step_id/kind/schema_version/material_state/sha256/content_url"
+        ],
+        "when": "Only the bound model step and its directly required parent-stage receipt. Complete this bounded directory before judging a reference missing."
+      },
+      {
+        "route": "GET /api/v1/socai2/cases/{case_id}/runs/{run_id}/artifacts/{artifact_id}",
+        "projection": [
+          "artifact envelope identity",
+          "whitelisted stage_delivery fields listed above"
+        ],
+        "when": "Only a confirmed local failure stage-delivery receipt, after PG establishes same tenant/Case/Run/step and empty retained_units. Follow the metadata content_url with configured same-origin mapping. Never follow request/response original URLs or a receipt containing retained business units in this minimal check; record that content-read limit explicitly."
+      },
+      {
+        "route": "GET /api/v1/socai2/cases/{case_id}/page-data",
+        "projection": [
+          "assessment null/present",
+          "assessment.id/origin/validity/scope_revision/adopted_at",
+          "assessment.sources[].result_id/artifact_id/task_revision_id",
+          "determination null/present"
+        ],
+        "when": "Compare current adopted identity/source to storage; omit conclusion/business-verdict text and unrelated page fields."
+      }
+    ],
+    "method": [
+      "After the coordinator supplies the same approved test reference, freeze only the controlled identity/config/source references privately; do not create a task, Run, model request or adopted version.",
+      "In a read-only tenant-bound transaction, select the accepted task/effective root, its attempts, actual Run IDs and only their model steps plus directly linked parent steps. For a completed local call, use exact step input/output pointers and same-scope artifact rows.",
+      "Project local response and stage-delivery metadata in SQL. Keep missing JSON keys distinct from explicit JSON null. Bind receipt.input_artifact_id and originals to the exact request/response rows; compare stored sha256 references to stored artifact sha256 without rehashing or exporting original bodies.",
+      "Read native and configured platform task/Run/artifact metadata and the page adoption identity. For the qualifying empty-unit local receipt only, compare its projected HTTP fields with the storage projection. Record transport, non-2xx and invalid-shape failures as failures, not empty successful collections.",
+      "Use a second minimal PG snapshot to bracket HTTP. If the selected task changes during the window, record changed_during_read_window and the two observations; do not silently substitute a later run or trigger indefinite polling/retries.",
+      "Save projections, checks, exceptions, source/config provenance and operation status only to a new private batch directory. Hand the coordinator engineering paths and operation completion only; no actual IDs, statuses, booleans, hashes, counts or model text enter chat before user-approved desensitization."
+    ],
+    "conditional_expectations": [
+      {
+        "branch": "S1 explicit local input rejection",
+        "contract": "The saved dispatch fact is false, call failed and locally ended, parse no_response, no usable conclusion or adoption eligibility, local retry_allowed false; request may exist, response is a local receipt, not a provider original."
+      },
+      {
+        "branch": "S2 received invalid response envelope",
+        "contract": "The saved dispatch fact is true, call failed and locally ended, parse unusable, no usable conclusion or adoption eligibility, local retry_allowed false; payload.raw remains explicit null and is not a fabricated model_original_response."
+      },
+      {
+        "branch": "S3 precise pre-dispatch deadline or proven unsent failure",
+        "contract": "Use the explicit unsent fact and existing classifier. Request existence alone does not establish network dispatch."
+      },
+      {
+        "branch": "S3 no response, cancellation or unexpected error without dispatch proof",
+        "contract": "Preserve the classifier outcome and three-valued dispatch fact; local end is separate from remote end. An unknown model step/Run keeps remote ended_at null. A corresponding unknown Run does not fabricate a Result or adopted result."
+      },
+      {
+        "branch": "Task retry versus local replay",
+        "contract": "Receipt.execution.retry_allowed false and attempt.retryable/next_retry_at are different facts. Do not infer queue retry prohibition from the closed local receipt."
+      },
+      {
+        "branch": "Case result and current adoption",
+        "contract": "Evaluate per actual Run and saved result identity. A failed child call does not by itself require all Case results or a prior adopted judgment to disappear; any later existing fallback/valid result must retain its saved origin, availability and validation states. No Result must remain an explicit collection empty after a successful read, not become an invented success."
+      },
+      {
+        "branch": "C3 parent aggregation",
+        "contract": "When present, bind parent and child identities and compare request_dispatched with explicit child facts/verified returned-response metadata, using three-valued aggregation. Do not infer true from a running/model step existing."
+      }
+    ],
+    "not_applicable_or_unverified": [
+      {
+        "condition": "The real test does not enter one of S1/S2/S3 failure branches",
+        "classification": "not_exercised",
+        "action": "Keep prior local test evidence scoped to its substitutes; do not induce an extra failure or model call to fill coverage."
+      },
+      {
+        "condition": "Accepted task has no actual attempt.run_id",
+        "classification": "not_applicable_downstream",
+        "action": "Still verify task/attempt state and HTTP; no Run/receipt/result traversal is possible."
+      },
+      {
+        "condition": "The execution failed before a model request was created",
+        "classification": "no_model_call_expected",
+        "action": "Do not demand or fabricate a model call receipt."
+      },
+      {
+        "condition": "No Result exists for the bound Run after a successful read",
+        "classification": "result_detail_not_applicable",
+        "action": "Record empty result refs and the saved adoption relationship; do not perform adoption or request an invented result URL."
+      },
+      {
+        "condition": "Receipt metadata contains retained business units or is not the local failure receipt",
+        "classification": "content_read_outside_minimal_scope",
+        "action": "Keep metadata-only evidence and mark full HTTP receipt-content comparison unverified."
+      },
+      {
+        "condition": "Missing route, auth failure, transport error, invalid response shape or incomplete pagination",
+        "classification": "readback_not_completed",
+        "action": "This is not not_applicable or an empty/success result; retain exact private error evidence."
+      },
+      {
+        "condition": "Model quality, I output slimming, A/I expansion, full materials, budgets/usage re-audit, full original rehash, 8181/4173 browser display and 4177 refresh/snapshot",
+        "classification": "outside_this_preparation",
+        "action": "No live call, deployment, service stop, new DB, cleanup, Git push or broad refresh. Frontend visual and 4177 evidence remain separately owned."
+      }
+    ],
+    "reusable_direct_tests": [
+      {
+        "path": "services/api/tests/test_socai2_model_input_guard.py",
+        "purpose": "Explicit unsent Case call and C3 dispatch aggregation."
+      },
+      {
+        "path": "services/api/tests/test_socai2_model_envelope.py",
+        "purpose": "Received invalid envelope, local Case receipt and unusable C3."
+      },
+      {
+        "path": "services/api/tests/test_socai2_model_local_end.py",
+        "purpose": "Unknown/local end, explicit deadline, schema rejection dispatch fact, pre-call failure and cancellation boundaries."
+      }
+    ],
+    "preparation_checks": [
+      "Referenced source files exist and parse as Python.",
+      "Existing strict OpenSpec source validation passed before this documentation edit.",
+      "No old or new runtime reports were loaded for values; only source and field structures were reviewed.",
+      "No test bodies or live endpoints were executed by this preparation."
+    ],
+    "source_files": [
+      "services/api/app/socai2/baseline_reasoning.py",
+      "services/api/app/socai2/baseline_failure.py",
+      "services/api/app/socai2/case_c3_completion_flow.py",
+      "services/api/app/socai2/stage_delivery.py",
+      "services/api/investigation_http/analysis_task_contracts.py",
+      "services/api/investigation_http/run_record_contracts.py",
+      "services/api/investigation_http/external_routes/run_records.py",
+      "services/api/investigation_http/external_routes/cases.py",
+      "services/api/investigation_http/record_links.py",
+      "services/api/tests/test_socai2_model_input_guard.py",
+      "services/api/tests/test_socai2_model_envelope.py",
+      "services/api/tests/test_socai2_model_local_end.py"
+    ],
+    "next_dependency": "Coordinator supplies the controlled local reference after deployment; only then adapt the existing reader entry to these fields and perform the single authorized readback. Core release plan and PROGRESS.md are untouched.",
+    "rerun_binding_adaptation": {
+      "status": "local_only_binding_entry_prepared",
+      "source_path": "/Users/lychee/Documents/project/socai2/.local/validation/s1-s2-s3-case-http-preparation-20261128-01/bind_single_case_readback.py",
+      "private_gate_report": "/Users/lychee/Documents/project/socai2/.local/validation/s1-s2-s3-case-http-preparation-20261128-01/binding-check-01/local-binding-private.json",
+      "controlled_directory": "/Users/lychee/Documents/project/socai2/.local/validation/model-exception-release-prep-20261128-01/single-case-task-01",
+      "method": "Read only the supplied local follow/request/terminal files when present; compare the exact rerun task/Case/operation identity and terminal task snapshot. Derive execution exclusively from attempts[].run_id. Keep the accepted status_url unchanged; do not assume a platform/native prefix rewrite.",
+      "scope": "No HTTP/PG call, sender invocation, old initial-task lookup or latest-record fallback. Missing/invalid gate reasons stay in the private report for the final consolidated review.",
+      "source_checks": [
+        "Python syntax completed",
+        "Ruff completed"
+      ],
+      "connection_dependency": "Await the coordinator/core explicit PG and native/platform read-configuration references before constructing the readback connection."
+    },
+    "native_submission_source_review": {
+      "scope": "Source/Git route and contract only; no POST, native HTTP probe or independent PG query performed.",
+      "route": "POST /api/v1/socai2/cases/{case_id}/investigations",
+      "native_registration": "analysis_submissions.case_router in investigation_http.main; handler case_investigation",
+      "request_contract": "AnalysisSubmitRequest; operation_key and mode",
+      "response_contract": "AnalysisTaskReceipt; HTTP 202 is acceptance only, not execution completion",
+      "status_link": "Saved task adapter publishes the native /api/v1/socai2/cases/{subject_id}/analysis-tasks/{task_id} address; a platform prefix must be mapped by its actual route contract, not guessed by the follower.",
+      "source_files": [
+        {
+          "path": "services/api/investigation_http/external_routes/analysis_submissions.py",
+          "worktree_sha256": "e65ca9c6ac8f91e4a9f99652aabb8185ab6e636f5eb991b8c1d4a9f35a1660b4",
+          "git": {
+            "6282e34": {
+              "present": true,
+              "same_as_worktree": true
+            },
+            "origin/main": {
+              "present": true,
+              "same_as_worktree": true
+            }
+          }
+        },
+        {
+          "path": "services/api/investigation_http/analysis_submission_contracts.py",
+          "worktree_sha256": "cbd99b831bd09b7840f2f9f20deb51201ec912bd87057bbb7be39a2a508047c6",
+          "git": {
+            "6282e34": {
+              "present": true,
+              "same_as_worktree": true
+            },
+            "origin/main": {
+              "present": true,
+              "same_as_worktree": true
+            }
+          }
+        },
+        {
+          "path": "services/api/investigation_http/adapters/analysis_submissions.py",
+          "worktree_sha256": "6e38f1609a11b7644262ef0aaf230b83632d24447fca3e1caa331746fb7fa7f4",
+          "git": {
+            "6282e34": {
+              "present": true,
+              "same_as_worktree": true
+            },
+            "origin/main": {
+              "present": true,
+              "same_as_worktree": true
+            }
+          }
+        }
+      ],
+      "private_exact_operation_receipt_review": "/Users/lychee/Documents/project/socai2/.local/validation/s1-s2-s3-case-http-preparation-20261128-01/entry-reconciliation-review-01/entry-review-private.json",
+      "limitation": "The exact-operation receipt review compares only the core saved read-only reconciliation with the controlled request. It is not a new PG observation and does not assert task acceptance or a completed Case test."
+    },
+    "execution_handoff": {
+      "status": "private_readback_and_exact_run_export_prepared_for_coordinator",
+      "minimum_result_path": ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/minimum-independent-result.private.json",
+      "readback_directory": ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/readback-01",
+      "page_export_directory": ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/page-export-02/page-export",
+      "source_files": [
+        ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/bind_single_case_readback.py",
+        ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/read_rerun_pg.py",
+        ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/read_rerun_http_pg.py",
+        ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/export_rerun_page.py",
+        ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/finalize_rerun_readback.py"
+      ],
+      "scope": "Accepted rerun task; actual attempts[].run_id; scalar PG before/after, matching native/8181 GET projections, local model receipt references, and current adoption metadata.",
+      "page_export_scope": "Separate private exact-Run database export with original runs/run_steps/artifacts arrays and exact Case row, using existing socai2.page-export.v1 format. Core owns 4177 append.",
+      "validation": [
+        "OpenSpec strict validation",
+        "Python source syntax and Ruff",
+        "Existing update_processing_audit.page_export identity/checksum parser"
+      ],
+      "packaging_note": "Initial full-Case packaging helper did not accept the reduced table set; retained its private diagnostic and repackaged the already-captured same snapshot locally. No added database query for repackaging.",
+      "boundaries": [
+        "No POST, redispatch, model sampling, adoption write, deployment, commit, push, or page update.",
+        "New runtime values, comparisons, originals and outcome details remain private. Existing release-entry reading authorization does not authorize reading this new result into Codex.",
+        "Report and export creation do not establish business/model-quality acceptance or completion of the OpenSpec change."
+      ]
+    },
+    "next_batch_readonly_entry_preparation": {
+      "status": "source_and_structure_prepared_only",
+      "scope": "Prepare reuse for the coordinator-owned next narrow release and one new normal Case rerun. No request, runtime-data read, task/service creation, old-model-original export, or 4177 append in this preparation.",
+      "entry_directory": ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/next-batch-entry",
+      "entry_source": ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/next-batch-entry/read_rerun_http_pg.py",
+      "binding_schema": "openspec/changes/complete-socai2-investigation-chain/case-rerun-readback-binding.schema.json",
+      "validation_record": ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/next-batch-entry/source-validation.json",
+      "old_sources": "Previous executed source files and all prior private artifacts remain untouched. New entry copies only the three readback source files and adapts the existing frozen-material SELECT.",
+      "binding_files": {
+        "read_config": "schema_version, batch_root, control_directory, operation_config, switch_plan, native_context_file/native_context_sha256, previous_reader_source, http_surfaces=[native], explicit limits; only accepted_response_body_file and accepted_http_receipt_file are extra acceptance pointers supplied independently after actual terminal handoff.",
+        "request-config-private.json": "Use core fields without modification: subject_id, prior_task_id, prior_task_ids, prior_operation_keys, body_file/body_sha256, source_follow_manifest, HTTP timeouts. No added binding_version, singular prior_operation_key, prior_attempt_run_ids, prior_control_directory, or accepted_* fields.",
+        "follow-manifest-private.json": "case_id, task_id, operation_key, status_url, session_file, additional_start_requested=false; populated by coordinator only after actual acceptance.",
+        "terminal-follow-private.json": "snapshot_path plus control.task_terminal/attempts_locally_ended/post_attempted/task_id/case_id/latest_run_id. Snapshot task-private.json follows existing AnalysisTaskDetail contract.",
+        "native_session": "origin and ordinary JSON headers; explicit same-origin accepted status_url; no platform credential attached to native calls.",
+        "prior_identity_values": "Reuse existing core prior_task_ids/prior_operation_keys and prior_task_id; source_follow_manifest is path-only comparison, never opened."
+      },
+      "new_batch_guards": [
+        "Control/request/acceptance/terminal paths must belong to the explicit new batch.",
+        "Accepted response identifies the same Case and new task; request bytes/hash and operation_key must match.",
+        "Reject existing prior_task_ids/prior_task_id and prior_operation_keys; compare source_follow_manifest path without reading old data.",
+        "Execution Run IDs come only from the new terminal task attempts[].run_id and are checked against exact PG attempts. No additional prior-Run list is required."
+      ],
+      "native_auth_and_profile": {
+        "http_context_source": "services/api/investigation_http/adapters/identity.py::load_context, business_context",
+        "http_lifecycle_source": "services/api/investigation_http/adapters/runtime.py::lifespan, configured_database_name",
+        "normal_contract": "SOCAI2_HTTP_CONTEXT_FILE points to tenant_id/actor_id/actor_name. Native app uses that configured BusinessContext; it has no platform JWT login step. AISOC_DEV_AUTH_BYPASS is rejected by existing runtime source.",
+        "origin": "Coordinator supplies the current release/profile origin in the new native session. No historical address fallback is embedded.",
+        "pg_source": "services/api/app/socai2/analysis_dispatch_runtime.py::load_profile; current switch_plan.dispatcher_profile selects database_url_file/database_connect_args/tenant_id. Entry invokes only load_profile and a read-only engine, never run(profile).",
+        "transport": "Current operation_config supplies ssh_argv/operation_timeout_seconds; current switch plan and candidate binding are checked by the existing read-only remote wrapper. Runtime target/loading evidence remains coordinator-owned."
+      },
+      "direct_steps": [
+        {
+          "step": "Bind local accepted and terminal files",
+          "method": "Compare identities and new-key exclusions without requests; fail closed if incomplete or inconsistent."
+        },
+        {
+          "step": "PG before",
+          "method": "Explicit deployed profile, repeatable-read/read-only transaction, tenant condition and statement timeout. Exact original/effective task, attempts, actual Runs, selected model/parent steps, receipt metadata, Result.source_run_id and current adoption references."
+        },
+        {
+          "step": "Frozen material",
+          "method": "Existing SELECT adapted to rerun/user/new operation_key. Actual attempt Run → runs.input_artifact_id page-model manifest → source_materials → same tenant/Case/Run baseline-context → run_members.material_id → exact alert_materials id/revision/nullable saved sha256. DB returns only scalar checks; no raw material or original hash recomputation. No actual Run means explicitly not applicable."
+        },
+        {
+          "step": "previous-analysis reference",
+          "method": "Only new-run previous-analysis-material artifact metadata and source_run_id. Does not execute the projector, fetch previous raw originals, re-evaluate prose, or infer the narrow fix passed merely from an absent error."
+        },
+        {
+          "step": "Native GETs only",
+          "method": "New task URL, exact investigation lookup, selected-step artifact directory, PG-confirmed empty-unit local model receipt, and adoption/evidence pointer projection. 8181 is handled separately by the frontend chat; this entry rejects non-native http_surfaces."
+        },
+        {
+          "step": "PG after and one private report",
+          "method": "Repeat the same scope and compare against both snapshots; preserve read-window changes, unknown, local end vs remote end, missing Results and previous adopted Result as distinct facts. No model-quality or unexercised-branch pass inferred."
+        }
+      ],
+      "source_paths": {
+        "binding": ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/next-batch-entry/bind_single_case_readback.py",
+        "pg": ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/next-batch-entry/read_rerun_pg.py",
+        "frozen_material": ".local/validation/s1-s2-s3-case-http-preparation-20261128-01/next-batch-entry/frozen_material_rerun.sql",
+        "task_projection": "services/api/app/socai2/analysis_tasks.py::project_task",
+        "task_http_contract": "services/api/investigation_http/analysis_task_contracts.py::AnalysisTaskDetail",
+        "previous_analysis": "services/api/app/socai2/case_previous_analysis.py::analysis/project/freeze",
+        "previous_analysis_existing_test": "services/api/tests/test_socai2_previous_analysis.py",
+        "previous_analysis_design": "openspec/changes/complete-socai2-investigation-chain/previous-analysis-material-consistency-20261128.md"
+      },
+      "checks_completed": [
+        "Existing change OpenSpec strict validation",
+        "Python AST including embedded remote wrapper",
+        "Ruff",
+        "JSON Schema metaschema",
+        "SQL bind-parameter names and SELECT-only source review",
+        "Old source preservation"
+      ],
+      "not_verified": [
+        "No new batch or source runtime data was opened.",
+        "No prepared entry was executed against HTTP or PostgreSQL.",
+        "No production behavior, model quality, deployment target state, or release result is established by source preparation."
+      ],
+      "next_input": "Coordinator supplies local private new-batch control/config paths after actual acceptance; prior coordinator data-reading approval does not authorize this chat to read raw or derived runtime values.",
+      "core_manifest_alignment": {
+        "source": ".local/validation/model-exception-release-rerun-prep-20261128-01/prepare_rerun_candidate.py",
+        "changes": "One-shot binder consumes independent read_config for acceptance pointers and core arrays for exclusions; main call wiring and native-only assertion updated. Core frozen files, PG projection and frozen SELECT unchanged.",
+        "validation_scope": "Only modified source AST/Ruff and field-structure alignment; no full revalidation or runtime/data read.",
+        "extra_fields": "Only two acceptance-file pointers added to independent read_config, to be filled from actual new native-submit after terminal handoff."
+      }
+    }
+  },
+  "spirithub_case_history_bridge_registration": {
+    "state": "ordinary_registration_and_mock_verification_passed",
+    "goal": "让普通 SpiritHub 平台按现有原生合同读取 Case 调查历史目录及定位指定 Run，供历史页和关系图共用。",
+    "scope": {
+      "operations": [
+        {
+          "operation_id": "socai2_Q34",
+          "method": "GET",
+          "path": "/api/v1/socai2/cases/{case_id}/investigations"
+        },
+        {
+          "operation_id": "socai2_Q35",
+          "method": "GET",
+          "path": "/api/v1/socai2/cases/{case_id}/investigations/{run_id}"
+        }
+      ],
+      "platform_change": "仅补普通路由登记和既有合同引用，复用原 Case 读取授权与 SocBridge。公开 Schema 和生成类型按一致性读取核对。",
+      "upstream": "依赖所选调查 HTTP 已加载两个原生 GET。真实同案读回沿核心本笔入口的后续验证安排。",
+      "integration": "合入 main 时以主线公开合同为基准，保留非 SOC 方法和同路径 POST。"
+    },
+    "steps": [
+      "完成现有 change 的计划记录并严格校验。",
+      "在 8181 对应源码工作树补两个 GET 的登记、桥接合同及响应引用。",
+      "复用普通平台代理和已有替身做目录、固定 Run 与原生错误的直接验证，记录本步前后源码和验证结果。"
+    ],
+    "required_direct_checks": [
+      "两个 GET 在普通 FastAPI 加载下实际可调用，并声明既有 operationId。",
+      "Q34 按原顺序透传 limit 和 cursor，读回 Case 身份和下一页游标。",
+      "Q35 按 Case 和 Run 原路径转发并保留响应身份及原生资源错误。",
+      "公开 Schema、生成类型和桥接合同的既有请求与响应引用一致。"
+    ],
+    "native_source": "services/api/investigation_http/external_routes/case_investigations.py",
+    "evidence_root": ".local/validation/q34-q35-ordinary-bridge-20261128-01",
+    "verification": {
+      "changes": [
+        "普通平台代理新增 Q34/Q35 GET，加入同一桥接合同已有定义的引用闭包。",
+        "公开 Schema 与生成类型经结构和指纹核对一致。"
+      ],
+      "result": "两个定向替身用例通过，核对普通注册、游标、固定 Case/Run 和原生 run_not_found。",
+      "evidence": ".local/validation/q34-q35-ordinary-bridge-20261128-01/verification.private.json",
+      "source_delta": ".local/validation/q34-q35-ordinary-bridge-20261128-01/source-delta.patch",
+      "environment": "复用既有 Python 3.12 替身环境，首次缺少的 pwdlib 由已有离线依赖补齐。Ruff 路由检查通过，测试文件保留改前既有 I001。",
+      "remaining": "真实同案读取随核心入口就绪后核对，main 公共合同合入仍待执行。"
+    }
+  },
+  "spirithub_case_git_dependency_audit": {
+    "status": "source_git_dependency_audit_completed_no_index_or_business_mutation",
+    "date": "2026-11-28",
+    "refs": {
+      "HEAD_6282e34": "6282e34db69eb0072044809b0418a9ccba3ae9fe",
+      "origin_main": "875ed7226e4e125d01bfc2bbc2d46ac0f5edd1fd"
+    },
+    "remote_main_verified_by": "read-only git ls-remote origin refs/heads/main; resolved commit matched local refs/remotes/origin/main; no fetch",
+    "conclusion": "当前两个 Git 提交均不能完整承载拟交付的 Case 查询。Q33/Q34/Q35/Q36 及 story-related、active_member_count 增量仍在工作区；平台可调用或 21 可运行不构成 Git 已交付证据。",
+    "endpoint_dependency_table": [
+      {
+        "operation": "Q33",
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{case_id}/members/{alert_id}/relations",
+        "change": "新增成员关系查询",
+        "HEAD_6282e34": "路由不存在",
+        "origin_main": "路由不存在",
+        "minimum_dependency_files": [
+          "services/api/app/socai2/case_story.py",
+          "services/api/app/socai2/case_story_contracts.py",
+          "services/api/app/socai2/case_story_relations.py",
+          "services/api/investigation_http/adapters/case_story.py",
+          "services/api/investigation_http/adapters/run_directory.py",
+          "services/api/investigation_http/adapters/services.py",
+          "services/api/investigation_http/contracts.py",
+          "services/api/investigation_http/external_routes/story.py",
+          "services/api/investigation_http/ports.py",
+          "services/api/investigation_http/story_contracts.py"
+        ],
+        "direct_test_source": "services/api/tests/test_socai2_case_story_related_pg.py",
+        "direct_test_entry": "run_checks",
+        "existing_validation_references": [
+          "docs/operations/evidence/case-story-migration-20261126-01/backend-delivery.md",
+          "docs/operations/evidence/case-story-migration-20261126-01/coordinator-http-readback.json",
+          "docs/operations/evidence/case-story-migration-20261126-01/coordinator-native-runtime-review.json"
+        ]
+      },
+      {
+        "operation": "Q34",
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{case_id}/investigations",
+        "change": "新增案内调查目录",
+        "HEAD_6282e34": "路由不存在",
+        "origin_main": "路由不存在",
+        "minimum_dependency_files": [
+          "services/api/app/socai2/case_investigations.py",
+          "services/api/app/socai2/case_story.py",
+          "services/api/app/socai2/case_story_contracts.py",
+          "services/api/app/socai2/case_story_relations.py",
+          "services/api/investigation_http/adapters/case_investigations.py",
+          "services/api/investigation_http/adapters/case_story.py",
+          "services/api/investigation_http/adapters/run_directory.py",
+          "services/api/investigation_http/adapters/services.py",
+          "services/api/investigation_http/case_investigation_contracts.py",
+          "services/api/investigation_http/contracts.py",
+          "services/api/investigation_http/dependencies.py",
+          "services/api/investigation_http/external_routes/case_investigations.py",
+          "services/api/investigation_http/main.py",
+          "services/api/investigation_http/ports.py",
+          "services/api/investigation_http/story_contracts.py"
+        ],
+        "direct_test_source": "services/api/tests/test_socai2_case_investigations_pg.py",
+        "direct_test_entry": "run_checks",
+        "existing_validation_references": [
+          "docs/operations/evidence/case-history-migration-20261126-01/native-history-candidate.json",
+          "docs/operations/evidence/case-history-migration-20261126-01/coordinator-source-review.json",
+          "docs/operations/evidence/case-history-migration-20261126-01/coordinator-http-readback-20261127.json",
+          "docs/operations/evidence/case-history-performance-20261127-01/readback-engineering.json"
+        ]
+      },
+      {
+        "operation": "Q35",
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{case_id}/investigations/{run_id}",
+        "change": "新增固定 Run 定位",
+        "HEAD_6282e34": "路由不存在",
+        "origin_main": "路由不存在",
+        "minimum_dependency_files": [
+          "services/api/app/socai2/case_investigations.py",
+          "services/api/app/socai2/case_story.py",
+          "services/api/app/socai2/case_story_contracts.py",
+          "services/api/app/socai2/case_story_relations.py",
+          "services/api/investigation_http/adapters/case_investigations.py",
+          "services/api/investigation_http/adapters/case_story.py",
+          "services/api/investigation_http/adapters/run_directory.py",
+          "services/api/investigation_http/adapters/services.py",
+          "services/api/investigation_http/case_investigation_contracts.py",
+          "services/api/investigation_http/contracts.py",
+          "services/api/investigation_http/dependencies.py",
+          "services/api/investigation_http/external_routes/case_investigations.py",
+          "services/api/investigation_http/main.py",
+          "services/api/investigation_http/ports.py",
+          "services/api/investigation_http/story_contracts.py"
+        ],
+        "direct_test_source": "services/api/tests/test_socai2_case_investigations_pg.py",
+        "direct_test_entry": "run_checks",
+        "existing_validation_references": [
+          "docs/operations/evidence/case-history-migration-20261126-01/native-history-candidate.json",
+          "docs/operations/evidence/case-history-migration-20261126-01/coordinator-source-review.json",
+          "docs/operations/evidence/case-history-migration-20261126-01/coordinator-http-readback-20261127.json",
+          "docs/operations/evidence/case-history-performance-20261127-01/readback-engineering.json"
+        ]
+      },
+      {
+        "operation": "Q36",
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{case_id}/info-summary",
+        "change": "新增资料汇总",
+        "HEAD_6282e34": "路由不存在",
+        "origin_main": "路由不存在",
+        "minimum_dependency_files": [
+          "services/api/app/socai2/case_info.py",
+          "services/api/app/socai2/case_service.py",
+          "services/api/app/socai2/case_story_relations.py",
+          "services/api/investigation_http/case_info_contracts.py",
+          "services/api/investigation_http/contracts.py",
+          "services/api/investigation_http/external_routes/cases.py",
+          "services/api/investigation_http/ports.py"
+        ],
+        "direct_test_source": "services/api/tests/test_socai2_case_info_pg.py",
+        "direct_test_entry": "run_checks",
+        "existing_validation_references": [
+          "docs/operations/evidence/case-info-migration-20261127-01/native-readback.json",
+          "docs/operations/evidence/case-info-migration-20261127-01/coordinator-field-contract-review.json",
+          "docs/operations/evidence/case-info-migration-20261127-01/http-four-page-contract-review.md"
+        ]
+      },
+      {
+        "operation": "story-related",
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{case_id}/story",
+        "change": "既有 GET 增加 view=related、focus_alert_id、summary 与 investigation_ref",
+        "HEAD_6282e34": "既有路由存在；缺本次参数/响应行为",
+        "origin_main": "既有路由存在；缺本次参数/响应行为",
+        "minimum_dependency_files": [
+          "services/api/app/socai2/case_story.py",
+          "services/api/app/socai2/case_story_contracts.py",
+          "services/api/app/socai2/case_story_relations.py",
+          "services/api/investigation_http/adapters/case_story.py",
+          "services/api/investigation_http/adapters/run_directory.py",
+          "services/api/investigation_http/adapters/services.py",
+          "services/api/investigation_http/contracts.py",
+          "services/api/investigation_http/external_routes/story.py",
+          "services/api/investigation_http/ports.py",
+          "services/api/investigation_http/story_contracts.py"
+        ],
+        "direct_test_source": "services/api/tests/test_socai2_case_story_related_pg.py",
+        "direct_test_entry": "run_checks",
+        "existing_validation_references": [
+          "docs/operations/evidence/case-story-migration-20261126-01/backend-delivery.md",
+          "docs/operations/evidence/case-story-migration-20261126-01/coordinator-http-readback.json",
+          "docs/operations/evidence/case-story-migration-20261126-01/coordinator-native-runtime-review.json"
+        ]
+      },
+      {
+        "operation": "case-queue-active-count",
+        "method": "GET",
+        "path": "/api/v1/socai2/cases",
+        "change": "既有列表增加 active_member_count",
+        "HEAD_6282e34": "既有路由存在；缺本次参数/响应行为",
+        "origin_main": "既有路由存在；缺本次参数/响应行为",
+        "minimum_dependency_files": [
+          "services/api/app/socai2/case_contracts.py",
+          "services/api/app/socai2/case_reader.py"
+        ],
+        "direct_test_source": "services/api/tests/test_socai2_case_queue_pg.py",
+        "direct_test_entry": "run_checks",
+        "existing_validation_references": [
+          "docs/operations/evidence/case-list-migration-20261126-01/http-read-contract.json",
+          "docs/operations/evidence/case-list-migration-20261126-01/coordinator-contract-review.json",
+          "docs/operations/evidence/case-list-migration-20261126-01/coordinator-source-review.json"
+        ]
+      }
+    ],
+    "runtime_file_table": [
+      {
+        "path": "services/api/app/socai2/case_story_relations.py",
+        "role": "关联查询公共实现",
+        "required_delta": "StoryRelations, explicit_run_sources, array_or_empty；供 Q33/Q34/Q35/Q36 共同使用。",
+        "HEAD_6282e34": "无文件",
+        "origin_main": "无文件",
+        "git_baselines_equal": true,
+        "worktree_blob": "53261e10ba33ac86ea0685d44ec595eb84dcdd4f",
+        "git_blobs": {
+          "HEAD_6282e34": null,
+          "origin_main": null
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_story.py",
+        "role": "故事与成员关系用例",
+        "required_delta": "RelatedStoryQuery 分支、read_member_relations、分页与来源投影。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "d9670063ddeba92d026e715082094154f717b5d2",
+        "git_blobs": {
+          "HEAD_6282e34": "d3f426d95b71fa6e649ededf366ffa977f7edf2e",
+          "origin_main": "d3f426d95b71fa6e649ededf366ffa977f7edf2e"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_story_contracts.py",
+        "role": "核心查询合同",
+        "required_delta": "RelatedStoryQuery、MemberRelationsQuery、StorySummary、MemberRelationCursor。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "c8da9a3d4d0878af6e5c12ade5e9780a05635406",
+        "git_blobs": {
+          "HEAD_6282e34": "5942949b9a88ca6b79b3de1da64642d698637929",
+          "origin_main": "5942949b9a88ca6b79b3de1da64642d698637929"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/story_contracts.py",
+        "role": "对外关联合同",
+        "required_delta": "InvestigationRef、RelatedStoryPage、CaseMemberRelations 及嵌套模型。",
+        "HEAD_6282e34": "无文件",
+        "origin_main": "无文件",
+        "git_baselines_equal": true,
+        "worktree_blob": "7bfe6d894e800309b34a9ef3ead0b702cdd9d8cc",
+        "git_blobs": {
+          "HEAD_6282e34": null,
+          "origin_main": null
+        }
+      },
+      {
+        "path": "services/api/investigation_http/adapters/case_story.py",
+        "role": "故事与 Run 链接适配",
+        "required_delta": "CaseStoryBackend、investigation_urls、来源 URL。Q34/Q35 适配直接复用。",
+        "HEAD_6282e34": "无文件",
+        "origin_main": "无文件",
+        "git_baselines_equal": true,
+        "worktree_blob": "8be7a795b2eaa61f0f55269319bbd2e2e36b588b",
+        "git_blobs": {
+          "HEAD_6282e34": null,
+          "origin_main": null
+        }
+      },
+      {
+        "path": "services/api/investigation_http/adapters/run_directory.py",
+        "role": "公共 URL 适配",
+        "required_delta": "仅抽取并导出 result_urls；新 Case 适配需要该符号。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "8cb66d2db8a50efb0be0e889ba86f730183b0960",
+        "git_blobs": {
+          "HEAD_6282e34": "51c29751e77c4eb20b6c23cca24787a9cdf331f6",
+          "origin_main": "51c29751e77c4eb20b6c23cca24787a9cdf331f6"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/external_routes/story.py",
+        "role": "Q33 与 story 扩展路由",
+        "required_delta": "成员关系 GET；story 的 view=related、focus_alert_id 及新响应模型。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "6c40a6d13bb67317149d9ae3d90faff8677a05ad",
+        "git_blobs": {
+          "HEAD_6282e34": "813c3bcd28c6d74ea9bb076c26caef0fabed569f",
+          "origin_main": "813c3bcd28c6d74ea9bb076c26caef0fabed569f"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_investigations.py",
+        "role": "Q34/Q35 用例",
+        "required_delta": "CaseInvestigationService、目录统计/游标与固定 Run 定位。",
+        "HEAD_6282e34": "无文件",
+        "origin_main": "无文件",
+        "git_baselines_equal": true,
+        "worktree_blob": "24443000b0ac6c54eefcb1929c1364d09590c032",
+        "git_blobs": {
+          "HEAD_6282e34": null,
+          "origin_main": null
+        }
+      },
+      {
+        "path": "services/api/investigation_http/case_investigation_contracts.py",
+        "role": "Q34/Q35 对外合同",
+        "required_delta": "CaseInvestigationPage、CaseInvestigationLookup、卡片/usage/preview 结构。",
+        "HEAD_6282e34": "无文件",
+        "origin_main": "无文件",
+        "git_baselines_equal": true,
+        "worktree_blob": "6c3795caaf206b4b95cdce1107e85dc16835144e",
+        "git_blobs": {
+          "HEAD_6282e34": null,
+          "origin_main": null
+        }
+      },
+      {
+        "path": "services/api/investigation_http/adapters/case_investigations.py",
+        "role": "Q34/Q35 适配",
+        "required_delta": "CaseInvestigationBackend 及 CaseStory investigation_urls。",
+        "HEAD_6282e34": "无文件",
+        "origin_main": "无文件",
+        "git_baselines_equal": true,
+        "worktree_blob": "5d4211531418b8719e38b5959bff76f6df4ccb03",
+        "git_blobs": {
+          "HEAD_6282e34": null,
+          "origin_main": null
+        }
+      },
+      {
+        "path": "services/api/investigation_http/external_routes/case_investigations.py",
+        "role": "Q34/Q35 路由",
+        "required_delta": "read_case_investigations、lookup_case_investigation。",
+        "HEAD_6282e34": "无文件",
+        "origin_main": "无文件",
+        "git_baselines_equal": true,
+        "worktree_blob": "dfd94c0001b7e9d1758746dcd90bf07ab956b71b",
+        "git_blobs": {
+          "HEAD_6282e34": null,
+          "origin_main": null
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_info.py",
+        "role": "Q36 用例",
+        "required_delta": "read_info_summary 与来源战术/对象/调查总数投影，复用 StoryRelations。",
+        "HEAD_6282e34": "无文件",
+        "origin_main": "无文件",
+        "git_baselines_equal": true,
+        "worktree_blob": "5d34392d9a03ce5feaeb7078608412c171beb94f",
+        "git_blobs": {
+          "HEAD_6282e34": null,
+          "origin_main": null
+        }
+      },
+      {
+        "path": "services/api/investigation_http/case_info_contracts.py",
+        "role": "Q36 对外合同",
+        "required_delta": "CaseInfoSummary、CaseInfoObject；从外部 contracts 导入 TacticCount。",
+        "HEAD_6282e34": "无文件",
+        "origin_main": "无文件",
+        "git_baselines_equal": true,
+        "worktree_blob": "8c3e9e6307815cfd9fdc535b413c70a2f7ee77d4",
+        "git_blobs": {
+          "HEAD_6282e34": null,
+          "origin_main": null
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_service.py",
+        "role": "Q36 服务接线",
+        "required_delta": "CaseService.read_info_summary 转接只读用例。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "b2966923583db2efc6a52e543288da2b8c71c8d7",
+        "git_blobs": {
+          "HEAD_6282e34": "02664f537da79349210ffc1a00c7019ba3930b73",
+          "origin_main": "02664f537da79349210ffc1a00c7019ba3930b73"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/external_routes/cases.py",
+        "role": "Q36 路由",
+        "required_delta": "info-summary GET、CaseInfoSummary 导入和受控错误映射。旧 Run/Result/artifact 方法保持。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "2d5309ea42bd05993ee3c94a11fecf12de3cf2ec",
+        "git_blobs": {
+          "HEAD_6282e34": "6e6f7171bf693a4d982ecc7a6ec4abcec27bedd5",
+          "origin_main": "6e6f7171bf693a4d982ecc7a6ec4abcec27bedd5"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/adapters/services.py",
+        "role": "服务工厂",
+        "required_delta": "story() 切换 CaseStoryBackend；新增 case_investigation_history()。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "d7e6d2b0fc151669b33fa1c39627e5cea1705203",
+        "git_blobs": {
+          "HEAD_6282e34": "b1787f5282da5be6e79428c925d5950df689a819",
+          "origin_main": "b1787f5282da5be6e79428c925d5950df689a819"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/dependencies.py",
+        "role": "Q34/Q35 依赖注入",
+        "required_delta": "case_investigation_history_service 及 RecordError 映射。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "f9808657e8308305bc8057d630f664dc938459c2",
+        "git_blobs": {
+          "HEAD_6282e34": "4fe7dfb80167089a41a407c028ab428d9e3fc9f2",
+          "origin_main": "4fe7dfb80167089a41a407c028ab428d9e3fc9f2"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/ports.py",
+        "role": "用例端口",
+        "required_delta": "CaseStory.read_member_relations、CaseInvestigationHistory、CaseOperations.read_info_summary。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "64910bae855526c94612a69af811e5c48b145b3b",
+        "git_blobs": {
+          "HEAD_6282e34": "9c8ed9aabce5ade416fdce88ddc71e590fa36f26",
+          "origin_main": "9c8ed9aabce5ade416fdce88ddc71e590fa36f26"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/contracts.py",
+        "role": "公共外部合同导出",
+        "required_delta": "Case 需要 MemberRelationsQuery、RelatedStoryQuery、StoryEntry、StorySummary、TacticCount 导出。不要夹带 IncidentDetailView。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "4ac0ed5fe02e8e9263a452cd94f8fcda1651f043",
+        "git_blobs": {
+          "HEAD_6282e34": "f860f498eb45043e6dead2af4b24717241468bea",
+          "origin_main": "f860f498eb45043e6dead2af4b24717241468bea"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/main.py",
+        "role": "路由装配",
+        "required_delta": "导入并登记 case_investigations.router。story/cases 既有 router 不需另起应用。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "7454ea3148c65d9624f1ad49693b087dcaaacc62",
+        "git_blobs": {
+          "HEAD_6282e34": "398117ebf025f65a9d5b67b90ff862f1d8452b93",
+          "origin_main": "398117ebf025f65a9d5b67b90ff862f1d8452b93"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_contracts.py",
+        "role": "Case 列表字段合同",
+        "required_delta": "CaseQueueItem.active_member_count。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "dba37ecc874dc033b85d92ee20eb4ddba54f54eb",
+        "git_blobs": {
+          "HEAD_6282e34": "2e57f412fefcbc61c86647e3e6ae93938a168e90",
+          "origin_main": "2e57f412fefcbc61c86647e3e6ae93938a168e90"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_reader.py",
+        "role": "Case 列表取数",
+        "required_delta": "按当前正式成员告警状态聚合 active_member_count 并写入 QueueItem。",
+        "HEAD_6282e34": "已有旧文件；未含本次所需增量",
+        "origin_main": "已有旧文件；未含本次所需增量",
+        "git_baselines_equal": true,
+        "worktree_blob": "c7f883e1dde486de5007f1b72c916abf85d16e0b",
+        "git_blobs": {
+          "HEAD_6282e34": "99f55f7c2b24b97b1dc1a0f6d76030e7e4f3ee00",
+          "origin_main": "99f55f7c2b24b97b1dc1a0f6d76030e7e4f3ee00"
+        }
+      }
+    ],
+    "direct_test_file_table": [
+      {
+        "path": "services/api/tests/test_socai2_case_story_related_pg.py",
+        "HEAD_6282e34": "缺文件",
+        "origin_main": "缺文件",
+        "direct_dependency": null,
+        "scope_note": "现成直接验证入口；本次没有执行。"
+      },
+      {
+        "path": "services/api/tests/test_socai2_case_investigations_pg.py",
+        "HEAD_6282e34": "缺文件",
+        "origin_main": "缺文件",
+        "direct_dependency": "test_socai2_case_story_related_pg.add/seed_story",
+        "scope_note": "现成直接验证入口；本次没有执行。"
+      },
+      {
+        "path": "services/api/tests/test_socai2_case_info_pg.py",
+        "HEAD_6282e34": "缺文件",
+        "origin_main": "缺文件",
+        "direct_dependency": "test_socai2_case_story_related_pg.add/seed_story",
+        "scope_note": "现成直接验证入口；本次没有执行。"
+      },
+      {
+        "path": "services/api/tests/test_socai2_case_queue_pg.py",
+        "HEAD_6282e34": "已有测试但缺当前增量",
+        "origin_main": "已有测试但缺当前增量",
+        "direct_dependency": null,
+        "scope_note": "现成直接验证入口；本次没有执行。"
+      },
+      {
+        "path": "services/api/tests/test_socai2_http_boundary.py",
+        "HEAD_6282e34": "已有测试但缺当前增量",
+        "origin_main": "已有测试但缺当前增量",
+        "direct_dependency": null,
+        "scope_note": "HTTP boundary 中只纳入 Case 相关规范化/断言；当前文件还含其他模块增量。"
+      }
+    ],
+    "already_committed_case_reads": [
+      {
+        "routes": [
+          "GET /api/v1/socai2/cases/{case_id}/exploration-base",
+          "GET /api/v1/socai2/cases/{case_id}/exploration"
+        ],
+        "operations": [
+          "E67",
+          "E69"
+        ],
+        "basis": "exploration_state 外部路由、核心服务与合同在两个 Git 树中存在且与工作区一致；main.py 已装配 exploration_state.router。"
+      },
+      {
+        "routes": [
+          "GET /api/v1/socai2/cases/{subject_id}/analysis-tasks",
+          "GET /api/v1/socai2/cases/{subject_id}/analysis-tasks/{task_id}"
+        ],
+        "basis": "动态 scoped router、适配、DTO、任务用例/store/timing 在两树中存在且与工作区一致；main.py 已装配 analysis_tasks.router。"
+      },
+      {
+        "routes": [
+          "GET /api/v1/socai2/cases/{case_id}/runs/{run_id}",
+          "GET /api/v1/socai2/cases/{case_id}/results/{result_id}",
+          "GET /api/v1/socai2/cases/{case_id}/runs/{run_id}/artifacts/{artifact_id}",
+          "GET /api/v1/socai2/cases/{case_id}/artifacts/{artifact_id}"
+        ],
+        "basis": "既有 run_detail/result_detail/artifact_content/case_source_artifact 方法在两树与工作区 AST 一致；Q36 的路由文件修改不等于这些既有方法缺失。"
+      }
+    ],
+    "already_committed_direct_dependencies": [
+      {
+        "path": "services/api/app/models/socai2.py",
+        "git_blobs": {
+          "HEAD_6282e34": "21acfcf69e023f397bb93fc8f304293c20b9346a",
+          "origin_main": "21acfcf69e023f397bb93fc8f304293c20b9346a"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/baseline_store.py",
+        "git_blobs": {
+          "HEAD_6282e34": "67d3d36657d0d564bfd3f0a864ffcd4c74c72180",
+          "origin_main": "67d3d36657d0d564bfd3f0a864ffcd4c74c72180"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/baseline_service.py",
+        "git_blobs": {
+          "HEAD_6282e34": "b2f1a635b1554a2e684a14b84017f848ad3ffecb",
+          "origin_main": "b2f1a635b1554a2e684a14b84017f848ad3ffecb"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_comparison.py",
+        "git_blobs": {
+          "HEAD_6282e34": "60f1182c69bf07a4eff33dd46dbc6dcc03ceaea7",
+          "origin_main": "60f1182c69bf07a4eff33dd46dbc6dcc03ceaea7"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/run_records.py",
+        "git_blobs": {
+          "HEAD_6282e34": "dd2dd2fa817d63ac5d4ee20bdd95c8bed78d5b55",
+          "origin_main": "dd2dd2fa817d63ac5d4ee20bdd95c8bed78d5b55"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/run_directory.py",
+        "git_blobs": {
+          "HEAD_6282e34": "d92b29f5275779b28b4161f794f2343abf9b72eb",
+          "origin_main": "d92b29f5275779b28b4161f794f2343abf9b72eb"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/run_directory_contracts.py",
+        "git_blobs": {
+          "HEAD_6282e34": "f254e9a2204283c95e816f6210ca352e4ecf3479",
+          "origin_main": "f254e9a2204283c95e816f6210ca352e4ecf3479"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_data_contracts.py",
+        "git_blobs": {
+          "HEAD_6282e34": "eb8b9a76e4dd75a7232e54f577ca5d801eb57751",
+          "origin_main": "eb8b9a76e4dd75a7232e54f577ca5d801eb57751"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/list_query.py",
+        "git_blobs": {
+          "HEAD_6282e34": "b15c4047b8f2d96b72123be2600a1603ce1edbf1",
+          "origin_main": "b15c4047b8f2d96b72123be2600a1603ce1edbf1"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/errors.py",
+        "git_blobs": {
+          "HEAD_6282e34": "9c6df76beb798c69580d3069446e5ab072669a43",
+          "origin_main": "9c6df76beb798c69580d3069446e5ab072669a43"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/run_record_contracts.py",
+        "git_blobs": {
+          "HEAD_6282e34": "58c508023592389a43857dfa51968465729fac15",
+          "origin_main": "58c508023592389a43857dfa51968465729fac15"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/run_directory_contracts.py",
+        "git_blobs": {
+          "HEAD_6282e34": "3afaf0ccc633abcdde7e7f4a2e92059f1768f2d1",
+          "origin_main": "3afaf0ccc633abcdde7e7f4a2e92059f1768f2d1"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/external_routes/exploration_state.py",
+        "git_blobs": {
+          "HEAD_6282e34": "af685259ef060fb3886bb83615940b7a22cf415c",
+          "origin_main": "af685259ef060fb3886bb83615940b7a22cf415c"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/exploration_state.py",
+        "git_blobs": {
+          "HEAD_6282e34": "929de0b757a1e19369b31c1b94ebb6517d8d705e",
+          "origin_main": "929de0b757a1e19369b31c1b94ebb6517d8d705e"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/exploration_state_contracts.py",
+        "git_blobs": {
+          "HEAD_6282e34": "702ba17897bb4d4c099dc60496f32cf4e5685c8f",
+          "origin_main": "702ba17897bb4d4c099dc60496f32cf4e5685c8f"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/external_routes/analysis_tasks.py",
+        "git_blobs": {
+          "HEAD_6282e34": "ba5a6cc4973e6b613b80bf04a030b86bcceb8dda",
+          "origin_main": "ba5a6cc4973e6b613b80bf04a030b86bcceb8dda"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/adapters/analysis_tasks.py",
+        "git_blobs": {
+          "HEAD_6282e34": "02270d81f245aaa72935c55604220aff6a5bc7eb",
+          "origin_main": "02270d81f245aaa72935c55604220aff6a5bc7eb"
+        }
+      },
+      {
+        "path": "services/api/investigation_http/analysis_task_contracts.py",
+        "git_blobs": {
+          "HEAD_6282e34": "caddd336db67689f1cd8ebb291b2b93bdbb8708d",
+          "origin_main": "caddd336db67689f1cd8ebb291b2b93bdbb8708d"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/analysis_tasks.py",
+        "git_blobs": {
+          "HEAD_6282e34": "ab75bce2bd0885c0b5f133979b897c79b251217a",
+          "origin_main": "ab75bce2bd0885c0b5f133979b897c79b251217a"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/analysis_task_store.py",
+        "git_blobs": {
+          "HEAD_6282e34": "4a913ba420bef18c745019e5d3e824be0b1d4d69",
+          "origin_main": "4a913ba420bef18c745019e5d3e824be0b1d4d69"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/analysis_task_times.py",
+        "git_blobs": {
+          "HEAD_6282e34": "266bd3607e0514763742448774dc47de5cc476a3",
+          "origin_main": "266bd3607e0514763742448774dc47de5cc476a3"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/case_data.py",
+        "git_blobs": {
+          "HEAD_6282e34": "a71f246bb1706a85757f95f2a7c4f87eb6aaf7d2",
+          "origin_main": "a71f246bb1706a85757f95f2a7c4f87eb6aaf7d2"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/incident_inputs.py",
+        "git_blobs": {
+          "HEAD_6282e34": "231c7a97ee710d0ecaea63faebeb3aadab11cd7b",
+          "origin_main": "231c7a97ee710d0ecaea63faebeb3aadab11cd7b"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/stage_inputs.py",
+        "git_blobs": {
+          "HEAD_6282e34": "0641cae4409fb85777215a68a034da3a0a6b5652",
+          "origin_main": "0641cae4409fb85777215a68a034da3a0a6b5652"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/enums.py",
+        "git_blobs": {
+          "HEAD_6282e34": "9de6926801214f9f1521fc7aad79d4c3deffaba2",
+          "origin_main": "9de6926801214f9f1521fc7aad79d4c3deffaba2"
+        }
+      },
+      {
+        "path": "services/api/app/socai2/subject_risk_contracts.py",
+        "git_blobs": {
+          "HEAD_6282e34": "cac7d539df62c35752d96c9d1404c9b22c5ec100",
+          "origin_main": "cac7d539df62c35752d96c9d1404c9b22c5ec100"
+        }
+      },
+      {
+        "path": "services/api/tests/test_socai2_analysis_task_http_pg.py",
+        "git_blobs": {
+          "HEAD_6282e34": "e574cdd3e4a543206428b5aed795ecd0373de2a4",
+          "origin_main": "e574cdd3e4a543206428b5aed795ecd0373de2a4"
+        }
+      }
+    ],
+    "hunk_boundaries": [
+      "TacticCount 核心类已在两个 Git 树的 app/socai2/page_contracts.py 中。Q36 缺的是 investigation_http/contracts.py 的 TacticCount 导出，不需为此收录 page_contracts.py 的 IncidentDetailView 等事件改动。该结论修正了初核按整文件差异推断的表述。",
+      "当前 investigation_http/contracts.py 同时新增 IncidentDetailView 导入/导出。若整文件收录，必须同步其事件定义；本次 Case 最小集合应只取相关 Story 类型和 TacticCount 的导出。",
+      "adapters/case_investigations.py 依赖 adapters/case_story.py.investigation_urls，后者依赖 adapters/run_directory.py.result_urls；只提交新目录路由/合同会漏掉可导入依赖。",
+      "Q34/Q35 的 core 用例依赖 case_story_relations.py 和 case_reader.usage_totals。usage_totals 的既有实现已在 Git；case_reader 的本次改动是独立列出的 Case 列表 active_member_count。",
+      "新 history/info 直接测试依赖新 test_socai2_case_story_related_pg.py 的 add/seed_story，不可只收两份测试。socai2_test_severity.py 未作为这些指定 Case 测试的直接导入依赖，未列入最小集合。",
+      "公共 models/socai2.py、baseline_store/service、case_data、incident_inputs、stage_inputs、case_comparison、run_records/directory 和只读错误/目录 DTO 均已在两树中且与工作区一致；本次查询集合未要求新增表或迁移。此判断不替代其他功能的迁移审计。"
+    ],
+    "verification_method": [
+      "Read immutable Git blobs by commit:path, separately inspect current worktree AST and import/symbol requirements.",
+      "Resolve current origin/main through ls-remote without mutating refs or index.",
+      "Map platform bridge operationId/path and actual Case frontend request source to native route functions.",
+      "Verify selected route/parameter/field absence at both Git references, not merely worktree file existence.",
+      "Check that recorded direct-test/evidence paths exist; reference prior evidence without loading or restating its runtime values. No tests or live reads were rerun."
+    ],
+    "source_snapshot_path": "/Users/lychee/Documents/project/socai2/.local/validation/s1-s2-s3-case-http-preparation-20261128-01/git-dependency-source-audit-complete.private.json",
+    "frontend_sources": [
+      "/Users/lychee/Projects/SpiritHub-web-8181/backend/src/spirithub/soc/bridge_contract.json",
+      "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/workbench-api.ts",
+      "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/case-history-api.ts",
+      "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/case-info-api.ts",
+      "/Users/lychee/Projects/SpiritHub-web-8181/web/src/features/soc-cases/case-queue.tsx"
+    ],
+    "handoff": "由统筹在获准测试完成后的 Git 操作中，将上述对应业务增量与直接测试按范围纳入实际后端提交；再以含这些路由/字段的提交更新父项目 server 引用。不能以当前 HEAD 或当前 main 冒称已具备 Q33–Q36。此审计不执行提交、暂存、merge、push、部署或模型调用，也不修改核心发布方案/PROGRESS.md。"
+  },
+  "spirithub_case_rerun_submit_registration": {
+    "state": "ordinary_source_and_mock_verified_running_platform_pending",
+    "goal": "让正常登录后的 8181 使用既有 Case 异步受理接口。原生受理状态、任务身份和错误按实际回执透传。",
+    "method": "POST",
+    "path": "/api/v1/socai2/cases/{case_id}/investigations",
+    "operation_id": "socai2_investigate",
+    "route_observation": {
+      "existing_prefix": "Vite 通用 API 前缀经现行主代理及告警回退到正式 SpiritHub。两套本机候选对这类路径只分流 GET，POST 仍按原方法和原路径前送。",
+      "ordinary_platform": "从当前正式平台代理直接获取的 OpenAPI 缺该 POST。",
+      "native_upstream": "平台配置的当前正式调查 HTTP 已声明同路径 POST 和 202，与既有正式转发读取的 OpenAPI 结构一致。",
+      "evidence": ".local/validation/m0g-spirithub-readonly-20261128-01/rerun-post-platform-registration.private.json"
+    },
+    "main_basis": {
+      "revision": "1cd0ff1fd9f7d23c15503c9ef0f6f66812dda449",
+      "ordinary_route": "backend/src/spirithub/api/routes/socai2.py 的 investigate",
+      "contracts": [
+        "backend/src/spirithub/soc/bridge_contract.json",
+        "schemas/platform-api.v1.json"
+      ],
+      "authorization": "沿用现有 Case 更新权限。",
+      "request": "Socai2AnalysisSubmitRequest，保留 operation_key 及 mode。",
+      "success": "Socai2AnalysisTaskReceipt，原生 202 代表持久受理，状态继续从返回的 status_url 查询。",
+      "transport": "沿用 main 的 downstream Response 及 SocBridge 已有真实状态透传。受理返回由原生 HTTP 和回执决定，追加注册不能把原生 202 降为平台默认 200。"
+    },
+    "scope": "优先在统筹指定的普通平台整合基线上保留 main 已有 POST 及其依赖。若需补旧源码，只回接这一 POST 的注册、原生投影、响应状态与该方法所需引用。并列保留同路径 Q34 GET、Q35 GET 及现有非 SOC 合同，生成类型仅在合同投影缺口需要时更新。",
+    "required_direct_checks": [
+      "使用普通平台注册、Case 更新权限和既有桥接替身验证 POST 到达原生相同路径，请求体和 operation_key 原样保留，原生正向 202 及任务回执透传。",
+      "验证已有原生冲突或提交结果未知的错误保持原义，无自动重投。核对同路径 GET 及既有 POST 各自存在。",
+      "采用现有普通平台运行链路，由统筹在另行安排的启用步骤核对活跃正式平台主管的 OpenAPI 同时声明目标 POST。"
+    ],
+    "execution_boundary": "原操作的受理状态由核心沿用原 operation_key 只读确认。本文追加当前接口证据及计划，保留原失败回执。计划审核阶段止于源码和 OpenAPI 核对。",
+    "preserved_bridge_behavior": "保留当前按现有 role 和 trusted 配置绑定的身份转发，保留其他已注册方法原有超时行为。此 POST 的超时仍按提交结果未知处理，查询沿用原 operation_key。",
+    "direct_status_check": "一次替身链路断言原生 202 与任务回执透传，原生错误不进入成功分支。平台向上游只发送初次收到的那一份测试替身请求。",
+    "implementation_receipt": {
+      "scope": "仅追加这一条普通 POST、状态透传、合同、生成类型及定向用例。Q34/Q35、既有 trusted 绑定与其他方法超时按改前保留。",
+      "method": "普通 FastAPI 和已有替身通过。按原生合同的 202、受理回执、同 key 请求体及 operation_conflict 均已在替身链路核对。",
+      "type_delta": "main 方法投影引用本地同形校验类型。仅补此方法及两个必要 DTO，其他声明按改前保留。",
+      "private_source_delta": ".local/validation/case-rerun-ordinary-submit-20261128-01/source-delta.patch",
+      "private_verification": ".local/validation/case-rerun-ordinary-submit-20261128-01/verification.private.json",
+      "ordinary_platform_load_handoff": ".local/validation/case-rerun-ordinary-submit-20261128-01/platform-load-handoff.private.json",
+      "running_state": "本轮测试用正式原生调查 HTTP。普通平台的此 POST 源码已修正，现行普通服务加载和正式提交验收留待独立安排。"
+    }
+  },
+  "spirithub_existing_allocation_and_read_contract_review": {
+    "state": "read_only_source_contract_review_completed",
+    "scope": [
+      "E01",
+      "E08",
+      "Q30",
+      "Q31",
+      "Q32",
+      "E57"
+    ],
+    "basis": {
+      "spirithub_source": "/Users/lychee/Projects/SpiritHub-web-8181",
+      "observed_main": "1cd0ff1fd9f7d23c15503c9ef0f6f66812dda449",
+      "source_sha256": {
+        "backend/src/spirithub/api/routes/socai2.py": "b4acdaad5ed1f6b20695d1a52841874a81b28faf6a62a0097c141c975b426125",
+        "backend/src/spirithub/soc/bridge_contract.json": "ca8a48e1b1ebc7699419f9fdb24f67d134a0acb1b7f068aaef0dd30992a4f79b",
+        "schemas/platform-api.v1.json": "71b71771a43e5c3b4ca352f8d3b5e538002c70127fc94e3a5aac99302b7710e3",
+        "web/src/shared/api/generated/live.ts": "99a82026d156b5d53c14960df5009ad8cfe09695e86e8c89c48d9b9b831efd3a"
+      },
+      "previous_independent_post_review": "/Users/lychee/Documents/project/socai2/.local/validation/model-exceptions-release-coordinator-20261128-01/ordinary-post-case-association-source-review.json",
+      "native_connection_reference": "/Users/lychee/Documents/project/socai2/.local/validation/s1-s2-s3-case-http-preparation-20261128-01/native-entry-minimal-01/native-connection-reference.private.json"
+    },
+    "method_rows": [
+      {
+        "operation": "E01",
+        "method": "POST",
+        "path": "/api/v1/socai2/cases",
+        "ordinary_registry": "socai2_E01",
+        "native_source": "services/api/investigation_http/external_routes/cases.py:78",
+        "native_success": {
+          "201": [
+            "Socai2CaseAllocationReceipt"
+          ]
+        },
+        "current_bridge_success": {
+          "200": [
+            "Socai2CaseAllocationReceipt"
+          ]
+        },
+        "current_public_success": {
+          "200": [
+            "Socai2AssociationReceipt"
+          ]
+        },
+        "request_body": [
+          "Socai2CaseCreate"
+        ],
+        "parameters": [],
+        "frontend_consumer": "web/src/features/soc-cases/case-entry-api.ts:48",
+        "current_generated_operation": "socai2_E01",
+        "needed_generated_response_model_definitions": [
+          "Socai2CaseAllocation",
+          "Socai2CaseAllocationReceipt",
+          "Socai2IncidentReceiver",
+          "Socai2InitialCaseTaskReceipt"
+        ],
+        "main": {
+          "operation_id": "socai2_E01",
+          "success": {
+            "201": [
+              "Socai2CaseAllocationReceipt"
+            ]
+          },
+          "generated_declaration_exists": true
+        },
+        "minimal_delta": "请求体不变。同步原生 201 和 Socai2CaseAllocationReceipt。若在旧 8181 源码收口，E01 复用已有 downstream Response 实际状态透传，避免默认 200。main 已包含创建 201 及正式回执，整合保留该实现。"
+      },
+      {
+        "operation": "E08",
+        "method": "POST",
+        "path": "/api/v1/socai2/cases/{case_id}/associations",
+        "ordinary_registry": "socai2_E08",
+        "native_source": "services/api/investigation_http/external_routes/cases.py:186",
+        "native_success": {
+          "200": [
+            "Socai2CaseAllocationReceipt"
+          ]
+        },
+        "current_bridge_success": {
+          "200": [
+            "Socai2CaseAllocationReceipt"
+          ]
+        },
+        "current_public_success": {
+          "200": [
+            "Socai2AssociationReceipt"
+          ]
+        },
+        "request_body": [
+          "Socai2AssociationRequest"
+        ],
+        "parameters": [
+          [
+            "path",
+            "case_id"
+          ]
+        ],
+        "frontend_consumer": "web/src/features/soc-cases/case-entry-api.ts:49",
+        "current_generated_operation": "socai2_E08",
+        "needed_generated_response_model_definitions": [
+          "Socai2CaseAllocation",
+          "Socai2CaseAllocationReceipt",
+          "Socai2IncidentReceiver",
+          "Socai2InitialCaseTaskReceipt"
+        ],
+        "main": {
+          "operation_id": "socai2_E08",
+          "success": {
+            "200": [
+              "Socai2CaseAllocationReceipt"
+            ]
+          },
+          "generated_declaration_exists": true
+        },
+        "minimal_delta": "请求体和 200 不变，将旧 Socai2AssociationReceipt 公开响应改为桥接已返回的 Socai2CaseAllocationReceipt。main 已公开该响应。"
+      },
+      {
+        "operation": "Q30",
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{subject_id}/analysis-tasks",
+        "ordinary_registry": "socai2_Q30",
+        "native_source": "services/api/investigation_http/external_routes/analysis_tasks.py:30",
+        "native_success": {
+          "200": [
+            "Socai2AnalysisTaskPage"
+          ]
+        },
+        "current_bridge_success": {
+          "200": [
+            "Socai2AnalysisTaskPage"
+          ]
+        },
+        "current_public_success": null,
+        "request_body": [],
+        "parameters": [
+          [
+            "path",
+            "subject_id"
+          ],
+          [
+            "query",
+            "limit"
+          ],
+          [
+            "query",
+            "cursor"
+          ]
+        ],
+        "frontend_consumer": "本轮前端变更未发现独立任务目录请求。保留伴随任务读取合同。",
+        "current_generated_operation": null,
+        "needed_generated_response_model_definitions": [
+          "Socai2AnalysisActiveStep",
+          "Socai2AnalysisAttemptTiming",
+          "Socai2AnalysisAttemptView",
+          "Socai2AnalysisTaskDetail",
+          "Socai2AnalysisTaskPage",
+          "Socai2AnalysisTaskTiming",
+          "Socai2AnalysisUpdateState"
+        ],
+        "main": {
+          "operation_id": "socai2_case_tasks",
+          "success": {
+            "200": [
+              "Socai2AnalysisTaskPage"
+            ]
+          },
+          "generated_declaration_exists": true
+        },
+        "minimal_delta": "普通注册和桥接合同均在，补公开 GET、路径/分页参数和任务列表引用。main 已具备同方法，保留其现有 operationId。"
+      },
+      {
+        "operation": "Q31",
+        "method": "GET",
+        "path": "/api/v1/socai2/cases/{subject_id}/analysis-tasks/{task_id}",
+        "ordinary_registry": "socai2_Q31",
+        "native_source": "services/api/investigation_http/external_routes/analysis_tasks.py:38",
+        "native_success": {
+          "200": [
+            "Socai2AnalysisTaskDetail"
+          ]
+        },
+        "current_bridge_success": {
+          "200": [
+            "Socai2AnalysisTaskDetail"
+          ]
+        },
+        "current_public_success": null,
+        "request_body": [],
+        "parameters": [
+          [
+            "path",
+            "subject_id"
+          ],
+          [
+            "path",
+            "task_id"
+          ]
+        ],
+        "frontend_consumer": "web/src/features/soc-cases/case-entry-api.ts:55",
+        "current_generated_operation": null,
+        "needed_generated_response_model_definitions": [
+          "Socai2AnalysisActiveStep",
+          "Socai2AnalysisAttemptTiming",
+          "Socai2AnalysisAttemptView",
+          "Socai2AnalysisTaskDetail",
+          "Socai2AnalysisTaskTiming"
+        ],
+        "main": {
+          "operation_id": "socai2_case_task",
+          "success": {
+            "200": [
+              "Socai2AnalysisTaskDetail"
+            ]
+          },
+          "generated_declaration_exists": true
+        },
+        "minimal_delta": "普通注册和桥接合同均在，补公开 GET、双身份路径参数和任务详情引用，保留 Case/Task 校验。main 已具备同方法，保留其现有 operationId。"
+      },
+      {
+        "operation": "Q32",
+        "method": "GET",
+        "path": "/api/v1/socai2/analysis-runs",
+        "ordinary_registry": "socai2_Q32",
+        "native_source": "services/api/investigation_http/external_routes/run_directory.py:30",
+        "native_success": {
+          "200": [
+            "Socai2AnalysisRunDirectoryPage"
+          ]
+        },
+        "current_bridge_success": {
+          "200": [
+            "Socai2AnalysisRunDirectoryPage"
+          ]
+        },
+        "current_public_success": null,
+        "request_body": [],
+        "parameters": [
+          [
+            "query",
+            "subject_type"
+          ],
+          [
+            "query",
+            "subject_id"
+          ],
+          [
+            "query",
+            "run_kind"
+          ],
+          [
+            "query",
+            "intent"
+          ],
+          [
+            "query",
+            "state"
+          ],
+          [
+            "query",
+            "time_from"
+          ],
+          [
+            "query",
+            "time_to"
+          ],
+          [
+            "query",
+            "limit"
+          ],
+          [
+            "query",
+            "cursor"
+          ]
+        ],
+        "frontend_consumer": "web/src/features/investigations/api.ts:8",
+        "current_generated_operation": null,
+        "needed_generated_response_model_definitions": [
+          "Socai2AnalysisRunDirectoryItem",
+          "Socai2AnalysisRunDirectoryPage",
+          "Socai2AnalysisRunDirectoryStatistics"
+        ],
+        "main": {
+          "operation_id": "socai2_run_directory",
+          "success": {
+            "200": [
+              "Socai2RunDirectoryPage"
+            ]
+          },
+          "generated_declaration_exists": true
+        },
+        "minimal_delta": "补公开统一 Run 目录 GET 及本方法三个目录模型，保留实际 escalation_decision 和 statistics.not_escalated_count。8181 旧 Socai2RunDirectoryPage 还服务 Q08 /runs，不能把该旧页和统一目录合并。main 有同路径，但其统一目录各自缺上述两字段。"
+      },
+      {
+        "operation": "E57",
+        "method": "GET",
+        "path": "/api/v1/socai2/incidents/grouping-summary",
+        "ordinary_registry": "socai2_E57",
+        "native_source": "services/api/investigation_http/external_routes/grouping.py:21",
+        "native_success": {
+          "200": [
+            "Socai2GroupingSummary"
+          ]
+        },
+        "current_bridge_success": {
+          "200": [
+            "Socai2GroupingSummary"
+          ]
+        },
+        "current_public_success": null,
+        "request_body": [],
+        "parameters": [
+          [
+            "query",
+            "source_namespace"
+          ],
+          [
+            "query",
+            "time_from"
+          ],
+          [
+            "query",
+            "time_to"
+          ]
+        ],
+        "frontend_consumer": "web/src/features/security-events/incidentListApi.ts:35",
+        "current_generated_operation": null,
+        "needed_generated_response_model_definitions": [
+          "Socai2GroupingQuery",
+          "Socai2GroupingSummary"
+        ],
+        "main": {
+          "operation_id": "socai2_grouping_summary",
+          "success": {
+            "200": [
+              "Socai2GroupingSummary"
+            ]
+          },
+          "generated_declaration_exists": true
+        },
+        "minimal_delta": "普通注册和桥接合同均在，补公开 GET 和现有分组查询及摘要引用。main 已具备同方法，保留其现有 operationId。"
+      }
+    ],
+    "scope_of_generation": "只同步这六个 public 方法、各自 operation 类型与缺少的回执/读口引用闭包，重用已有同形公共错误及其他已声明模型。保留相邻方法、现有调用校验和非 SOC 类型。main 已有方法的绑定按主线实际 operationId 生成。",
+    "known_run_directory_difference": {
+      "native_item": "escalation_decision",
+      "native_statistics": "not_escalated_count",
+      "front_consumer": "web/src/features/investigations/InvestigationListPage.tsx:56",
+      "native_model_source": "services/api/investigation_http/run_directory_contracts.py",
+      "observed_main_lacks_both": true,
+      "current_public_legacy_use": "GET /api/v1/socai2/runs"
+    },
+    "followup_test_reuse": {
+      "not_executed_in_this_review": true,
+      "reference": "backend/tests/soc/test_bridge.py",
+      "only_if_changed": [
+        "test_case_creation_and_association_preserve_allocation_receipt",
+        "test_case_analysis_task_reads_keep_task_identity_without_run",
+        "test_run_directory_forwards_authorized_scope_and_native_statistics",
+        "test_incident_grouping_summary_uses_static_route_and_preserves_bridge_contract"
+      ]
+    },
+    "implementation_status": "待统筹安排下一步，当前仅记录源码差异。"
+  },
+  "spirithub_allocation_read_contract_alignment": {
+    "state": "source_and_targeted_tests_passed",
+    "goal": "对齐普通平台 E01/E08 的正式分配回执以及 Q30/Q31/Q32/E57 的公开读取合同和生成类型。",
+    "scope": {
+      "E01": "复用现有 downstream Response 透传实际上游 201。桥接和公开成功响应使用现有 CaseAllocationReceipt。",
+      "E08": "保持现有原生 200 透传结果，公开响应和生成类型同步 CaseAllocationReceipt。",
+      "Q30_Q31_Q32_E57": "保留普通平台注册。向公开 Schema 增加既有四个 GET 和真实响应引用闭包。",
+      "Q32": "保留 escalation_decision、statistics.not_escalated_count。统一目录使用已有 AnalysisRunDirectory DTO，原 /runs 及其 DTO 沿用。",
+      "scope_boundary": "保留普通 POST、Q34/Q35、既有 trusted 绑定及各方法超时语义。保留非 SOC 方法和声明。"
+    },
+    "steps": [
+      "本计划写入后严格校验现有 OpenSpec change。",
+      "在普通临时目录内准备补丁，通过当前一般 Response 透传 E01 实际成功状态。普通重新调查 POST 的提交结果未知按自身调用保留。",
+      "基于已有正式回执和读取合同同步两个 JSON 的需要部分，按当前生成工具取得所需前端声明，核对其他方法和 DTO 的语义。",
+      "复用已有创建、关联、任务、目录、分组测试及受此公共接线影响的已验普通 POST 与历史读口用例。以真实源文件指纹核对并交独验。"
+    ],
+    "required_direct_checks": [
+      "E01 mock 原生 201、E08 mock 原生 200，各自透传实际分配回执和原请求体。",
+      "已有 Q30/Q31/Q32/E57 请求直达正常模拟上游，保留分页、身份和原生统计。静态检查四条公开方法的引用完整。",
+      "已验证普通重新调查 POST 和 Q34/Q35 行为保留，生成类型独立检查通过，非 SOC 及旧 /runs 相应声明等同改前。",
+      "记录 before/after 的两个 JSON 方法和组件语义差异、实际应用和替身测试源码指纹。"
+    ],
+    "deployment_state": "本步交付源码和替身证据，平台运行环境和真实业务请求沿先前独立边界。",
+    "source_plan_reference": "spirithub_existing_allocation_and_read_contract_review",
+    "implementation_receipt": {
+      "result": "E01 登录后的普通桥接透传上游实际成功状态，公开 201 和 E08 200 均使用 CaseAllocationReceipt。已注册四个 GET 公开方法和 DTO 同步完成。",
+      "method": "复用原 E01/E08、Q30/Q31、Q32、E57、重新调查 POST 和 Q34/Q35 用例，合计八项定向替身用例通过。公共桥接和生成类型检查通过。",
+      "read_error_contract": "已注册四个 GET 的公开声明和桥接合同沿用现有平台错误格式。原错误处理逻辑保留。",
+      "q32_preserved": "原生 escalation_decision 与 statistics.not_escalated_count 保留，旧 /runs DTO 语义保持。",
+      "evidence": ".local/validation/case-allocation-read-contract-20261128-01/verification.private.json",
+      "json_semantic_delta": ".local/validation/case-allocation-read-contract-20261128-01/json-semantic-delta.private.json",
+      "source_fingerprints": ".local/validation/case-allocation-read-contract-20261128-01/source-delta.private.json",
+      "source_patch": ".local/validation/case-allocation-read-contract-20261128-01/source-delta.patch",
+      "runtime_boundary": "本步源码与替身已验。普通平台真实加载及业务读回按独立步骤安排。"
+    }
+  },
+  "lookup_registration_uniform_http_release_item": {
+    "status": "pending_uniform_http_release_source_scope",
+    "scope": "Q34/Q35 Case investigation directory and fixed-Run lookup registration plus required dependencies.",
+    "source_audit_path": ".local/validation/model-exception-release-rerun-prep-20261128-01/lookup-source-audit-01/source-audit.json",
+    "source_evidence": [
+      {
+        "path": ".local/validation/model-exception-release-rerun-prep-20261128-01/active-read-01/unpacked/http-0/source/investigation_http/main.py",
+        "line": 38
+      },
+      {
+        "path": ".local/validation/model-exception-release-rerun-prep-20261128-01/prepare_dispatcher_switch.py",
+        "line": 66
+      }
+    ],
+    "finding": "The workspace and evidence reader use the same Q35 path; the frozen native HTTP main registration lacks that router, and the narrow dispatcher candidate does not deploy HTTP changes.",
+    "dependencies": {
+      "registration_and_response": [
+        "services/api/investigation_http/main.py",
+        "services/api/investigation_http/external_routes/case_investigations.py",
+        "services/api/investigation_http/case_investigation_contracts.py",
+        "services/api/investigation_http/story_contracts.py"
+      ],
+      "service_wiring": [
+        "services/api/investigation_http/dependencies.py::case_investigation_history_service",
+        "services/api/investigation_http/adapters/services.py::case_investigation_history",
+        "services/api/investigation_http/ports.py::CaseInvestigationHistory"
+      ],
+      "reader_and_relation_scope": [
+        "services/api/investigation_http/adapters/case_investigations.py",
+        "services/api/app/socai2/case_investigations.py",
+        "services/api/app/socai2/case_story_relations.py"
+      ],
+      "shared_url_and_contract_imports": [
+        "services/api/investigation_http/adapters/case_story.py::investigation_urls",
+        "services/api/investigation_http/adapters/run_directory.py::result_urls",
+        "services/api/app/socai2/case_story_contracts.py::RelatedStoryQuery",
+        "services/api/investigation_http/contracts.py shared story/Run type exports"
+      ],
+      "existing_release_dependency_inventory": "openspec/changes/complete-socai2-investigation-chain/case-m0g-http-pg-audit-20261128.json#spirithub_case_git_dependency_audit",
+      "meaning": "Required load/read chain, not a claim that every listed file is absent from the deployed image. Do not release only the main.py include line."
+    },
+    "handling": "Retain saved evidence; no path substitution with Run detail, no fresh GET, no per-batch extra deployment. Close in the existing uniform HTTP release and then validate the actual loaded route.",
+    "frontend_boundary": "The candidate proxy source contains Q35, but does not prove which native HTTP instance its runtime soc_http_base_url selects. No runtime config was read in this audit, so no claim that 8181 used the frozen 21 HTTP image or another route-capable candidate can be made here. Proxy registration cannot establish native registration."
+  },
+  "http_complete_delivery_source_audit": {
+    "status": "source_handoff_ready_for_coordinator_staging_reconciliation",
+    "scope": "调查 HTTP 完整源码、合同、依赖、既有测试/独审路径和统一发布入口；不操作 Git/index/根 PROGRESS，不部署、不发业务请求。",
+    "inventory": "openspec/changes/complete-socai2-investigation-chain/http-complete-delivery-source-inventory-20261128.json",
+    "handoff": "openspec/changes/complete-socai2-investigation-chain/http-complete-delivery-handoff-20261128.md",
+    "extends": [
+      "spirithub_case_git_dependency_audit",
+      "lookup_registration_uniform_http_release_item"
+    ],
+    "q34_q35": "本地目录/定位源码及注册、共享 reader/contracts/URL 依赖已逐路径列入；先前冻结 HTTP 缺口仍随统一 HTTP 发布，未补发 GET 或改用 Run detail。",
+    "post": "已实现 Case investigations 与 Incident diagnose POST 的 route/contract/context/port/factory/writer/core task policy/store/任务读取全链列入，独立 dispatcher 配置与发布边界单列。",
+    "deployment": "完整 app + investigation_http 源码包、依赖锁、增量 SQL 引用图、配置字段、监听、模型/上游职责、健康与回滚入口均列明；manage.py 无 rollback 子命令。",
+    "validation": "源码清单/导入闭包/最终散列与 strict 通过；统筹独审指出的测试前置断言已补强，最终指定四项离线边界 4 passed/0 failed，Q34/Q35 及完整 paths/components 严格比较通过；实际业务和发布不在本步范围。",
+    "unverified": "最终暂存与 Git/main/父项目、实际 profile/迁移/镜像/现役注册及业务验收由统筹核对；不据本清单宣称 change 完成。",
+    "bounded_http_boundary_fix": {
+      "status": "same_four_offline_boundary_tests_passed_after_independent_review_strengthening",
+      "source_paths": [
+        "services/api/investigation_http/errors.py",
+        "services/api/investigation_http/adapters/operational_logging.py",
+        "services/api/tests/test_socai2_http_boundary.py"
+      ],
+      "final_source_sha256": {
+        "services/api/investigation_http/errors.py": "4bd2ebf1615fffb803d17a824d5284229e98b3576be90b31abf436c1826e6133",
+        "services/api/investigation_http/adapters/operational_logging.py": "b06058603912e77e73ab101e60614eb73ffa8eb5ab32ee6fb707f9c0dccb33c5",
+        "services/api/tests/test_socai2_http_boundary.py": "0f3080045e316488a9cb6f84163a5c4a91415a6a90090c5297d3ae987fb56711"
+      },
+      "test_result": {
+        "passed": 4,
+        "failed": 0,
+        "exit_code": 0
+      },
+      "reached": "Q34/Q35/POST; exact final paths/components equality; remaining legacy alias and internal-boundary checks.",
+      "runtime_boundary": "Offline schema/import/logging/TestClient only; no real service, PG or model validation.",
+      "audit_strengthening": "Reconstructed legacy alert field component is derived from current single-request schema and fully compared before insertion; batch changes update only two explicitly asserted keys.",
+      "baseline_handling": "Original OpenAPI baseline retained. Explicit enumerated published/approved field/type/required/reference/description assertions precede normalization.",
+      "evidence": ".local/validation/http-complete-source-delivery-20261128-01/http-boundary-fix-01/final-result.source-only.json",
+      "passed_run": ".local/validation/http-complete-source-delivery-20261128-01/http-boundary-fix-01/test-05",
+      "exact_diff": ".local/validation/http-complete-source-delivery-20261128-01/http-boundary-fix-01/implementation.diff",
+      "source_provenance": ".local/validation/http-complete-source-delivery-20261128-01/http-boundary-fix-01/all-schema-source-provenance.source-only.json",
+      "handoff": "http-complete-delivery-handoff-20261128.md",
+      "historical_results": "All prior failed and passed test-run artifacts preserved.",
+      "git_scope": "Only earlier authorized source reads; no Git/index writes or branch changes, and no subsequent Git operations."
+    }
+  }
+}

@@ -1,0 +1,459 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:socai2:case-rerun-readback-binding:v2",
+  "title": "New-batch Case rerun readback file structures",
+  "description": "结构交接，不含已受理任务值、运行值或可执行配置。主 schema 对应 read config；其余独立文件使用对应 $defs。完整 dispatcher profile 仍由既有 load_profile 校验。",
+  "$ref": "#/$defs/read_config",
+  "$defs": {
+    "read_config": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": "case-rerun-read-config.v2"
+        },
+        "batch_root": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "control_directory": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "operation_config": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "switch_plan": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "native_context_file": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "native_context_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "previous_reader_source": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "仅引用前轮 audit_case_metadata.py 中的纯比较函数，不读取旧批数据。"
+        },
+        "http_surfaces": {
+          "const": [
+            "native"
+          ],
+          "description": "本次只做 native HTTP/PG；8181 由前端会话独立读取。"
+        },
+        "max_response_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "directory_page_limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_directory_pages": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_task_chain_depth": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "accepted_response_body_file": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "独立核验配置中的路径，终态后由统筹填写本次实际 native-submit 的对应工件；不回写核心 request-config。"
+        },
+        "accepted_http_receipt_file": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "独立核验配置中的路径，终态后由统筹填写本次实际 native-submit 的对应工件；不回写核心 request-config。"
+        }
+      },
+      "required": [
+        "schema_version",
+        "batch_root",
+        "control_directory",
+        "operation_config",
+        "switch_plan",
+        "native_context_file",
+        "native_context_sha256",
+        "previous_reader_source",
+        "http_surfaces",
+        "max_response_bytes",
+        "directory_page_limit",
+        "max_directory_pages",
+        "max_task_chain_depth",
+        "accepted_response_body_file",
+        "accepted_http_receipt_file"
+      ],
+      "additionalProperties": false
+    },
+    "request_config": {
+      "type": "object",
+      "properties": {
+        "subject_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "prior_task_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "body_file": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "body_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "http_timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "http_connect_timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "prior_task_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "prior_operation_keys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "source_follow_manifest": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "仅比较路径以核排旧目录；核验程序不打开旧 follow manifest。"
+        }
+      },
+      "required": [
+        "subject_id",
+        "prior_task_id",
+        "body_file",
+        "body_sha256",
+        "http_timeout_seconds",
+        "http_connect_timeout_seconds",
+        "prior_task_ids",
+        "prior_operation_keys",
+        "source_follow_manifest"
+      ],
+      "additionalProperties": true,
+      "description": "直接消费核心 prepare_rerun_candidate.py 冻结的既有 request_config；不改写、不复制、不补字段。"
+    },
+    "request_body": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "const": "rerun"
+        },
+        "operation_key": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "mode",
+        "operation_key"
+      ],
+      "additionalProperties": false
+    },
+    "follow_manifest": {
+      "type": "object",
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "task_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "operation_key": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status_url": {
+          "type": "string",
+          "format": "uri-reference"
+        },
+        "session_file": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "additional_start_requested": {
+          "const": false
+        }
+      },
+      "required": [
+        "case_id",
+        "task_id",
+        "operation_key",
+        "status_url",
+        "session_file",
+        "additional_start_requested"
+      ],
+      "additionalProperties": true
+    },
+    "terminal_follow": {
+      "type": "object",
+      "properties": {
+        "snapshot_path": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "control": {
+          "type": "object",
+          "properties": {
+            "task_terminal": {
+              "const": true
+            },
+            "attempts_locally_ended": {
+              "const": true
+            },
+            "post_attempted": {
+              "const": false
+            },
+            "task_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "case_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "latest_run_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "task_terminal",
+            "attempts_locally_ended",
+            "post_attempted",
+            "task_id",
+            "case_id",
+            "latest_run_id"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "snapshot_path",
+        "control"
+      ],
+      "additionalProperties": true
+    },
+    "http_accepted_receipt": {
+      "type": "object",
+      "properties": {
+        "status_code": {
+          "const": 202
+        }
+      },
+      "required": [
+        "status_code"
+      ],
+      "additionalProperties": true
+    },
+    "accepted_response_body": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "subject_type": {
+          "const": "case"
+        },
+        "subject_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "status": {
+          "const": "accepted"
+        },
+        "status_url": {
+          "type": "string",
+          "format": "uri-reference"
+        }
+      },
+      "required": [
+        "task_id",
+        "subject_type",
+        "subject_id",
+        "status",
+        "status_url"
+      ],
+      "additionalProperties": true
+    },
+    "native_session": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "string",
+          "format": "uri",
+          "description": "已核对的正式原生 HTTP origin；不写示例地址，不自动回落到其他服务。"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "原生读取只使用普通 JSON 请求头，不带平台 Authorization/Cookie；平台会话单独配置。"
+        }
+      },
+      "required": [
+        "origin",
+        "headers"
+      ],
+      "additionalProperties": true
+    },
+    "trusted_context": {
+      "type": "object",
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "actor_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "actor_name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "tenant_id",
+        "actor_id",
+        "actor_name"
+      ],
+      "additionalProperties": false
+    },
+    "operation_config": {
+      "type": "object",
+      "properties": {
+        "ssh_argv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "operation_timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "ssh_argv",
+        "operation_timeout_seconds"
+      ],
+      "additionalProperties": true
+    },
+    "switch_plan_read_fields": {
+      "type": "object",
+      "properties": {
+        "remote_directory": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "dispatcher_profile": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "original_image_id": {
+          "type": "string"
+        },
+        "timeouts": {
+          "type": "object",
+          "properties": {
+            "docker_seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "probe_seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "statement_ms": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "docker_seconds",
+            "probe_seconds",
+            "statement_ms"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "remote_directory",
+        "dispatcher_profile",
+        "original_image_id",
+        "timeouts"
+      ],
+      "additionalProperties": true
+    },
+    "dispatcher_profile_read_fields": {
+      "type": "object",
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "database_url_file": {
+          "type": "string",
+          "pattern": "^/",
+          "description": "本机或目标容器的显式绝对路径；具体运行值只填本机私密文件。"
+        },
+        "database_connect_args": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "tenant_id",
+        "database_url_file",
+        "database_connect_args"
+      ],
+      "additionalProperties": true
+    }
+  }
+}

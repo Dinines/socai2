@@ -12,6 +12,7 @@ __all__ = [
     "CurrentUser",
     "analysis_service",
     "attachment_service",
+    "case_investigation_history_service",
     "case_service",
     "comment_service",
     "exploration_service",
@@ -40,6 +41,13 @@ async def attachment_service(request: Request):
 
 def story_service():
     return provide(services.story)
+
+
+def case_investigation_history_service():
+    try:
+        return services.case_investigation_history()
+    except StoreError as exc:
+        raise record_error(exc.code, exc.status) from exc
 
 
 def exploration_service():

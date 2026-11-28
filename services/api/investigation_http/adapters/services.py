@@ -14,7 +14,6 @@ from app.socai2.case_attachments import CaseAttachmentService
 from app.socai2.case_comments import CaseCommentService
 from app.socai2.case_management import manage_case, read_management
 from app.socai2.case_service import CaseService
-from app.socai2.case_story import CaseStoryService
 from app.socai2.exploration import ExplorationService
 from app.socai2.exploration_state import ExplorationStateService
 from app.socai2.grouping_summary import GroupingSummaryService
@@ -32,6 +31,8 @@ from investigation_http.adapters.case_allocation import (
     member_change_urls,
     related_case_urls,
 )
+from investigation_http.adapters.case_investigations import CaseInvestigationBackend
+from investigation_http.adapters.case_story import CaseStoryBackend
 from investigation_http.adapters.run_directory import RunDirectoryBackend
 from investigation_http.adapters.run_records import RunRecordBackend
 from investigation_http.ports import (
@@ -106,7 +107,11 @@ def attachments(method):
 
 
 def story():
-    return CaseStoryService(case_sessions("GET"))
+    return CaseStoryBackend(case_sessions("GET"))
+
+
+def case_investigation_history():
+    return CaseInvestigationBackend(case_sessions("GET"))
 
 
 def exploration():

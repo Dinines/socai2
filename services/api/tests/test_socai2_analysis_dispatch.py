@@ -6,6 +6,9 @@ import ssl
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import httpx
 import pytest
@@ -16,6 +19,8 @@ from app.socai2.analysis_dispatch_types import (
     Outcome,
     classify_failure,
 )
+from app.socai2.analysis_dispatcher import AnalysisDispatcher
+from app.socai2.baseline_store import StoreError
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -77,3 +82,23 @@ def test_release_sources_present_without_automatic_activation():
     assert config["instances"] == 1
     assert all((ROOT / path).is_file() for path in config["patches"])
     assert config["requires"] == "analysis-lifecycle-release-fragment.json"
+
+
+def test_input_busy_after_persisted_start_keeps_attempt_for_completion(tmp_path):
+    policy = DispatchPolicy(**load_profile(str(ROOT / "deploy/local-investigation/analysis-dispatch.example.json"))["dispatch"])
+    policy = replace(policy, receipt_directory=str(tmp_path))
+    began, identity = datetime.now(UTC), uuid4()
+    attempt = {"id": uuid4()}
+    repository = SimpleNamespace(prepare=AsyncMock(return_value=attempt), begin=AsyncMock(return_value=attempt))
+
+    async def load(task):
+        repository.prepare.assert_awaited_once_with(task, started_at=began)
+        raise StoreError("analysis_subject_busy")
+
+    executor = SimpleNamespace(load=load, execute=AsyncMock())
+    dispatcher = AnalysisDispatcher(repository, None, policy, {"case_investigation": executor}, clock=lambda: began)
+    task = {"id": identity, "kind": "case_investigation", "_claimed_at": began}
+    receipt = asyncio.run(dispatcher._run(task))
+    assert receipt.action == "finish" and receipt.attempt_id == attempt["id"]
+    assert receipt.result.outcome == "failed" and receipt.result.error_stage == "input"
+    executor.execute.assert_not_awaited()

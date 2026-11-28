@@ -11,7 +11,7 @@
 | 功能与页面需求 | [产品需求](design/alert-incident-case-product-requirements.md)、[功能与跳转清单](../deliverables/investigation-validation-20261106/frontend-feature-list.md) |
 | 表、字段及读取 | [字段字典](design/socai2-field-dictionary-20261103.md)、[数据交接](investigation/socai2-page-data-handoff-20261106.md)、[当前候选OpenAPI](operations/evidence/case-initial-http-20261115-01/candidate-openapi.json)、[Case首轮对接](integration/case-initial-http.md) |
 | 模型输入输出 | [按环节的职责与合同](investigation/model-input-output-current-20261109.md) |
-| 部署与配置 | [全模块部署](../deploy/README.md)、[四类配置与逐项索引](operations/configuration.md)、[模型/LiteLLM](operations/deployment-models.md)、[数据湖与数据库](operations/deployment-datastores.md)、[21 部署](../deploy/aisoc21/README.md)、[环境说明](operations/environment.md)、[Mac SSH 接入](operations/mac-ssh-relay-20261107.md) |
+| 部署与配置 | [21调查服务手工部署与恢复手册](operations/investigation-manual-deployment-21-20261127.md)、[全模块部署](../deploy/README.md)、[四类配置与逐项索引](operations/configuration.md)、[模型/LiteLLM](operations/deployment-models.md)、[数据湖与数据库](operations/deployment-datastores.md)、[21 部署](../deploy/aisoc21/README.md)、[环境说明](operations/environment.md)、[Mac SSH 接入](operations/mac-ssh-relay-20261107.md) |
 | 当前问题 | [问题清单](investigation/current-issues.md)、[实施任务](../openspec/changes/complete-socai2-investigation-chain/tasks.md) |
 | 执行与评审证据 | [当前证据导航](operations/evidence/README.md)，历史批次不作为当前运行状态 |
 | 需求原件 | [AI SOC2](requirements/AI%20SOC2.docx)，保持原件 |

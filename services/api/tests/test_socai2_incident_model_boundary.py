@@ -48,14 +48,48 @@ def build(sample):
 
 
 def answer(prepared):
+    from socai2_test_severity import opinion
     selected = {aid: next(sid for sid, s in prepared["source_map"].items()
                           if s["alert_ids"] == [aid] and s["ref"]["role"] == "observation")
                 for aid in prepared["member_aliases"]}
-    return {"diagnosis": {"summary": "合成结构检查。", "conclusion": "授权情况仍待核实。",
+    return {"severity_opinion": opinion(selected.values()), "diagnosis": {"summary": "合成结构检查。", "conclusion": "授权情况仍待核实。",
             "source_ids": list(selected.values()), "limitations": []},
         "members": [{"alert_ref": alias, "state": "unresolved", "assessment": "成员记录已阅读，仍需核实。",
                      "source_ids": [selected[aid]], "limitations": []} for aid, alias in prepared["member_aliases"].items()],
         "findings": [], "open_questions": []}
+
+
+def test_owned_lake_ingress_metadata_is_backend_only_and_scoped(sample):
+    source = sample[0]
+    known, unknown = [member['material']['raw_json'] for member in source['members'][:2]]
+    backend = {
+        'lake_ref': {'source_namespace': known['source'], 'tenant_id': known['tenant_id']},
+        'future_receipt_field': {'count': 0, 'enabled': False, 'items': []},
+    }
+    known.setdefault('field_metadata', {})['lake_ingress'] = copy.deepcopy(backend)
+    known['raw_event']['business_context'] = {'lake_ingress': {'count': 0, 'enabled': False, 'items': []}}
+    unknown.setdefault('field_metadata', {})['lake_ingress'] = copy.deepcopy(backend)
+    unknown.pop('identity_version')  # An unrecognized envelope must retain its fields.
+    original = copy.deepcopy(source)
+    prepared = build(sample)
+    assert source == original
+
+    def visible(material):
+        return {
+            prepared['source_map'][sid]['ref']['source_path']: row['value']
+            for row in prepared['records'] for sid in row['source_ids']
+            if prepared['source_map'][sid]['ref']['id'] == material['id']
+        }
+
+    prefix = '$.raw_json.field_metadata.lake_ingress'
+    first, second = [visible(member['material']) for member in source['members'][:2]]
+    assert not any(path == prefix or path.startswith(prefix + '.') for path in first)
+    assert second[prefix + '.lake_ref.source_namespace'] == backend['lake_ref']['source_namespace']
+    assert second[prefix + '.lake_ref.tenant_id'] == backend['lake_ref']['tenant_id']
+    business = '$.raw_json.raw_event.business_context.lake_ingress'
+    assert first[business + '.count'] == 0 and type(first[business + '.count']) is int
+    assert first[business + '.enabled'] is False
+    assert first[business + '.items'] == []
 
 
 def test_full_frozen_values_and_receipts_are_preserved_without_mutation(sample):
@@ -174,12 +208,13 @@ def test_repeated_history_matches_share_text_but_keep_each_reference(sample):
 def test_output_restores_original_ids_fields_and_exact_sources(sample):
     prepared = build(sample)
     body = answer(prepared)
+    body["business_verdict"] = "needs_review"
     Draft202012Validator(output.candidate_schema(prepared)).validate(body)
     result, members = output.parse(json.dumps(body), prepared)
     assert {m["alert_id"] for m in members} == set(prepared["member_aliases"])
     assert {f.id for f in result.findings} == {"member:" + aid for aid in prepared["member_aliases"]}
     payload = result.model_dump(mode="json")
-    assert set(payload) == {"summary", "conclusion", "findings", "source_refs", "open_questions", "limitations"}
+    assert set(payload) == {"summary", "conclusion", "findings", "source_refs", "open_questions", "limitations", "business_verdict"}
     validate_refs(payload, sample[0], sample[1], reference_roles(sample[0]))
 
 
@@ -270,3 +305,16 @@ def test_oversize_required_input_is_not_silently_shortened(sample, monkeypatch):
     monkeypatch.setattr(boundary, "draft_limit", lambda: 1000)
     with pytest.raises(StoreError, match="incident_required_input_view_size"):
         build(sample)
+
+
+def test_subject_risk_policy_remains_backend_only(sample):
+    source = sample[0]
+    source["parent"].update(severity="high", severity_source="member_max",
+        risk_metadata={"policy": {"version": "RISK_POLICY_BACKEND_ONLY"}, "manual_severity_revision": 9})
+    before = copy.deepcopy(source)
+    prepared = build(sample)
+    assert "RISK_POLICY_BACKEND_ONLY" not in prepared["user"]
+    assert "risk_metadata" not in prepared["user"]
+    assert "manual_severity_revision" not in prepared["user"]
+    assert prepared["data"]["program_facts"]["incident_severity"]["severity_effective"] == "high"
+    assert source == before

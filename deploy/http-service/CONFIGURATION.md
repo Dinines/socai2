@@ -8,6 +8,8 @@
 
 21 当前文件为 `/run/c173-release/config/owner-directory.json`，与既有 HTTP 上下文、读写连接、管理配置一起保留；私密文件不进入 Git。[本批部署及读回](../../docs/operations/evidence/alert-git-21-release-20261125-01/README.md)。
 
+S6 文件日志是当前源码的候选增量，尚未写入下述历史候选/正式运行 profile。新装或升级当前源码时使用本文末尾的“文件日志候选配置”；旧批次配置与回执保持原样。
+
 适用版本 `streaming-http-20261115-r2`，仅解释[本候选profile](streaming-20261115-01/profile.json)及实际加载的配置。完整部署顺序见[部署入口](README.md)。下面“当前值”来自仓库候选，不代表21已加载。所有文件路径都必须按实际运行主机/容器解释；没有配置时不改用其他环境。
 
 ## 加载与生效
@@ -159,3 +161,20 @@
 - 附件关联没有上传目录、文件服务器地址或文件大小策略JSON。业务后端传file_id、file_name、mime_type、size_bytes及可选sha256，调查服务保存关联；size_bytes只是对方声明，未探测真实文件。参数长度/分页约束见[附件合同](../../services/api/app/socai2/case_attachment_contracts.py)和Swagger。
 - 评论、人工任务、采用、故事及管理的输入限制来自现行DTO/Schema，没有另外的部署参数；不能把请求字段当服务器配置。
 - 模型政策详细字段由调查/模型部署说明负责，本服务只引用同版文件；`*_input*.json`、`*.schema.json`是当前执行/数据合同，不能当自由调整的普通限额。
+
+## 文件日志候选配置（S6）
+
+服务通过现有 HTTP 访问数据库；此处 JSON 只规定程序错误日志的文件格式，不是新的业务输入接口。配置模板见 [operational-logging.example.json](../local-investigation/operational-logging.example.json)，同版源码清单见 [S6候选打包片段](../local-investigation/operational-logs-release-fragment.json)。
+
+| 配置 | 取值与用途 |
+| --- | --- |
+| `SOCAI2_LOGGING_PROFILE_FILE` | API/Fusion运行环境中的绝对JSON路径；由选定的环境文件提供。HTTP使用只读runtime_mounts挂载该文件并校验SHA-256 |
+| `logging_directory_mount` | HTTP部署profile中显式的`{source,target}`；source为已准备且服务用户可写的绝对持久目录，target必须精确等于日志profile的directory |
+| `service` / `instance` | 日志所属服务与实例；只用字母、数字、下划线、点及短横线；进程自动补PID，文件不会跨进程共享 |
+| `directory` | 容器内绝对路径，与上述持久挂载一致；不可用tmpfs、源码目录或未挂载容器层冒充持久日志 |
+| `level` / `format` | 明确选择级别和`json`；首版模板INFO，每条记录占一行 |
+| `max_bytes` / `backup_count` | 正整数；模板20971520字节和10份，每进程独立轮转 |
+
+`manage.py prepare`会核只读配置文件与日志目录对应关系，配置了日志却缺持久挂载时拒绝准备；只增加该目录的写挂载，其他原挂载仍只读。服务启动先初始化文件日志再访问数据库；控制台仍保留。文件失败仅向stderr报告一次`operational_log_file_unavailable`和`file_saved=false`，不改变业务错误，也不自动重试业务。
+
+旧API/Fusion没有选日志profile时维持原控制台行为，这不算已支持文件日志。当前源码候选必须显式配置并实际读回文件；配置示例、源码打包或HTTP成功都不能代替此验证。新装/升级都沿同一profile选择方式，不修改历史profile、不自动重启现有服务。

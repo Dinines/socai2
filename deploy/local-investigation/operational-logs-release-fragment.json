@@ -1,0 +1,46 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "candidate_S6_passed_not_deployed",
+  "requires": "analysis-task-times-release-fragment.json",
+  "patches": {
+    "services/api/app/core/operational_logging.py": "app/core/operational_logging.py",
+    "services/api/app/core/logging.py": "app/core/logging.py",
+    "services/api/app/core/config.py": "app/core/config.py",
+    "services/api/app/socai2/analysis_dispatch_runtime.py": "app/socai2/analysis_dispatch_runtime.py",
+    "services/api/app/socai2/analysis_dispatcher.py": "app/socai2/analysis_dispatcher.py",
+    "services/api/app/socai2/analysis_dispatch_store.py": "app/socai2/analysis_dispatch_store.py",
+    "services/api/app/socai2/baseline_analysis_model.py": "app/socai2/baseline_analysis_model.py",
+    "services/api/app/socai2/alert_basic_executor.py": "app/socai2/alert_basic_executor.py",
+    "services/api/app/socai2/incident_diagnosis_executor.py": "app/socai2/incident_diagnosis_executor.py",
+    "services/api/app/socai2/baseline_reasoning.py": "app/socai2/baseline_reasoning.py",
+    "services/api/app/socai2/baseline_enrichment.py": "app/socai2/baseline_enrichment.py",
+    "services/api/app/socai2/baseline_evidence.py": "app/socai2/baseline_evidence.py",
+    "services/api/investigation_http/adapters/runtime.py": "investigation_http/adapters/runtime.py",
+    "services/api/investigation_http/errors.py": "investigation_http/errors.py",
+    "services/api/app/investigation_v2/query_api.py": "app/investigation_v2/query_api.py",
+    "services/api/app/socai2/token_budget.py": "app/socai2/token_budget.py"
+  },
+  "fusion_patches": {
+    "services/fusion/app/core/operational_logging.py": "app/core/operational_logging.py",
+    "services/fusion/app/core/logging.py": "app/core/logging.py",
+    "services/fusion/app/core/config.py": "app/core/config.py",
+    "services/fusion/app/services/alert_sink.py": "app/services/alert_sink.py",
+    "services/fusion/app/services/socai2_sink.py": "app/services/socai2_sink.py",
+    "services/fusion/app/workers/lake_consumer.py": "app/workers/lake_consumer.py",
+    "services/fusion/app/workers/lake_alert_delivery.py": "app/workers/lake_alert_delivery.py"
+  },
+  "logging_profile_template": "deploy/local-investigation/operational-logging.example.json",
+  "configuration": {
+    "dispatcher": "logging_profile_file",
+    "api_and_fusion": "SOCAI2_LOGGING_PROFILE_FILE",
+    "http_packager": "logging_directory_mount"
+  },
+  "notes": [
+    "Install API/Fusion copies together from this source; do not share rotating files between processes.",
+    "New and upgraded dispatcher profiles require an explicit absolute logging_profile_file before enabling.",
+    "HTTP and Fusion use an explicit read-only logging profile and a separate persistent writable directory matching directory in that profile.",
+    "No database migration. Existing credentials/data/model artifacts and response contracts remain unchanged.",
+    "No business-data redaction feature is added. Logs select event codes, associations and stack locations only.",
+    "This fragment is a candidate packaging contract, not deployment or activation authorization."
+  ]
+}

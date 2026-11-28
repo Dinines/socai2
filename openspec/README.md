@@ -1,6 +1,6 @@
 # OpenSpec 实施说明
 
-本项目使用`spec-driven`。当前调查范围见[主调查设计](changes/complete-socai2-investigation-chain/design.md)及[任务](changes/complete-socai2-investigation-chain/tasks.md)；主调查31/41，后续[流式更新](changes/schedule-streaming-investigation-updates/tasks.md)第1–7步及五项审计修复已完成本机程序联验，尚未部署。第8–10步后置，当前进入第11步候选资源与测试配套准备，21从Kafka开始的真实整链及结束审计尚未完成。实际部署、已交付能力和当前问题统一从[PROGRESS](../PROGRESS.md)与[交接指南](../FRONTEND_BACKEND_HANDOFF.md)进入。
+调查主线见[主调查设计](changes/complete-socai2-investigation-chain/design.md)与[任务](changes/complete-socai2-investigation-chain/tasks.md)。流式更新沿[本期任务](changes/schedule-streaming-investigation-updates/tasks.md)、[范围及归档条件](changes/schedule-streaming-investigation-updates/closeout-scope-20261118.md)和[后置范围](changes/schedule-streaming-investigation-updates/deferred-scope.md)收口；人工定向分析、手动全案综合、知识后台异步维护保留未实施状态。当前运行及分阶段交付见[PROGRESS](../PROGRESS.md)，接口使用见[交接指南](../FRONTEND_BACKEND_HANDOFF.md)。文档或结构审计完成不能代替业务验收与整项交付。
 
 已结束功能的规格、验收及独审在[change归档](changes/archive/)；此前逐批发布说明保留在[11-14整理前记录](../docs/handoff/history/2026-11-14-investigation-cleanup/snapshots/openspec/README.md)。旧批次的版本、授权和完成声明不替代当前状态；模型质量后置仍为NOT_PASSED，局部交付不核销主调查整体。
 

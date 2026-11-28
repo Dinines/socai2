@@ -1,0 +1,675 @@
+{
+  "contract_version": "socai2.lake-record.v1",
+  "status": "3a_contract_3b_schema_3c_persistence_3d_ack_3e_real_range_validated_in_isolation_not_deployed",
+  "baseline": {
+    "server_version": "23.8.16.16",
+    "table": "raw_events",
+    "existing_columns": 48,
+    "engine": "ReplacingMergeTree(ingest_time)",
+    "partition": [
+      "toYYYYMM(event_time)",
+      "tenant_id"
+    ],
+    "order_by": [
+      "tenant_id",
+      "event_time",
+      "class_uid",
+      "event_id"
+    ]
+  },
+  "mapping_version": "spirithub-ocsf-lake-v1",
+  "profile_contract": {
+    "required": [
+      "tenant_id",
+      "source_namespace",
+      "connector_type",
+      "kafka_cluster",
+      "topics",
+      "consumer_group",
+      "mapping_version",
+      "database",
+      "retention.ingest_days",
+      "retention.legacy_days",
+      "retention.ingest_mapping_versions"
+    ],
+    "input_format": "one bare OCSF JSON object per Kafka value; Kafka coordinates come only from ConsumerRecord",
+    "legacy_activity_extension_enabled": false,
+    "event_time_unit": "milliseconds",
+    "untrusted_body_tenant": "preserve in body; do not use for routing",
+    "incomplete_profile": "fail before consumption; do not choose a different environment",
+    "ocsf_version": "1.9.0"
+  },
+  "new_columns": [
+    {
+      "name": "source_namespace",
+      "type": "LowCardinality(String)",
+      "default_sql": "''",
+      "source": "profile.source_namespace",
+      "validation": "required_nonempty",
+      "purpose": "来源与身份命名空间；实时和回放是否共用由显式绑定决定",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "source_event_id",
+      "type": "String",
+      "default_sql": "''",
+      "source": "metadata.uid",
+      "validation": "opaque_string_or_empty",
+      "purpose": "保留来源记录ID原值；不是finding_info.uid或OCSF版本",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "source_version",
+      "type": "String",
+      "default_sql": "''",
+      "source": "canonical_full_record_digest",
+      "validation": "required_nonempty",
+      "purpose": "本版始终使用完整输入规范化摘要；上游记录版本未约定",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "is_alert",
+      "type": "Nullable(UInt8)",
+      "default_sql": "NULL",
+      "source": "is_alert; unmapped.spirithub.partial_fields.is_alert",
+      "validation": "null_or_boolean_or_zero_one",
+      "purpose": "只有显式布尔/0/1可投影，不由class或严重程度推导",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "device_hostname",
+      "type": "String",
+      "default_sql": "''",
+      "source": "device.hostname; unmapped.spirithub.partial_fields.device.hostname",
+      "validation": "nonempty_string_or_empty",
+      "purpose": "设备角色；不退回device.name或源端点",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "device_ip",
+      "type": "Nullable(IPv6)",
+      "default_sql": "NULL",
+      "source": "device.ip; unmapped.spirithub.partial_fields.device.ip",
+      "validation": "valid_ip_or_null",
+      "purpose": "设备IP角色；IPv4映射IPv6，不借用source_ip",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "event_time_source",
+      "type": "LowCardinality(String)",
+      "default_sql": "'unknown'",
+      "source": "time_projection",
+      "validation": "ocsf_time_ms_or_missing_or_invalid",
+      "purpose": "旧行unknown；新行缺时固定epoch，不用消费/Kafka时间冒充发生时间",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "parse_status",
+      "type": "LowCardinality(String)",
+      "default_sql": "'unknown'",
+      "source": "decode_and_projection_status",
+      "validation": "documented_status",
+      "purpose": "ok仅表示本版解码及投影通过，不声称完整OCSF Schema认证",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "mapping_version",
+      "type": "LowCardinality(String)",
+      "default_sql": "''",
+      "source": "profile.mapping_version",
+      "validation": "required_known_version",
+      "purpose": "我方映射合同版本；与OCSF metadata.version及上游映射版本分开",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "kafka_cluster",
+      "type": "LowCardinality(String)",
+      "default_sql": "''",
+      "source": "profile.kafka_cluster",
+      "validation": "required_nonempty",
+      "purpose": "输入集群逻辑ID；不是可变broker地址",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "kafka_topic",
+      "type": "LowCardinality(String)",
+      "default_sql": "''",
+      "source": "ConsumerRecord.topic",
+      "validation": "required_nonempty",
+      "purpose": "实际收到的Topic；不是原Redpanda坐标",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "kafka_partition",
+      "type": "Nullable(Int32)",
+      "default_sql": "NULL",
+      "source": "ConsumerRecord.partition",
+      "validation": "nonnegative_int32",
+      "purpose": "0有效，旧行NULL",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "kafka_offset",
+      "type": "Nullable(Int64)",
+      "default_sql": "NULL",
+      "source": "ConsumerRecord.offset",
+      "validation": "nonnegative_int64",
+      "purpose": "0有效，旧行NULL；位点确认不在本步实现",
+      "old_rows": "unknown_or_null"
+    },
+    {
+      "name": "kafka_timestamp",
+      "type": "Nullable(DateTime64(3, 'UTC'))",
+      "default_sql": "NULL",
+      "source": "ConsumerRecord.timestamp",
+      "validation": "epoch_milliseconds_or_null",
+      "purpose": "Kafka记录时间，不作为可靠发生时间或版本身份",
+      "old_rows": "unknown_or_null"
+    }
+  ],
+  "existing_columns": [
+    {
+      "name": "event_id",
+      "type": "UUID",
+      "source": "derived.lake_record_uuid",
+      "conversion": "stable_uuid_v5",
+      "fallback": "required",
+      "semantics": "相同来源记录及内容版本相同；缺ID按Kafka记录定位"
+    },
+    {
+      "name": "tenant_id",
+      "type": "UUID",
+      "source": "profile.tenant_id",
+      "conversion": "uuid",
+      "fallback": "required",
+      "semantics": "只认我方配置绑定，正文tenant字段不授权覆盖"
+    },
+    {
+      "name": "event_time",
+      "type": "DateTime64(3, 'UTC')",
+      "source": "time",
+      "conversion": "strict_epoch_milliseconds",
+      "fallback": "1970-01-01T00:00:00.000Z sentinel",
+      "semantics": "配合event_time_source；无有效time不拿Kafka/now回填"
+    },
+    {
+      "name": "ingest_time",
+      "type": "DateTime64(3, 'UTC')",
+      "source": "clickhouse.now64(3)",
+      "conversion": "server_insert_time",
+      "fallback": "database_default",
+      "semantics": "每次实际INSERT重新取时，用于ReplacingMergeTree及已确认新接入保留期"
+    },
+    {
+      "name": "class_uid",
+      "type": "UInt32",
+      "source": "class_uid",
+      "conversion": "uint32_not_bool",
+      "fallback": "0",
+      "semantics": "保留显式0；不从partial_fields恢复原class；缺失/非法标partial"
+    },
+    {
+      "name": "category_uid",
+      "type": "UInt32",
+      "source": "category_uid",
+      "conversion": "uint32_not_bool",
+      "fallback": "0",
+      "semantics": "不按class推导类别；缺失/非法标partial"
+    },
+    {
+      "name": "severity_id",
+      "type": "UInt8",
+      "source": "severity_id",
+      "conversion": "uint8_not_bool",
+      "fallback": "0",
+      "semantics": "日志来源等级，不作为I/Case当前等级"
+    },
+    {
+      "name": "severity",
+      "type": "String",
+      "source": "severity",
+      "conversion": "string",
+      "fallback": "empty",
+      "semantics": "保留原值，不补造业务等级"
+    },
+    {
+      "name": "activity_id",
+      "type": "UInt32",
+      "source": "activity_id",
+      "conversion": "uint32_not_bool",
+      "fallback": "0",
+      "semantics": "0表示上游未知或兼容缺值，原文及parse_status可区分"
+    },
+    {
+      "name": "source_ip",
+      "type": "IPv6",
+      "source": "src_endpoint.ip",
+      "conversion": "valid_ip_v4_mapped_v6",
+      "fallback": "::",
+      "semantics": "只对应源端点；缺失/非法的哨兵不参与有效对象匹配，原字段可判存在性"
+    },
+    {
+      "name": "dest_ip",
+      "type": "IPv6",
+      "source": "dst_endpoint.ip",
+      "conversion": "valid_ip_v4_mapped_v6",
+      "fallback": "::",
+      "semantics": "只对应目的端点；同上"
+    },
+    {
+      "name": "src_port",
+      "type": "UInt16",
+      "source": "src_endpoint.port",
+      "conversion": "uint16_not_bool",
+      "fallback": "0",
+      "semantics": "0合法；查询需结合原字段存在性，不将缺失视为实际端口0"
+    },
+    {
+      "name": "dst_port",
+      "type": "UInt16",
+      "source": "dst_endpoint.port",
+      "conversion": "uint16_not_bool",
+      "fallback": "0",
+      "semantics": "同上"
+    },
+    {
+      "name": "protocol",
+      "type": "String",
+      "source": "connection_info.protocol_name",
+      "conversion": "string",
+      "fallback": "empty",
+      "semantics": "只使用明确的协议名称，不按端口猜测"
+    },
+    {
+      "name": "src_hostname",
+      "type": "String",
+      "source": "src_endpoint.hostname",
+      "conversion": "string",
+      "fallback": "empty",
+      "semantics": "只连接源；移除新接入device.name兜底，旧行不回写"
+    },
+    {
+      "name": "dst_hostname",
+      "type": "String",
+      "source": "dst_endpoint.hostname",
+      "conversion": "string",
+      "fallback": "empty",
+      "semantics": "只连接目的"
+    },
+    {
+      "name": "user_name",
+      "type": "String",
+      "source": "class_uid=3002: user.name; otherwise: actor.user.name",
+      "conversion": "class_scoped_string",
+      "fallback": "empty",
+      "semantics": "认证是被认证用户，其余是行为主体；不同角色不互相兜底"
+    },
+    {
+      "name": "process_name",
+      "type": "String",
+      "source": "class_uid=1007: process.name; otherwise: actor.process.name",
+      "conversion": "class_scoped_string",
+      "fallback": "empty",
+      "semantics": "进程活动为目标进程，其余为行为进程；不互相补缺"
+    },
+    {
+      "name": "file_path",
+      "type": "String",
+      "source": "file.path",
+      "conversion": "string",
+      "fallback": "empty",
+      "semantics": "本记录直接文件对象；不拿进程镜像路径替代"
+    },
+    {
+      "name": "hash_sha256",
+      "type": "String",
+      "source": "file.fingerprints[].value where algorithm_id=3 or algorithm=SHA256",
+      "conversion": "strict_64_hex",
+      "fallback": "empty",
+      "semantics": "只文件SHA256，不存整条消息摘要；算法信息冲突的项不投影"
+    },
+    {
+      "name": "connector_type",
+      "type": "String",
+      "source": "profile.connector_type",
+      "conversion": "nonempty_string",
+      "fallback": "required",
+      "semantics": "配置绑定的接入类型，测试配置使用lyc前缀；不拿metadata.product.name替换"
+    },
+    {
+      "name": "raw_payload",
+      "type": "String",
+      "source": "raw_data for valid OCSF object; complete input for invalid material",
+      "conversion": "lossless_text_or_base64",
+      "fallback": "empty_if_absent",
+      "semantics": "有效对象raw_data为String则原样保存；非字符串则保存其JSON表示，0/false不变空；缺失为空并由ocsf_json原字段区分。完整输入仍在ocsf_json；异常输入保存完整字节的可逆表示"
+    },
+    {
+      "name": "ocsf_json",
+      "type": "String",
+      "source": "original Kafka value UTF-8 text for a valid JSON object",
+      "conversion": "exact_input_text",
+      "fallback": "empty_for_invalid_or_non_object",
+      "semantics": "不修改JSON对象、不插入_socai2_storage、不截断；所有扩展字段完整保留"
+    },
+    {
+      "name": "mitre_techniques",
+      "type": "Array(String)",
+      "source": "mitre_techniques[]; mitre_attck[].technique_id; attacks[].technique.uid",
+      "conversion": "ordered_unique_strings",
+      "fallback": "[]",
+      "semantics": "仅复制明确来源标签，不推断攻击技术"
+    },
+    {
+      "name": "mitre_tactics",
+      "type": "Array(String)",
+      "source": "mitre_tactics[]; mitre_attck[].tactic_names[]; attacks[].tactic.uid",
+      "conversion": "ordered_unique_strings",
+      "fallback": "[]",
+      "semantics": "保留来源标签原值，不作为检测结论"
+    },
+    {
+      "name": "iocs",
+      "type": "Array(String)",
+      "source": "valid src_endpoint.ip; dst_endpoint.ip; file fingerprints",
+      "conversion": "ordered_unique_strings",
+      "fallback": "[]",
+      "semantics": "复制输入中有角色的观察值，不生成新IOC结论"
+    },
+    {
+      "name": "actor_kind",
+      "type": "LowCardinality(String)",
+      "source": "activity.actor.kind",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "actor_kind_source",
+      "type": "String",
+      "source": "activity.actor.kind_source",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "actor_id",
+      "type": "String",
+      "source": "activity.actor.id",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "actor_on_behalf_of",
+      "type": "String",
+      "source": "activity.actor.on_behalf_of",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "action",
+      "type": "String",
+      "source": "activity.action",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "resource_type",
+      "type": "String",
+      "source": "activity.resource.type",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "resource_id",
+      "type": "String",
+      "source": "activity.resource.id",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "resource_owner",
+      "type": "String",
+      "source": "activity.resource.owner",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "src_country_code",
+      "type": "LowCardinality(String)",
+      "source": "activity.location.country_code",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "src_asn",
+      "type": "UInt32",
+      "source": "activity.location.asn",
+      "conversion": "legacy_extension_only",
+      "fallback": "0",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "src_as_org",
+      "type": "String",
+      "source": "activity.location.as_org",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "src_reputation",
+      "type": "Float32",
+      "source": "activity.location.reputation",
+      "conversion": "legacy_extension_only",
+      "fallback": "0",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "src_reputation_known",
+      "type": "UInt8",
+      "source": "activity.location.reputation_known",
+      "conversion": "legacy_extension_only",
+      "fallback": "0",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "client_family",
+      "type": "LowCardinality(String)",
+      "source": "activity.location.client.family",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "client_version",
+      "type": "String",
+      "source": "activity.location.client.version",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "client_category",
+      "type": "LowCardinality(String)",
+      "source": "activity.location.client.category",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "client_raw",
+      "type": "String",
+      "source": "activity.location.client.raw",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "outcome",
+      "type": "LowCardinality(String)",
+      "source": "activity.outcome",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "session_id",
+      "type": "String",
+      "source": "activity.session.id",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "session_key",
+      "type": "String",
+      "source": "activity.session.key",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "session_key_kind",
+      "type": "LowCardinality(String)",
+      "source": "activity.session.key_kind",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    },
+    {
+      "name": "session_originating_human",
+      "type": "String",
+      "source": "activity.session.originating_human",
+      "conversion": "legacy_extension_only",
+      "fallback": "empty",
+      "semantics": "现有内部activity扩展；新裸OCSF profile不启用该扩展时保持默认，不额外生产富化/PG会话；完整原值在JSON"
+    }
+  ],
+  "projection": {
+    "partial_lookup": "for role fields and is_alert only: primary root path; if absent only, same path under unmapped.spirithub.partial_fields; explicit null/invalid/conflicting root does not silently fall back",
+    "partial_class": "class/category/activity remain at original root; never restore target classification to turn class0 into a known class",
+    "device_name": "display name only; never automatically treated as hostname",
+    "invalid_scalar": "use legacy typed sentinel or new nullable NULL; preserve original in body; mark partial if a provided mapped value is invalid",
+    "missing_optional": "empty/NULL is not false, zero activity, no alert, or successful authentication",
+    "status_precedence": [
+      "tombstone",
+      "invalid_utf8",
+      "invalid_json",
+      "non_object",
+      "partial",
+      "unclassified",
+      "ok"
+    ],
+    "partial_conditions": [
+      "upstream mapping_status=partial",
+      "missing or invalid required common scalar",
+      "invalid provided mapped scalar",
+      "time missing/invalid"
+    ],
+    "unclassified_condition": "valid root class_uid=0 without partial conditions; known classes without a tool are still saved",
+    "invalid_payload_encoding": "invalid_utf8 uses base64 in raw_payload; invalid_json/non_object use exact UTF-8 input; tombstone is empty with tombstone status",
+    "ocsf_validation_scope": "strict JSON object and defined projection rules only; not a new complete OCSF validation engine",
+    "common_structure_checks": [
+      "metadata object",
+      "metadata.version equals configured OCSF version",
+      "class_uid/category_uid/activity_id nonnegative integer literals within UInt32 projection range",
+      "type_uid nonnegative integer literal within OCSF long_t range (0..2^63-1); retained in JSON, not projected to UInt32",
+      "severity_id integer literal within UInt8 range",
+      "time as defined in this contract"
+    ]
+  },
+  "identity": {
+    "source_id_path": [
+      "metadata",
+      "uid"
+    ],
+    "source_id_type": "non-whitespace string, retain exact text; do not canonicalize opaque IDs",
+    "source_id_current_meaning": "upstream metadata.uid derives from ingest_id; source record identity only until publisher confirms business update correlation",
+    "not_source_id": [
+      "metadata.version",
+      "metadata.original_event_uid",
+      "finding_info.uid",
+      "unmapped.spirithub.event_fingerprint",
+      "Kafka key"
+    ],
+    "version": "sha256:full-record-v1:<hex>; digest of tagged canonical JSON; invalid payload digest uses raw bytes with a distinct domain",
+    "canonical": "recursive tagged arrays: object sorted by Unicode code point, array order preserved, string unchanged, boolean distinct, null distinct; integer literals and decimal/exponent literals have separate tags, because strict typed projections distinguish them; within each numeric kind use exact decimal sign/significand/exponent with trailing zeros removed, zero forms become 0e0; strict duplicate-key/nonfinite/surrogate rejection",
+    "included": "every received JSON field including upstream logging metadata and unknown extensions",
+    "excluded": "do not add our ingestion clock, Kafka delivery coordinates or projection fields to a source-identified record content digest",
+    "uuid": "uuid5(NAMESPACE_URL, compact UTF-8 JSON array with ensure_ascii=False)",
+    "source_tuple": [
+      "socai2.lake-record.v1",
+      "tenant_uuid",
+      "source_namespace",
+      "source",
+      "source_event_id",
+      "source_version"
+    ],
+    "fallback_tuple": [
+      "socai2.lake-record.v1",
+      "tenant_uuid",
+      "source_namespace",
+      "kafka",
+      "kafka_cluster",
+      "kafka_topic",
+      "kafka_partition",
+      "kafka_offset",
+      "source_version"
+    ],
+    "retry_scope": "same source ID and same full content are stable across Kafka delivery coordinates; if ID missing, only same original Kafka record stable",
+    "update_scope": "changed content yields a distinct version; linking several ingestion IDs to one original vendor alert is separate and unconfirmed",
+    "transport_change": "if upstream rewrites logging metadata, retain new full-record version; no inferred volatile-field stripping",
+    "coordinates": "row represents one retained delivery; does not create a per-delivery permanent ledger",
+    "downstream_alert_ids": "unchanged; do not substitute lake UUID for existing RawAlert/material IDs",
+    "invalid_payload_version": "sha256:raw-bytes-v1:<parse_status>:<hex>; tombstone and empty byte payload are distinct by status"
+  },
+  "time": {
+    "path": "time",
+    "accepted": "JSON integer literal, not bool, decimal literal or numeric string; Unix epoch milliseconds; no magnitude-based seconds guess",
+    "minimum_inclusive": "1900-01-01T00:00:00.000Z",
+    "maximum_exclusive": "2300-01-01T00:00:00.000Z",
+    "missing_sentinel": "1970-01-01T00:00:00.000Z",
+    "missing_source": "missing",
+    "invalid_source": "invalid",
+    "valid_source": "ocsf_time_ms",
+    "iso_strings": "not accepted by this bare OCSF1.9 profile; retain original and mark invalid, rather than silently selecting a timezone",
+    "kafka_time": "stored separately; never used as event_time fallback for source-identified records, because a retry may have another Kafka timestamp",
+    "query": "new records use reliable event windows only with event_time_source=ocsf_time_ms; missing/invalid records remain accessible by ingest_time or identity/coordinates; legacy unknown uses explicit old branch",
+    "semantics": "OCSF primary time under its class meaning: activity occurrence for activity classes, finding creation where finding classes redefine it; underlying activity time remains a separate original field"
+  },
+  "retention": {
+    "user_confirmed": true,
+    "scope": "only new mapping versions in explicit profile",
+    "basis": "each actual ClickHouse insert ingest_time",
+    "ingest_days": 400,
+    "retry_refreshes": true,
+    "legacy_days": 400,
+    "legacy_basis": "event_time",
+    "first_ingest_column": false,
+    "ttl_template": "if(mapping_version IN (__INGEST_MAPPING_VERSIONS__), toDateTime(ingest_time) + toIntervalDay(__INGEST_RETENTION_DAYS__), toDateTime(event_time) + toIntervalDay(__LEGACY_RETENTION_DAYS__))",
+    "purge_rule": "new mapping scope uses ingest_time and configured 400-day window; legacy scope keeps existing per-tenant event_time window; DELETE and preview COUNT share exactly one predicate",
+    "other_paths": [
+      "services/api/app/services/retention.py:build_lake_purge_sql",
+      "services/api/app/workers/retention_purge.py:build_lake_count_sql",
+      "services/api/app/db/lake_migrations.py",
+      "services/api/clickhouse/001_init.sql"
+    ],
+    "runtime_purge_worker": "not verified in this step; its default disabled/dry-run setting is not evidence of current deployment",
+    "no_early_delete": "until both TTL and active purge predicates agree, do not start new ingestion under the old event-time deletion rules"
+  },
+  "delivery": {
+    "3a": "field/mapping/identity/time contract and candidate additive DDL; synthetic rules verified, no database writes",
+    "3b": "register append-only migration after current004, synchronize fresh-install DDL and configured TTL/purge predicates; test old/new schema rows in controlled23.8 database",
+    "3c": "adapter and lossless save/readback",
+    "3d": "consumer raw-byte access, configured topic binding and durable per-partition acknowledgement",
+    "3f": "source/role/time-aware queries and raw body readback; keep original frozen tool contracts distinguishable"
+  }
+}

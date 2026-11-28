@@ -6,8 +6,9 @@ import logging
 from uuid import UUID, uuid4
 
 import httpx
-from app.core.operational_logging import log_context, log_exception
 from sqlalchemy import insert, null, select, update
+
+from app.core.operational_logging import log_context, log_exception
 
 from . import baseline_analysis_contract as analysis
 from .analysis_dispatch_types import ExecutionFailure
@@ -241,16 +242,15 @@ class ModelSteps(BaselineEvidence):
             with log_context(run_id=run_id, step_id=model_id, stage=stage_code, operation="model_complete"):
                 async with asyncio.timeout_at(deadline):
                     payload = await gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
-        except (ModelCallError, ExecutionFailure, httpx.TransportError, TimeoutError, asyncio.CancelledError) as exc:
-            from .analysis_dispatch_types import classify_failure
+        except (Exception, asyncio.CancelledError) as exc:
+            from .analysis_dispatch_types import classify_failure, model_dispatch_fact
             from .baseline_failure import local_receipt
             outcome = classify_failure(exc, stage="execute")
             log_exception(logging.getLogger(__name__), "model_step_failed", extra={
                 "run_id": run_id, "step_id": model_id, "stage": stage_code,
                 "operation": "model_complete", "dependency": "model_http",
                 "error_code": outcome.error_code, "outcome": outcome.outcome})
-            dispatched = not (outcome.outcome == "failed" and outcome.error_code in {
-                "service_unavailable", "model_schema_rejected"})
+            dispatched = model_dispatch_fact(exc)
             receipt = exc.payload() if isinstance(exc, ModelCallError) else {
                 "raw": None, "validation_error": outcome.error_code, "transport_error": outcome.error_detail}
             async with self.service.transaction(tenant_id) as store:
@@ -264,14 +264,20 @@ class ModelSteps(BaselineEvidence):
                 response_id = await self.save(store, run, model_id, response, "model_response",
                     [reference("artifact", request_id, "execution_receipt")])
                 failure = {**error(outcome.error_code, now), "request_dispatched": dispatched}
+                if isinstance(exc, ModelCallError) and exc.rejection_code:
+                    # The HTTP request was sent, but the provider explicitly
+                    # rejected the schema without running the model.
+                    failure["not_executed"] = True
                 await store.db.execute(update(S).where(*store.where(S, S.c.id == model_id)).values(
                     state=outcome.outcome, ended_at=now if outcome.outcome == "failed" else None,
                     output_artifact_id=response_id, usage=usage(None), error=failure))
                 model = await store.one(select(S).where(*store.where(S, S.c.id == model_id)))
                 prepared["transport_stage_delivery"] = await local_receipt(store, run, model,
                     (request_id, request), (response_id, response), code=outcome.error_code,
-                    dispatched=dispatched, state=outcome.outcome)
-            if isinstance(exc, asyncio.CancelledError):
+                    dispatched=dispatched, state=outcome.outcome,
+                    parse_state="unusable" if isinstance(exc, ModelCallError) and exc.envelope_code else "no_response")
+            if isinstance(exc, asyncio.CancelledError) or not isinstance(exc,
+                    (ModelCallError, ExecutionFailure, httpx.TransportError, TimeoutError)):
                 raise
             return None, outcome.error_code, model_id, response_id
         recorded, parsed, reason, adaptation, content = usage(payload), None, None, None, None

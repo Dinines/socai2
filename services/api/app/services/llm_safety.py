@@ -39,7 +39,7 @@ whichever path the traffic did not take.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any
 
 import httpx
@@ -98,6 +98,7 @@ async def safe_chat_completions_request(
     timeout: float = 30.0,
     extra_headers: dict[str, str] | None = None,
     client: httpx.AsyncClient | None = None,
+    response_decoder: Callable[[httpx.Response], dict[str, Any]] | None = None,
     **extra_body: Any,
 ) -> dict[str, Any]:
     """Validate ``messages``, then POST them to a chat-completions endpoint.
@@ -111,6 +112,10 @@ async def safe_chat_completions_request(
     a call site can move between services without rewriting. ``client`` is
     accepted so callers that already hold a pooled ``AsyncClient`` — and tests
     — do not each construct one.
+
+    ``response_decoder`` is an explicit consumer-local hook after HTTP status
+    validation; omitting it keeps the existing ``dict(response.json())`` behavior.
+    The callable is not part of the submitted JSON body.
 
     Every outcome from here is recorded in :mod:`app.services.llm_health`, which
     is what lets ``GET /api/v1/llm/status`` say whether the provider is actually
@@ -131,12 +136,12 @@ async def safe_chat_completions_request(
         if client is not None:
             response = await client.post(url, headers=headers, json=payload, timeout=timeout)
             response.raise_for_status()
-            result = dict(response.json())
+            result = response_decoder(response) if response_decoder is not None else dict(response.json())
         else:
             async with httpx.AsyncClient(timeout=timeout) as owned:
                 response = await owned.post(url, headers=headers, json=payload)
                 response.raise_for_status()
-                result = dict(response.json())
+                result = response_decoder(response) if response_decoder is not None else dict(response.json())
     except Exception as exc:
         # Re-raised unchanged — every caller's error handling is untouched. The
         # class name only; a message can carry a URL with a key in it.

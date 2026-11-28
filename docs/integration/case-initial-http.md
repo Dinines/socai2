@@ -1,6 +1,8 @@
 # 建案后的首轮调查：后端接口对接
 
-2026-11-15：当前21候选18424 API/18480 Swagger为80操作、默认内部可信、无鉴权，旧18024/18080已停止。此前第6步替身联验保留[原验收](../operations/evidence/case-initial-http-20261115-01/README.md)。S01真实A/I保存及62次GET之后，[整事件Case和A01固定范围对照](../operations/evidence/streaming-case-http-20261115-01/README.md)已完成2次POST/5次GET持久受理，再由唯一调度执行首轮；[结果58次GET](../operations/evidence/streaming-case-result-http-20261115-01/README.md)通过，2个Run/Result、34步骤、96工件目录及44份必要正文与测试快照一致。两案completed/accepted/uncertain/partial，实际范围分别3和1。Case为正常长文本，引用问题保留、正文全面评估未做，不算质量通过；S04和整个change验收仍待。
+2026-11-20接通核对：当前正式HTTP已挂载异步Incident `diagnose`、Case `investigations`及任务读取，现有建案按 `allocations/initial_task` 返回。本页请求与受理/执行区分仍适用；下述11-15部署端口与“尚未发布”仅为原批次状态，当前环境见[PROGRESS](../../PROGRESS.md)，本次完整候选及真实新批见[接通回执](../operations/evidence/http-real-data-20261120-01/README.md)。
+
+2026-11-15历史记录：当前21候选18424 API/18480 Swagger为80操作、默认内部可信、无鉴权，旧18024/18080已停止。此前第6步替身联验保留[原验收](../operations/evidence/case-initial-http-20261115-01/README.md)。S01真实A/I保存及62次GET之后，[整事件Case和A01固定范围对照](../operations/evidence/streaming-case-http-20261115-01/README.md)已完成2次POST/5次GET持久受理，再由唯一调度执行首轮；[结果58次GET](../operations/evidence/streaming-case-result-http-20261115-01/README.md)通过，2个Run/Result、34步骤、96工件目录及44份必要正文与测试快照一致。两案completed/accepted/uncertain/partial，实际范围分别3和1。Case为正常长文本，引用问题保留、正文全面评估未做，不算质量通过；S04和整个change验收仍待。
 
 业务后端创建案件后，调查服务会通过调度器完成首轮调查。后端使用创建回执中的任务地址查进度，再沿任务中的链接读结果。无需另发“准备Run”和“启动Run”。HTTP只负责业务受理与读取，执行由独立调查服务负责。
 

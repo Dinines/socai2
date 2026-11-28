@@ -1,17 +1,17 @@
 # 21 告警、事件和 Case 后端联调清单
 
-适用发布版本为 `c173-release-20261121-04`。告警、事件和 Case 页面通过 21 的正式 HTTP 联调。
+本清单起于 `c173-release-20261121-04`。2026-11-24 现场核对：正式 HTTP 已是 `c173-q04-release-20261123-01`（83 个业务操作），Swagger 仍为 11-21 版（82 个）。告警、事件和 Case 通过 21 正式 HTTP 联调，实际请求/响应以该服务 `/openapi.json` 为准。[当前审计及分步安排](../../openspec/changes/complete-socai2-investigation-chain/integration-coordination-audit-20261124.md)
 
 ## 我方交付
 
 | 资料 | 地址或用法 |
 | --- | --- |
 | 正式 API | `http://192.168.1.21:18024/api/v1/socai2`。带 JSON 请求体时用 `Content-Type: application/json`。 |
-| 接口文档与导入 | OpenAPI 可导入接口工具或用于生成客户端。服务器填 `http://192.168.1.21:18024`，文档路径已含 `/api/v1/socai2`。[在线 Swagger](http://192.168.1.21:18080/) · [OpenAPI JSON 下载](http://192.168.1.21:18080/handoff/openapi.json) · [仓库同版 OpenAPI](../../deploy/aisoc21/c173-release-20261121-04/contract/openapi.json) |
+| 接口文档与导入 | 使用[当前 HTTP OpenAPI](http://192.168.1.21:18024/openapi.json)导入或生成客户端。服务器填 `http://192.168.1.21:18024`，路径已含 `/api/v1/socai2`。[在线 Swagger](http://192.168.1.21:18080/)与[11-21 仓库合同](../../deploy/aisoc21/c173-release-20261121-04/contract/openapi.json)仍属旧版，缺当前 Q04，其他字段差异也需按现网核对。 |
 | 前端设计稿 | 告警、事件和 Case 的可交互设计原型位于 `prototypes/security-pages-v2/`。[启动方式与预览入口](#前端页面设计稿) |
 | 页面功能逐项映射 | 按告警、事件、Case 三类页面和功能编号查取数、写入、跳转及分页接口。功能目的与字段对照参见两份索引，接口路径和请求字段以本次正式 OpenAPI 为准。[页面功能映射](product-api-data-requirements-20261114.md#7-125项逐项归属) · [页面跳转规格](../../deliverables/investigation-validation-20261106/frontend-data-navigation-contract.md#跳转与关联规格) |
 | 异步任务与调查记录 | [发起事件诊断与案件调查](analysis-submission-http.md#目标功能与路径) · [分析任务字段](analysis-tasks-http.md#任务详情字段) · [统一 Run 目录](run-directory-http.md#输入参数) · [步骤与工件](run-records-http.md#用途与调用) |
-| 验收回执 | 21 正式 HTTP 和 Swagger 同版，共 82 个操作。统一运行目录的计数和卡片标记已对照正式数据库，并用同版镜像完成隔离正例读回。[正式发布清单](../../deploy/aisoc21/c173-release-20261121-04/release.json) · [正式读回](../operations/evidence/c173-escalation-release-20261121-04/README.md) |
+| 验收回执 | 11-21 当批 HTTP/Swagger 同版 82 操作的[发布清单](../../deploy/aisoc21/c173-release-20261121-04/release.json)及[正式读回](../operations/evidence/c173-escalation-release-20261121-04/README.md)保持原范围；11-24 当前版本差异见[三处结构核对](../operations/evidence/integration-coordination-audit-20261124-01/README.md)。 |
 
 ## 前端页面设计稿
 
@@ -114,6 +114,10 @@ python3 prototypes/security-pages-v2/serve.py --port 4173
 | 联调数据 | 确认实际联调地址和对应租户或组织。给一组脱敏样例，覆盖可分配人员、资产命中及查无匹配。若实际使用库表或视图供数，请给数据库地址、库名、schema、表或视图名和字段映射。 |
 
 SpiritHub 已有人员列表及详情 `GET /api/v1/admin/users` 和 `GET /api/v1/admin/users/{user_id}`，以及资产列表及详情 `GET /api/v1/assets` 和 `GET /api/v1/assets/{asset_id}`。请确认采用的现有入口。[SpiritHub OpenAPI](https://github.com/wangjuelong26/SpiritHub/blob/14053d46bb362e5c45441d87699c0e3c44f84a45/schemas/platform-api.v1.json)
+
+11-23 在 21 核对到两个实际人员目录。登录返回的 `/api/v1/auth/me.id` 来自 `spirithub.public.users.id`。告警接口 `owner_id` 是 UUID，按 `aisoc.public.users.id` 对应的已存 `facts.owner_id` 筛选。当前活跃目录及旧桥接配置均没有可用于这两侧的有效映射。负责人筛选和「分配给我」需由平台提供当前租户对应的调查人员 UUID。[目录核验](../operations/evidence/c173-alert-readback-20261123-01/README.md)
+
+21 平台 API 的四页共享转发已沿固定 C173 Origin 启用可信 HTTP。平台会话、路由权限和本地绑定由 Spirit Hub 入口校验，C173 提供业务数据和动作。平台就绪 200，未登录告警 GET 返回 401。正式有记录的登录读回待合法会话复验。[转发激活](../operations/evidence/c173-formal-alert-readback-20261123-01/README.md#spirit-hub-共享转发)
 
 ## Kafka 日志接入
 

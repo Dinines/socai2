@@ -1,18 +1,24 @@
 """One I synthesis over frozen members; no A queries, Case runs, or actions."""
 import asyncio
-from app.core.operational_logging import log_context
 from uuid import uuid4, uuid5
 
 from sqlalchemy import func, insert, null, select, update
 
+from app.core.operational_logging import log_context
+
 from . import ai_delivery_store, incident_model_boundary, incident_output_adapter
+from .analysis_dispatch_types import ExecutionFailure
 from .baseline_analysis import budget_reason
 from .baseline_analysis_model import TenantChatGateway, usage
 from .baseline_context import reference
 from .baseline_contracts import Limits
 from .baseline_enrichment import S, error
 from .baseline_store import StoreError, digest, encoded
-from .model_errors import ModelCallError
+from .model_errors import (
+    DEADLINE_BEFORE_DISPATCH,
+    INPUT_CONTRACT_REJECTED,
+    ModelCallError,
+)
 from .model_protocol import prepare_request
 from .runtime_policy import active_policy, execution_policy
 from .stage_result_contracts import INCIDENT_EXECUTOR_VERSION as VERSION
@@ -136,15 +142,16 @@ class IncidentDiagnosisExecutor:
                 with log_context(run_id=rid, step_id=model, stage="I", operation="model_complete"):
                     async with asyncio.timeout_at(deadline):
                         payload = await self.gateway.complete(body, max(0, deadline - asyncio.get_running_loop().time()))
-            except ModelCallError as exc:
+            except (Exception, asyncio.CancelledError) as exc:
                 async with self.service.transaction(tenant) as store:
                     run, _ = await self.locked(store, rid)
-                    response_id = await self.save(store, run, model, "model_response",
-                        {"schema_version": VERSION, **exc.payload(), "usage": usage(None)})
-                    await store.db.execute(update(S).where(*store.where(S, S.c.id == model)).values(
-                        output_artifact_id=response_id, usage=usage(None)))
-                if exc.rejection_code:
-                    await self.stop(tenant, rid, "failed", exc.rejection_code)
+                    await ai_delivery_store.save_call_failure(store, run, stage, model, request_id, VERSION, exc)
+                if (isinstance(exc, ExecutionFailure) and exc.code in {INPUT_CONTRACT_REJECTED, DEADLINE_BEFORE_DISPATCH}
+                        and exc.not_executed and not exc.temporary):
+                    await self.stop(tenant, rid, "failed", exc.code)
+                    return await self.outcome(tenant, claim)
+                if isinstance(exc, ModelCallError) and (exc.envelope_code or exc.rejection_code):
+                    await self.stop(tenant, rid, "failed", exc.envelope_code or exc.rejection_code)
                     return await self.outcome(tenant, claim)
                 raise
             from .citation_quality import seal

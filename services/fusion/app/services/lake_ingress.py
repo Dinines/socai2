@@ -277,21 +277,22 @@ class Projection:
         return [v for v in value if isinstance(v, str) and v]
 
 
-def _labels(projection):
+def project_labels(projection):
+    """Return explicit techniques/tactics, retaining the projection's issues."""
     p = projection
     techniques = p.strings(p.array(("mitre_techniques",)), ("mitre_techniques",))
     tactics = p.strings(p.array(("mitre_tactics",)), ("mitre_tactics",))
-    for field in ("mitre_attck", "attacks"):
-        for item in p.array((field,)):
+    for field in (("mitre_attck",), ("attacks",), ("finding_info", "attacks")):
+        for item in p.array(field):
             if not isinstance(item, dict):
-                p.bad((field,), "invalid_object_item")
+                p.bad(field, "invalid_object_item")
                 continue
-            paths = (("technique_id",), ("tactic_names",)) if field == "mitre_attck" else (("technique", "uid"), ("tactic", "uid"))
+            paths = (("technique_id",), ("tactic_names",)) if field == ("mitre_attck",) else (("technique", "uid"), ("tactic", "uid"))
             for output, path in zip((techniques, tactics), paths, strict=True):
                 value = nested(item, path)
                 if value is ABSENT or value is None:
                     continue
-                output.extend(p.strings(value if path == ("tactic_names",) else [value], (field, *path)))
+                output.extend(p.strings(value if path == ("tactic_names",) else [value], (*field, *path)))
     return list(dict.fromkeys(techniques)), list(dict.fromkeys(tactics))
 
 
@@ -351,7 +352,7 @@ def adapt_ocsf(payload: bytes | None, *, profile: IngressProfile, position: Kafk
             p.bad(("is_alert",), "invalid_bool")
         is_alert = None
     sha256, fingerprints = _fingerprints(p)
-    techniques, tactics = _labels(p)
+    techniques, tactics = project_labels(p)
     raw = p.value(("raw_data",))
     row.update(
         tenant_id=profile.tenant_id, event_time=event_time, severity=p.string(("severity",)),

@@ -1,9 +1,16 @@
-import {active, businessGate, boundResults, pageUrl, runPath, subjectPath, subjectListPath, subjectEntry, subjectHistory, resumeVisible, ReadScope, VisiblePoll} from './viewer_state.mjs';
+import {active, businessGate, boundResults, pageUrl, runPath, subjectPath, subjectListPath, subjectEntry, subjectHistory, resumeVisible, readPart, readPagePart, ReadScope, VisiblePoll} from './viewer_state.mjs';
 
 import {executionFlow, matchingAttempt, matchingExchange, stateLabel, timeLabel} from './execution_flow.mjs';
-import {loadCaseSources, readSourceExecution} from './frozen_sources.mjs';
+import {readClosingReport, closingTitle, localEndLabel} from './delivery_view.mjs';
+import {checkArtifact, loadCaseSources, readSourceExecution} from './frozen_sources.mjs';
 import {classifySources, classifyRunSources, registeredRun, sourceCaption} from './test_sources.mjs';
 import {parseRunLink, checkLinkEnvironment, chooseRun, runLinkSearch, checkRunIdentity, linkedSubject} from './viewer_links.mjs';
+import {currentRisk, riskLevel, currentRiskCard, readRoundRisk, roundRiskCard, riskActivityList} from './subject_risk.mjs';
+import {durationLabel, taskTimeRows, attemptTimeRows, taskPhase, noRunLabel, timingAnomalies} from './analysis_task_time.mjs';
+import './recommendation-view.js';
+const recommendations=globalThis.socai2Recommendations;
+import './assessment-view.js';
+const basisView=globalThis.socai2Assessment;
 
 const $ = id => document.getElementById(id);
 const origin = location.origin;
@@ -64,6 +71,7 @@ function lines(title, items) {
   box.append(ul.children.length ? ul : node('p', '无记录', 'muted')); return box;
 }
 function notice(text, error = false) { return node('div', text, `notice${error ? ' error' : ''}`); }
+const riskUi={node,button,facts,card,notice,rawDetails};
 function showError(error, observed = selected ? detailObserved : tabObserved) {
   if (error.name === 'AbortError') return;
   const target = batch || currentSubject ? $('read-status') : $('global-error');
@@ -136,6 +144,10 @@ async function loadSubjects(append = false, autoSelect = true) {
     const b = button('',()=>{clearReportTarget();return openSubject(group);}); b.className='subject-choice'; b.dataset.subjectId=group.mapping.subject_id;
     b.setAttribute('aria-current','false');
     b.append(node('strong',group.title),node('small',group.mapping.subject_id,'identity'));
+    if(type!=='alert') {
+      const risk=currentRisk(type,item);
+      b.append(node('small',`当前等级：${riskLevel(risk.level)} · 优先级：${value(risk.priority)}`,'subject-risk-list'));
+    }
     group.button=b; subjects.set(key,group); $('subject-list').append(b);
   }
   subjectCursor=response.data.next_cursor; $('more-subjects').hidden=!subjectCursor;
@@ -171,6 +183,25 @@ async function openSubject(group, scroll = false, preferredRun = null) {
     ['执行记录',runResult.status==='fulfilled'?`${history.length} 轮`:'读取失败'],
     ['任务记录',taskResult.status==='fulfilled'?tasks.length:'读取失败']]));
   if(subject.member_count!=null)summary.append(node('p',`当前关联 ${subject.member_count} 条告警；每轮以该轮保存的输入为准。`,'muted small'));
+  if(mapping.subject_type!=='alert') {
+    summary.append(currentRiskCard(mapping.subject_type,subject,riskUi,{listOnly:subjectResult.status!=='fulfilled'}));
+    const changes=node('details');changes.className='subject-risk-history';changes.append(node('summary','等级与优先级变化（只读）'));
+    const historyBox=node('div');changes.append(historyBox);let activityPage=null;
+    const loadActivity=async()=>{
+      const suffix=mapping.subject_type==='case'?'/activities':'/records/activities';
+      const offset=activityPage?.next_offset??0;
+      const response=await read(tabScope,`${path}${suffix}?limit=${config.page_size}&offset=${offset}`,true);
+      if(!tabScope.current(generation))return;
+      activityPage={...response.data,items:[...(activityPage?.items??[]),...response.data.items]};
+      historyBox.replaceChildren(riskActivityList(mapping,activityPage.items,riskUi,runId=>{
+        const entry=history.find(item=>item.run?.id===runId);
+        const target={...mapping,run_id:runId};
+        return selectDetail({kind:'run',mapping:target,url:entry?.url??runPath(target),history,scroll:true});
+      }));
+      if(activityPage.next_offset!=null)historyBox.append(button('更多变化',loadActivity));
+    };
+    historyBox.append(button('读取变化记录',loadActivity));summary.append(changes);
+  }
   const properties=node('details');properties.append(node('summary','对象属性'),rawDetails(subject,'展开完整对象属性'));summary.append(properties);
   for(const [i,result] of results.entries()) if(result.status==='rejected')
     summary.append(notice(`${['对象属性','执行目录','任务目录'][i]}读取失败：${result.reason.message}。其余已读取内容保留。`,true));
@@ -336,21 +367,20 @@ async function loadTab(name, append = false, preserve = false, filter = null) {
     tabObserved = response.observedAt; observed(tabObserved); scheduleBatch();
   } catch (error) { if (tabScope.current(generation)) showError(error); }
 }
-async function allPages(scope, path, identity=null) {
-  const generation = scope.generation, items = [], seen = new Set();
-  let cursor = null;
-  do {
-    const response = await read(scope, page(path,cursor), path.startsWith('/api/'));
-    if (!scope.current(generation)) throw new DOMException('选择已改变','AbortError');
-    if(identity && ['subject_type','subject_id','run_id'].some(key=>response.data[key]!==identity[key]))
-      throw new Error('读取目录与指定主体或Run不一致');
-    items.push(...response.data.items);
-    cursor = response.data.next_cursor;
-    if (cursor && seen.has(cursor)) throw new Error('目录分页未向前推进');
-    seen.add(cursor);
-  } while (cursor);
-  return items;
+async function pagesPart(scope, path, identity=null) {
+  const generation=scope.generation;
+  return readPagePart(async cursor=>{
+    const response=await read(scope,page(path,cursor),path.startsWith('/api/'));
+    if(!scope.current(generation))throw new DOMException('选择已改变','AbortError');
+    return response.data;
+  },identity);
 }
+async function allPages(scope, path, identity=null) {
+  const part=await pagesPart(scope,path,identity);
+  if(part.error)throw new Error(part.error);
+  return part.data;
+}
+
 function renderLedgerItem(item) {
   if (tab === 'cases') {
     const c = card(`${item.use_case_id} · ${item.scenario_id}`, item.status);
@@ -423,21 +453,33 @@ async function fetchSelection(s) {
     // Run summaries may be capped; directory links are the only paginated source.
     const directory = s.mapping.subject_type === 'case' ? response.data : (await read(detailScope, `${s.url}/trace`, true)).data;
     checkRunIdentity(s.mapping,response.data,directory);
-    const [steps,artifacts]=await Promise.all([allPages(detailScope,directory.steps_url),allPages(detailScope,directory.artifacts_url)]);
-    let result=response.data.result;
-    let resultUrl;
-    if(s.mapping.subject_type==='case') {
-      const id=response.data.result_ids?.[0];
-      if(id) {resultUrl=`${subjectPath(s.mapping)}/results/${encodeURIComponent(id)}`;result=(await read(detailScope,resultUrl,true)).data.result;}
-      if(result && result.source_run_id!==response.data.run.id) throw new Error('结果与当前执行不一致');
+    const identity={subject_type:s.mapping.subject_type,subject_id:s.mapping.subject_id,run_id:response.data.run.id};
+    const [stepPart,artifactPart]=await Promise.all([
+      pagesPart(detailScope,directory.steps_url,identity),pagesPart(detailScope,directory.artifacts_url,identity)]);
+    const steps=stepPart.data,artifacts=artifactPart.data;
+    const parts={steps:stepPart,artifacts:artifactPart};
+    if(s.mapping.subject_type!=='alert')parts.risk=await readPart(()=>readRoundRisk({mapping:{...s.mapping,run_id:response.data.run.id},run:directory.run??response.data.run,artifacts,readBody:url=>read(detailScope,url,true)}));
+    let result=response.data.result,resultUrl;
+    if(s.mapping.subject_type==='case' && response.data.result_ids?.length) {
+      resultUrl=`${subjectPath(s.mapping)}/results/${encodeURIComponent(response.data.result_ids[0])}`;
+      parts.result=await readPart(async()=>{
+        const detail=(await read(detailScope,resultUrl,true)).data;
+        return recommendations.checkResult(detail,{caseId:s.mapping.subject_id,resultId:response.data.result_ids[0],runId:response.data.run.id});
+      });
+      result=parts.result.data;
     }
-    const boundMapping=(s.mappings??[s.mapping]).find(m=>m.run_id===response.data.run.id);
-    let task;
-    if(boundMapping?.task_id)task=(await read(detailScope,`${subjectPath(s.mapping)}/analysis-tasks/${boundMapping.task_id}`,true)).data;
-    if(!matchingAttempt(task,response.data.run.id)) {
+    parts.task=await readPart(async()=>{
+      if(s.task && matchingAttempt(s.task,response.data.run.id))return s.task;
       const tasks=await allPages(detailScope,`${subjectPath(s.mapping)}/analysis-tasks`);
-      task=tasks.find(t=>matchingAttempt(t,response.data.run.id));
-      if(!task) { const candidate=tasks.find(t=>t.latest_run_id===response.data.run.id);if(candidate)task=(await read(detailScope,`${subjectPath(s.mapping)}/analysis-tasks/${candidate.task_id}`,true)).data; }
+      const candidate=tasks.find(t=>t.latest_run_id===response.data.run.id);
+      return candidate?(await read(detailScope,`${subjectPath(s.mapping)}/analysis-tasks/${candidate.task_id}`,true)).data:null;
+    });
+    const task=parts.task.data;
+    let report=null;
+    if(!result && s.mapping.subject_type==='case') {
+      parts.report=await readPart(()=>readClosingReport({run:response.data.run,steps,artifacts,
+        readContent:async ref=>checkArtifact(ref,(await read(detailScope,ref.content_url,true)).data)}));
+      report=parts.report.data;
     }
     const sources=testSources.get(subjectKey(s.mapping))?.exchanges??batch?.exchanges;
     const exchange=matchingExchange(sources??[],s.mapping,response.data.run.id,task?.task_id);
@@ -445,7 +487,7 @@ async function fetchSelection(s) {
       previousUrl:response.data.previous_run_url,readBody:url=>read(detailScope,url,true),readPages:(url,identity)=>allPages(detailScope,url,identity)}):null;
     const sourceClassification=await classifyRunSources({mapping:s.mapping,run:directory.run??response.data.run,artifacts,
       context:upstream?.current?.context,readBody:url=>read(detailScope,url,true),prefixes:config.test_source_prefixes});
-    return {...response,directory,steps,artifacts,result,upstream,sourceClassification,context:{task,exchange,resultUrl,runUrl:s.url,observedAt:response.observedAt},isActive:active('run',response.data.run.state)};
+    return {...response,directory,steps,artifacts,result,report,parts,upstream,sourceClassification,context:{task,exchange,resultUrl,runUrl:s.url,observedAt:response.observedAt},isActive:active('run',response.data.run.state)};
   }
   return read(detailScope, s.kind === 'evidence' ? s.item.content_url : s.url, s.kind !== 'evidence');
 }
@@ -453,14 +495,24 @@ function renderSelection(s, response) {
   const {data} = response, box = node('div');
   if (s.kind === 'task') {
     const c = card(`任务 · ${data.intent}`, data.status);
-    c.append(facts([['任务', data.task_id], ['来源', data.source], ['原因', data.reason_code], ['下次重试', data.next_retry_at], ['开始', data.started_at], ['结束', data.ended_at]]));
+    c.append(facts([['任务', data.task_id], ['来源', data.source], ['原因', data.reason_code], ['下次重试', timeLabel(data.next_retry_at)], ...taskTimeRows(data,timeLabel)]));
+    c.append(notice(taskPhase(data)));
+    if(data.execution_shared)c.append(notice('历史合并请求：尝试及步骤来自共享执行；受理与入队时间保留原请求记录。'));
+    if(data.active_step) {
+      const step=data.active_step;
+      c.append(facts([['当前步骤',step.name],['步骤开始',timeLabel(step.started_at)],['步骤已执行',durationLabel(step.elapsed_seconds)]]));
+      c.append(button('打开当前步骤所属 Run',()=>selectDetail({kind:'run',mapping:{...s.mapping,run_id:step.run_id},url:runPath({...s.mapping,run_id:step.run_id}),task:data})));
+    }
+    const anomalies=timingAnomalies(data);
+    if(anomalies.length)c.append(notice(`时间记录异常：${anomalies.join('、')}；对应耗时未推定为 0。`,true));
     if (!data.attempts.length) c.append(notice(data.status === 'accepted' ? '任务已受理，等待产生执行尝试；当前没有 Run。' : '当前任务没有执行尝试或 Run。'));
     box.append(c);
     for (const attempt of data.attempts) {
-      const a = card(`第 ${attempt.attempt_no} 次尝试`, attempt.outcome ?? attempt.local_state);
-      a.append(facts([['Run', attempt.run_id], ['本地状态', attempt.local_state], ['错误代码', attempt.error_code], ['错误环节', attempt.error_stage], ['可重试', attempt.retryable]]));
+      const checked=data.status==='skipped' && !attempt.run_id && attempt.outcome==='completed';
+      const a = card(`第 ${attempt.attempt_no} 次尝试`, checked?'检查已结束':attempt.outcome ?? attempt.local_state);
+      a.append(facts([['Run', attempt.run_id], ['本地状态', attempt.local_state], ...attemptTimeRows(attempt,timeLabel), ['错误代码', attempt.error_code], ['错误环节', attempt.error_stage], ['可重试', attempt.retryable]]));
       if (attempt.run_url && attempt.run_id) a.append(button('打开此尝试 Run', () => selectDetail({kind:'run', mapping:{...s.mapping,run_id:attempt.run_id}, url:attempt.run_url, task:data})));
-      else a.append(node('p', '此尝试尚无关联 Run，保留准备/错误记录。', 'muted'));
+      else a.append(node('p', noRunLabel(data,attempt), 'muted'));
       a.append(rawDetails(attempt)); box.append(a);
     }
     if (s.mapping.run_id) box.append(button('打开账本登记 Run', () => selectDetail({kind:'run',mapping:s.mapping,url:runPath(s.mapping),task:data})));
@@ -489,15 +541,26 @@ function renderSelection(s, response) {
     };
     label.append(select);header.append(label);box.append(header);
     box.append(facts([['执行状态',stateLabel(run.state)],['交付情况',stateLabel(run.delivery_state)],['开始时间',timeLabel(run.started_at)],['结束时间',timeLabel(run.ended_at)]]));
+    const localLabel=localEndLabel(run,response.context.task,response.report);
+    if(localLabel)box.append(notice(localLabel));
+    if(s.mapping.subject_type!=='alert')box.append(roundRiskCard(response.parts.risk,riskUi));
+    for(const [key,label] of [['steps','步骤目录'],['artifacts','原件目录'],['result','结果'],['task','任务'],['report','收尾报告']]) {
+      const part=response.parts?.[key];
+      if(!part?.error)continue;
+      const text=['steps','artifacts'].includes(key)?`${label}未读全，已读取 ${part.data.length} 条`:`${label}读取失败`;
+      const warning=notice(`${text}：${part.error}。其他已读取内容保留。`,true);
+      warning.append(button('重新读取本轮',refreshDetail));box.append(warning);
+    }
     if(data.input_member_count!=null)box.append(node('p',`本轮输入 ${data.input_member_count} 条告警 · 当前关联 ${data.current_member_count} 条告警`,'scope-summary small'));
     if(data.input_selection) box.append(node('p',`本轮选入 ${data.input_selection.selected_count} / ${data.input_selection.total_member_count} 条成员；实际覆盖 ${data.analysis_coverage?.analyzed_count ?? '未记录'} 条。`,'scope-summary'));
     const ticket=detailScope.generation;
-    box.append(executionFlow({run,steps:response.steps,artifacts:response.artifacts,result:response.result,context:response.context,upstream:response.upstream,
+    box.append(executionFlow({run,steps:response.steps,artifacts:response.artifacts,result:response.result,context:response.context,upstream:response.upstream,readStatus:response.parts,report:response.report,
       readSource:entry=>readSourceExecution(entry,url=>read(detailScope,url,true),(url,identity)=>allPages(detailScope,url,identity)),
       readBody:url=>read(detailScope,url,true),current:()=>detailScope.current(ticket),onInspect:pauseParentPolling,
-      ui:{node,button,facts,rawDetails,notice,resultCard,contentCard}}));
+      ui:{node,button,facts,rawDetails,notice,resultCard:value=>resultCard(value,{report:response.report,
+        resultReadFailed:Boolean(response.parts?.result?.error),reportReadFailed:Boolean(response.parts?.report?.error)}),contentCard}}));
     const extra=node('details',null,'execution-extra');extra.append(node('summary','轮次比较、当前采用与完整记录'));
-    if(s.mapping.subject_type==='case') extra.append(comparison(data,run),button('读取当前采用与新鲜度',()=>inlineRead(extra,subjectPath(s.mapping),renderCurrentCase)));
+    if(s.mapping.subject_type==='case') extra.append(comparison(data,run),button('读取当前采用与新鲜度',()=>inlineRead(extra,subjectPath(s.mapping),data=>renderCurrentCase(data,s.mapping.subject_id))));
     extra.append(rawDetails(data,'完整执行记录（Run）'));
     for(const [key,label] of [['steps','步骤'],['artifacts','原件']]) if(response.directory[`${key}_url`]) extra.append(button(`查看完整${label}目录`,()=>loadDirectory(extra,response.directory[`${key}_url`],key)));
     box.append(extra);return box;
@@ -511,15 +574,39 @@ function renderSelection(s, response) {
   }
   box.append(contentCard(data, response.raw, s.label)); return box;
 }
-function resultCard(result) {
+function resultCard(result, {report=null,resultReadFailed=false,reportReadFailed=false}={}) {
+  if(!result && report) {
+    const saved=report.result,c=card(closingTitle(report,resultReadFailed),report.delivery?.state??saved.delivery_state);
+    c.append(notice('以下内容来自所选Run保存的收尾报告；没有把报告当作已采用结果。'));
+    c.append(facts([['执行状态',stateLabel(saved.run_state)],['本地执行',saved.local_execution_state==='ended'?'已结束':'未确认'],
+      ['交付情况',stateLabel(saved.delivery_state)],['采用资格',saved.adoption_eligible===false?'不可采用':'未确认'],
+      ['结论比较',saved.comparison_eligible===false?'不可用于结论比较':'未确认']]));
+    c.append(node('p',saved.conclusion??saved.closing_note??'未保存最终结论正文。','prose'));
+    if(saved.findings||saved.questions||saved.case_impact)c.append(assessmentPanel(saved));
+    c.append(recommendationPanel(saved.recommendations,'收尾报告中保留的建议'));
+    c.append(rawDetails(report,'同Run收尾报告、来源与保留单元'));return c;
+  }
   const c = card('本轮分析结果', result?.validation_state ?? result?.state);
-  if (!result) { c.append(notice('没有保存的结果。')); return c; }
-  c.append(facts([['业务判定', stateLabel(result.conclusion_state ?? result.verdict)], ['交付情况', stateLabel(result.delivery_state)], ['结构校验', stateLabel(result.validation_state)]]));
+  if (!result) { c.append(notice(resultReadFailed||reportReadFailed?'结果或收尾报告读取失败，请重试；不能据此判定没有保存内容。':'没有保存的结果；当前已读目录中未找到可用收尾报告。')); return c; }
+  const verdict = result.case_id || Object.hasOwn(result, 'diagnosis')
+    ? [['模型判定', basisView.verdictLabel(result.business_verdict)]]
+    : [['业务判定', stateLabel(result.verdict)]];
+  if(result.conclusion_state)verdict.push(['结论确定性', stateLabel(result.conclusion_state)]);
+  c.append(facts([...verdict, ['交付情况', stateLabel(result.delivery_state)], ['结构校验', stateLabel(result.validation_state)]]));
   if(result.error_code) c.append(notice(`结果错误：${result.error_code}`, true));
   c.append(node('p', result.conclusion ?? result.summary ?? result.rationale ?? '未保存结论正文。', 'prose'));
   if (result.closing_note) c.append(node('p', result.closing_note, 'prose'));
-  if (result.findings) c.append(lines('发现', result.findings.map(f => f.statement)));
+  if (result.case_id) c.append(assessmentPanel(result));
+  else if (result.findings) c.append(lines('发现', result.findings.map(f => f.statement)));
+  c.append(recommendationPanel(result.recommendations));
   c.append(rawDetails(result, '查看完整结果及依据')); return c;
+}
+function assessmentPanel(result) {
+  const section=node('section');section.innerHTML=basisView.render(result);return section;
+}
+function recommendationPanel(values,title='本轮建议') {
+  const section=node('section');section.append(node('h4',title));
+  const body=node('div');body.innerHTML=recommendations.render(values);section.append(body);return section;
 }
 function comparison(outer, record) {
   const c = card('上一轮比较');
@@ -529,9 +616,44 @@ function comparison(outer, record) {
   for (const [key,label] of [['previous_run_url','读取上一轮 Run'],['comparison_result_url','读取比较结果']]) if (outer[key]) c.append(button(label, () => inlineRead(c, outer[key], data => rawDetails(data, label))));
   return c;
 }
-function renderCurrentCase(data) {
+function renderCurrentCase(data,caseId) {
+  if(data.case?.id!==caseId)throw Error('当前采用状态不属于所选Case。');
   const c = card('当前 Case 采用状态与新鲜度'), assessment = data.current_assessment;
   c.append(facts([['Case', data.case.id], ['当前判断', data.case.current_assessment_id], ['当前成员数', data.member_count], ['采用有效性', assessment?.value?.validity], ['输入新鲜度', assessment?.input_freshness?.state], ['变化原因', assessment?.input_freshness?.reasons]]));
+  c.append(node('p',assessment?.value?.conclusion??'尚未采用案件判断。','prose'));
+  if(assessment)c.append(facts([['模型判定',basisView.verdictLabel(assessment.business_verdict)]]));
+  if(assessment){const coverage=node('div');coverage.innerHTML=basisView.coverage(assessment.members,assessment.members_truncated);c.append(coverage);}
+  c.append(node('h4','当前采用来源的依据与建议'),node('p','按当前判断引用的结果分别读取；保留原范围，建议不代表已批准或执行。'));
+  const sources=recommendations.resultSources(assessment);
+  if(!sources.length)c.append(node('p',assessment?'当前判断未引用Result；不能从其他轮次补值。':'尚未采用案件判断。'));
+  for(const source of sources){
+    const group=node('section'),content=node('div');
+    group.append(node('p',`来源结果：${source.result_id}`,'recommendation-source'));
+    group.append(button('读取来源依据与建议',async()=>{
+      pauseParentPolling();const generation=detailScope.generation;content.replaceChildren(node('p','正在读取来源内容…'));
+      try{
+        const response=await read(detailScope,`${subjectPath({subject_type:'case',subject_id:caseId})}/results/${encodeURIComponent(source.result_id)}`,true);
+        if(!detailScope.current(generation))return;
+        const result=recommendations.checkResult(response.data,{caseId,resultId:source.result_id});
+        content.replaceChildren(node('p',`来源轮次：${result.source_run_id}`,'recommendation-source'),assessmentPanel(result),recommendationPanel(result.recommendations,'来源结果中的建议'));
+      }catch(error){if(detailScope.current(generation))content.replaceChildren(notice(`来源读取失败：${error.message}；可重新点击读取。`,true));}
+    }),content);c.append(group);
+  }
+  for(const source of (assessment?.sources||[]).filter(x=>!x.result_id)){
+    const group=node('section'),content=node('div');content.innerHTML=basisView.otherSources([source]);
+    group.append(button('读取来源正文',async()=>{
+      pauseParentPolling();const generation=detailScope.generation;content.replaceChildren(node('p','正在读取来源内容…'));
+      try{
+        if(source.assessment_id&&source.assessment_id!==assessment.value.id)throw Error('来源不属于当前采用记录。');
+        const suffix=basisView.sourcePath(caseId,source).slice(('/cases/'+encodeURIComponent(caseId)).length);
+        const response=await read(detailScope,subjectPath({subject_type:'case',subject_id:caseId})+suffix,true);
+        if(!detailScope.current(generation))return;
+        const saved=basisView.checkSource(response.data,{caseId,source});
+        content.innerHTML=basisView.otherSources([source],[{source,data:saved}]);
+      }catch(error){if(detailScope.current(generation))content.innerHTML=basisView.otherSources([source],[{source,error:error.message}]);}
+    }),content);c.append(group);
+  }
+  if(assessment?.sources_truncated)c.append(notice('采用来源目录已截断，仅展示已读取的来源。'));
   c.append(rawDetails(assessment, '查看当前判断来源')); return c;
 }
 async function inlineRead(container, url, renderer) {

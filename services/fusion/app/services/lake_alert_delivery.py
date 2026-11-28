@@ -10,7 +10,11 @@ from pathlib import Path
 from uuid import UUID
 
 from app.services.lake_alert_receiver import ReceiveResult
-from app.services.lake_alert_selection import reconcile_immutable_versions, select_alert
+from app.services.lake_alert_selection import (
+    reconcile_immutable_versions,
+    select_alert,
+    validate_read_limits,
+)
 from app.services.receipt_json import decoded, encoded
 
 FIELDS = ("tenant_id", "source_namespace", "mapping_version", "event_id", "source_version", "event_time", "class_uid",
@@ -29,8 +33,10 @@ class DeliveryPolicy:
         body = json.loads(path.read_text())
         required = {"version", "enabled", "selection_profile_file", "receive_profile_file", "connection_file",
                     "poll_interval_seconds", "max_deliveries_per_cycle", "statement_timeout_seconds", "runtime"}
-        if set(body) != required or body["version"] != "socai2.lake-alert-delivery.v1" or type(body["enabled"]) is not bool:
+        if set(body) not in (required, required | {"read_limits"}) or body["version"] != "socai2.lake-alert-delivery.v1" or type(body["enabled"]) is not bool:
             raise ValueError("invalid_delivery_profile")
+        if "read_limits" in body:
+            validate_read_limits(body["read_limits"])
         for key in ("selection_profile_file", "receive_profile_file", "connection_file"):
             if not isinstance(body[key], str) or not body[key].strip():
                 raise ValueError("explicit_delivery_files_required")
@@ -48,6 +54,9 @@ class DeliveryPolicy:
 
     def file(self, name):
         return self.directory / self.body[name]
+
+    def read_limits(self, selection):
+        return dict(self.body.get("read_limits", selection.body["read_limits"]))
 
 
 def binding_digest(selection, receive):
@@ -68,12 +77,14 @@ def initial_state(decision):
 
 
 class LakeDeliverySource:
-    def __init__(self, client, selection):
+    def __init__(self, client, selection, *, read_limits=None):
         self.client, self.selection = client, selection
+        self.read_limits = dict(selection.body["read_limits"] if read_limits is None else read_limits)
+        validate_read_limits(self.read_limits)
 
     def _scan(self):
         policy = self.selection
-        limits, scope = policy.body["read_limits"], policy.scope()
+        limits, scope = self.read_limits, policy.scope()
         settings = {"readonly": 2, "max_execution_time": limits["query_timeout_seconds"],
                     "max_result_rows": limits["max_records"]+1, "max_result_bytes": limits["max_result_bytes"],
                     "result_overflow_mode": "throw"}

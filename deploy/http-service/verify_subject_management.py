@@ -108,7 +108,8 @@ def main():
     assert resolved['facts']['resolved_by']==actor
     reassigned,_=single('incidents',incidents[0],'management',{'owner_id':None})
     assert reassigned['facts']['handling_status']=='resolved'
-    opened,_=single('incidents',incidents[0],'management',{'handling_status':'in_progress','severity_override':None})
+    opened,_=single('incidents',incidents[0],'management',{'handling_status':'in_progress','severity_override':None,
+            'severity_override_reason':'SYNTHETIC restore current member rule'})
     assert opened['facts']['resolved_at'] is None and opened['facts']['resolution_note'] is None
     assert opened['facts']['severity_override_reason'] is None
     assert get('incidents',incidents[0])['derived']['severity_effective']=='medium'
@@ -116,10 +117,10 @@ def main():
             'severity_override_reason':'SYNTHETIC batch severity','tags':['synthetic','batch-managed']})
     assert all(item['facts']['handling_status']=='in_progress' for item in assigned['items'])
     assert request('POST','/incidents/management-batch',body)==assigned
-    # A same-value new intent records a receipt without increasing the subject version.
+    # A same-grade explicit human confirmation is a new manual revision, even at the same level.
     noop,_=single('incidents',incidents[0],'management',{'severity_override':'critical',
             'severity_override_reason':'SYNTHETIC batch severity'})
-    assert not noop['changed']
+    assert noop['changed']
     resolved,_=batch('incidents',incidents[:2],'management-batch',{'handling_status':'resolved','resolution_note':'SYNTHETIC batch resolution'})
     assert all(item['facts']['handling_status']=='resolved' for item in resolved['items'])
     activity_ids={closed['activity_id'],reopened['items'][0]['activity_id']}

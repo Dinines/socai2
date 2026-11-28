@@ -18,7 +18,6 @@
 - **WHEN** 复算旧失败请求的计量或读取旧Run
 - **THEN** 复算只报告新准入规则的结果，旧失败、原工件、无输出和采用指针保持；不自动重跑或追认调查成功
 
-
 ### Requirement: Model inputs select business information for the stage goal
 
 每个模型环节 SHALL 先明确使用模型的原因、待完成的业务判断和输出用途，再按字段选择有助于该目标的材料。程序 MUST NOT 将原始记录、数据库对象、工具回执或上游请求整包序列化透传；只换格式、去重或未超限不构成完成。完整原件、身份、范围、版本和执行台账保持后台可回查；所选业务事实与正文保留原值/原文和角色，必要依据及反证不得因未被前序模型引用而丢弃。
@@ -71,6 +70,11 @@
 - **WHEN** 同一成员材料的结构字段、已识别接入外壳或结构化文本副本重复表达相同值
 - **THEN** 程序按同材料和语义字段合并展示，保留有独立内容的业务字段及0/false/有效空列表；不同成员事实不按值相同合并，普通正文原样保留；失效或缺失 A 不作为有效前序判断
 
+#### Scenario: I input contains known lake ingress administration
+- **WHEN** I材料按既有结构确认是自有RawAlert外壳，且含`field_metadata.lake_ingress`
+- **THEN** I专用配置将该入站台账子树留在后台，不在最终提示中逐字段重复；完整原件、其他业务字段、成员/来源映射和输出恢复合同保持，A及Case不应用该I专用过滤
+- **AND** 未确认外壳或其他业务位置出现同名字段时沿既有表示保留，不按样本值或任意同名键删除；不为本次过滤新增跨成员对象推断或行为合并
+
 ### Requirement: C3 selects facts and knowledge for the initial investigation
 
 配置 C3 输入 SHALL 服务于首轮调查解释和必要补查，保留成员业务事实、有效 A/I 原文及其支持/反证、相关人工信息和按已配置用途选择的知识。程序 SHALL 按已识别结构剔除重复对象/时间、接入外壳、纯目录历史及知识检索/索引台账，不能整包透传或语义改写所选正文。原件、角色、记录主体、成员范围和来源映射保持，输出及存储合同不变。
@@ -112,7 +116,6 @@
 #### Scenario: Followup reads a saved selected input
 - **WHEN** 新 C3 输入工件保存读回后用于 Deep 或 C6 构造
 - **THEN** 后续输入保持同一 unmapped 边界，并保留有效已映射事实、来源角色和成员范围；本地预览或结构验证不能替代真实容量和模型业务验收
-
 
 ### Requirement: Structured knowledge reaches the model as selected intact business fields
 
@@ -625,6 +628,11 @@ A/I执行 SHALL 保存该次冻结输入、实际查询/模型请求回复、步
 - **WHEN** I准备模型输入并接收模型答复
 - **THEN** 保留完整成员目录与逐成员已读/未决/未读状态，无法容纳目录或答复漏成员时明确失败，发现仅引用实际可见且属于其范围成员的来源，不凭归并依据制造独立观察事实
 
+#### Scenario: The platform opens a specific saved incident diagnosis run
+- **WHEN** 已具备事件读取权限的调用者通过平台 Q09 打开指定的已保存事件诊断 Run
+- **THEN** 平台 SHALL 按已认证主体与固定轮次核验归属，返回 `run_id`、`kind`、`subject_id` 和 `subject_title`，并由固定轮次读取提供真实执行状态及结果，已保存的失败或未知轮次亦保留其原身份
+- **AND** 若读取身份或归属失败，平台 SHALL 返回原读取错误或身份校验错误，当前采用结果保持独立
+
 ### Requirement: Compact model inputs preserve required meaning and actual visibility
 
 模型输入 SHALL 按阶段任务组织语义组，在预算内优先保留成员核心事实、适用人工限定和明确反证；I的同次分诊及配对理由仍为必要输入。C3/C6的A/I参考判断 SHALL 为可选原子组，不得挤出必要事实/H；C6实际补查、执行计划和有效指定比较仍为必要输入。可合并重复身份/来源元数据，但 MUST 保持值、类型、来源及成员映射。完整材料保存在库，实际模型视图 SHALL 分别说明材料保存完整性、分诊适用性和实际可见性，MUST NOT 将prepared或发送成功等同模型完整阅读。
@@ -1042,6 +1050,11 @@ New configured C3/C6 inputs SHALL select business materials according to the dec
 ### Requirement: Program observations preserve facts without repeated representation
 New fixed Case boundaries SHALL freeze the observation rendering version and business field mapping. Program-owned observed statements MAY display identical values once only within the same original record, member scope and semantic field, retaining every selected source ID and each original path/value in the frozen mapping. Different records, fields, types or values MUST remain distinct. Historical boundaries SHALL retain their original rendering and validation behavior; the existing stored statement capacity SHALL NOT be raised or satisfied by truncating facts.
 
+#### Scenario: A retained raw source list differs from its admitted derived list
+- **WHEN** the existing admission policy deduplicates source references by first occurrence before generating a program-owned statement, while the receipt retains the original raw unit
+- **THEN** later verification of that statement SHALL replay the same applicable admission derivation and frozen renderer, preserving the original unit, citation-processing provenance, first-occurrence reference order and all existing content/source checks
+- **AND** replay SHALL NOT rewrite model or human prose, modify historical originals or fabricate a historical processing receipt
+
 #### Scenario: The same observed field appears in normalized and raw envelopes
 - **WHEN** configured event roots identify the same field in one record and the selected original values have identical types and content
 - **THEN** the new program statement displays the record scope once and the common field/value once with every selected source ID
@@ -1225,6 +1238,149 @@ C3/C4 SHALL 沿现有工具能力和冻结绑定匹配业务目标。真实来�
 - **WHEN** 读取C4路由或Deep汇总
 - **THEN** 保留原计划方式、目标和绑定；程序依据真实查询回执独立记录是否派发、状态、返回数量及来源工件，不从Deep文字或完成状态推断新增取证
 - **AND** 无查询的材料分析、有返回的查询、成功查空、未查、失败和unknown保持区别，graph不计外部查询，human不自动创建任务
+
+### Requirement: Required subject judgments are distinct from review and nullable storage
+
+按负责人 2026-11-18 的明确要求，事件和 Case 建立后 SHALL 有可解释的系统初始严重程度和处理优先级；正常 I/Case 分析交付 SHALL 产生本主体本轮严重程度意见、依据及适用范围。模型可表达不确定和待复核，但 SHALL NOT 因此豁免应产出的属性。数据库允许空、API 必有键、程序接收或自动采用 MUST NOT 作为业务属性完整或已人工复核的证明。来源等级、系统意见、当前生效值、人工覆盖、结论确定性和生命周期 SHALL 区分。告警既有来源等级和分诊合同保持，变更其对外交接须另列影响和兼容范围。
+
+本要求为本轮目标增量，当前审查发现系统产出链尚未补齐，不能视为已实现；字段矩阵和实施顺序见 `subject-field-audit-20261118.md` 及其链接基准。优先级规则及缺来源初始政策 SHALL 走明确配置；不得使用 AI 置信度冒充工作优先级，不允许前端用常数伪造模型意见。
+
+#### Scenario: A normal investigation concludes with uncertainty
+- **WHEN** I 或 Case 正常交付了证据不足的结论
+- **THEN** 保存本轮业务意见、严重程度及依据、范围、未确定事项，待复核与等级并列展示；缺少应产出的等级时登记功能/交付问题，不将空值解释为合法完成
+
+#### Scenario: A human changes a system supplied priority
+- **WHEN** 人工调整已由系统给出初值的优先级
+- **THEN** 保存人工值、理由、操作者、时间及版本，保留系统意见；后轮产生新意见不静默覆盖人工值，撤销覆盖按明确规则恢复系统值
+
+#### Scenario: A new round cannot produce a required opinion
+- **WHEN** 截断、失败或其他异常导致本轮缺少必需意见
+- **THEN** 保留可用结果及历史原答继续合法下游，当前页面明确显示已有值的真实来源、时间、范围和本轮未更新原因；不把旧值或规则初值伪装成新模型意见，不将该字段验收计为通过
+
+#### Scenario: UI receives an existing incident level and a saved recommendation
+- **WHEN** 事件接口已有 severity_effective，或 Result 已保存建议正文、目标及依据
+- **THEN** 页面按该主体/轮次读取实际值并清楚展示，来源汇总不冒充分析等级意见；建议与真实审批/执行分别展示，不因展示缺口新增模型调用
+
+### Requirement: Automatic severity is monotonic and human changes remain traceable
+
+事件/Case SHALL 保存当前等级、来源/依据、本轮意见、冻结范围及更新版本。等级顺序为 info、low、medium、high、critical；创建时以实际成员最高已知等级初始化，全部未知按配置 medium 并明示规则初值。后续自动应用 SHALL 只提升当前等级，包含曾由人工设置的当前值；降低建议 SHALL 保存且注明未自动应用。人工 SHALL 能带理由、操作者、时间和期望版本升降等级，新一轮适用意见仍可上调。成员变化 SHALL 标记范围/新鲜度，不以旧成员汇总反复撤销人工降低。
+
+I/C6 SHALL 在原调用产出独立等级意见及依据、实际/潜在影响、来源和限制；程序绑定身份和冻结范围，C3/Deep/定向意见不得直接改全案当前等级。模型输入 SHALL 按本环节用途选择，不为评级带入租户/测试控制字段、计算规则或人工操作台账。旧 schema 和历史原答不改写；新增持久化使用增量迁移，GET 不初始化/回填。Incident 来源汇总与持久生效值、Case 旧 null 清除的兼容变化 SHALL 按定稿 §4 明列并同步 OpenAPI/交接，不改告警交接合同。
+
+#### Scenario: New subjects expose persisted initial risk through existing reads
+- **WHEN** 原生接收创建事件或显式创建 Case，实际分配成员含已知或未知来源等级
+- **THEN** 创建事务按实际成员最高已知等级给初值，全部未知使用显式配置并标规则初值；保存版本、时间和成员材料引用。Incident来源汇总与持久生效等级分开，列表、详情、筛选、排序、统计及导出同源，告警合同不变
+
+#### Scenario: Installed Fusion ingress initializes the event in its alert transaction
+- **WHEN** 显式配置的 Fusion 入站角色首次保存告警和关联事件
+- **THEN** 使用事件自己的成员及风险策略完成初始化，告警、材料、成员关系、事件风险属性及初始分析任务在同一事务保存
+- **AND** 新装和升级接通该角色所需的事件列，列表和同一 ID 的详情读回保存结果；Case 创建仅在其适用分支读取 Case 成员及人工定级操作者
+
+#### Scenario: Capacity creates a successor Case
+- **WHEN** 一次分配因容量创建多个 Case，或创建请求明确给主案人工等级
+- **THEN** 每个新案根据自己的实际成员初始化，续案不继承前案等级；主案人工指定值保留操作者/来源及系统初值。重试不重置已存状态，旧主体不因GET或新增成员被再次初始化
+
+#### Scenario: A later opinion recommends a lower severity
+- **WHEN** 当前等级 high，本轮适用意见 medium
+- **THEN** 当前等级仍为 high，本轮意见和未自动降低原因可读；不把降低建议记为程序错误，不改历史意见
+
+#### Scenario: Publishing an incident opinion does not invalidate its own input
+- **WHEN** 新直接 I 保存并应用等级意见，成员材料和原有业务输入未发生变化
+- **THEN** 自身持久等级、风险台账及优先级输出不使该轮诊断过期，写端、核心 freshness 与 HTTP 返回同一 current 结论；真实材料或业务输入变化仍判 stale
+- **AND** 用版本化比较增量识别新输入，完整原件和旧无标记输入的比较合同保持，已完成旧批的 stale 不能追认为通过
+
+#### Scenario: A fresh opinion raises a manually lowered grade
+- **WHEN** 人工带理由把 high 改为 medium，之后启动的新轮给出适用的 high 意见
+- **THEN** 自动上调至 high，人工原记录保留；前后值、依据及来源 Run 可追溯
+
+#### Scenario: An old or racing result arrives after a human edit
+- **WHEN** 已处理意见重放、较早轮次晚到，或运行开始后人工改过等级
+- **THEN** 程序按幂等身份、轮次次序、冻结范围和人工修订号保存或复用处理记录；旧/失效输入不能覆盖新人工值，未应用原因明确可读
+
+#### Scenario: A truncated response includes an independently usable severity unit
+- **WHEN** I/C6 长度截断或部分交付，但等级单元完整且能绑定本主体冻结范围
+- **THEN** 保存并按相同更新规则处理该单元，纯引用质量问题独立记录；不能因 length 自动丢弃，也不能从残句拼造缺失值或伪造完整 Result
+- **AND** 缺少可用单元时当前值保持并记录本轮未更新，独立可用分析继续下游；不追加本阶段专用模型请求
+
+#### Scenario: An unknown execution preserves a complete candidate unit
+- **WHEN** 已保存完整等级候选，但整轮执行结果仍 unknown 或本地交付终态尚未确认
+- **THEN** 候选原文及来源保留，当前等级/优先级不变；不得把 unknown 当作可应用的已知部分交付，不伪造采用或重派未知调用
+
+### Requirement: Priority maps effective severity and preserves human overrides
+
+程序 SHALL 按显式配置把当前生效严重程度映射为 info=10、low=30、medium=50、high=75、critical=95，并保存映射版本、依据及时间；不使用置信度、上下文乘数或千分制。系统建议和人工覆盖 SHALL 分存；人工值允许 0–100（含 0），有理由/操作者/时间/版本。无覆盖时生效值等于系统建议；覆盖存在时新模型意见不改人工优先级。撤销覆盖 SHALL 使用当前等级映射，不用创建时旧值。优先级不因此变为队列调度权重。
+
+#### Scenario: Severity rises while a human priority is active
+- **WHEN** 人工优先级60，当前等级由 high 自动升到 critical
+- **THEN** 系统建议变95，生效优先级保持60，两者均可读取；显式撤销后变95，活动记录和版本可追溯
+
+#### Scenario: A required grade is cleared through an old management client
+- **WHEN** 客户端提交 Case severity=null，或 Incident severity_override=null
+- **THEN** Case 明确422且原值不变；Incident 允许且要求同时提交非空 severity_override_reason，按显式人工恢复成员规则处理并保存理由/操作者/前后值，全部来源未知使用配置初值；不能返回成功却保存空的必需等级
+- **AND** 旧 Incident 客户端撤销但无理由时明确422且原值不变；现行禁止 null 带理由的验证规则随本次合同增量调整，OpenAPI、页面及回执一并验证
+
+#### Scenario: A manual update retries or conflicts with another update
+- **WHEN** Case/Incident等级或优先级管理操作重试、复用不同意图的幂等键、或使用过期主体版本
+- **THEN** 同键同意图返回原回执且不新增活动、不改后续状态；同键异意图或旧版本明确409，无部分写入。成功操作保存各自理由、操作者、时间及前后值，主体行版本只推进一次
+- **AND** Incident批量保持整批原子性，任一项版本冲突导致全部不写；告警管理合同和行为不随此功能扩展
+
+#### Scenario: A manual priority operation is explicit and traceable
+- **WHEN** 人工设置或撤销优先级覆盖，或同时调整等级
+- **THEN** 0与100均是合法值，沿既有Numeric(5,2)最多两位小数且不静默舍入，null/越界/缺非空理由/同时设置和撤销明确422；省略和false不触发撤销，理由不能独立提交。按本次配置和当前有效等级保存系统建议，覆盖值及理由独立保留；撤销恢复当前映射，历史创建initial和policy不被覆盖
+
+#### Scenario: A service page edits risk and encounters a version conflict
+- **WHEN** 页面通过已有Case/Incident管理接口提交明确等级或优先级修改
+- **THEN** 发送对应理由、原操作键和已读版本，成功后独立GET并展示真实保存值与活动；409保留草稿，显式读取最新版本后才允许用户重新确认；结果未知不自动重派或换键
+- **AND** 真实服务模式不使用演示默认值补空，切换主体后旧响应不得写入当前页；可信HTTP连接不强制虚构token，已有token仅在内存使用
+
+#### Scenario: A page reads a historical grade opinion and related activities
+- **WHEN** 用户在4173或4177选择历史Run或查看主体风险变化记录
+- **THEN** 历史意见读取该Run的冻结/候选/应用工件并核身份，当前等级明确作为当前观察单独展示；工件缺失或失败不回落latest。活动按实际target归属展示前后值/理由/操作者和来源轮次，关联主体活动不能冒充本主体等级变化
+- **AND** 列表、详情、筛选和导出沿已有持久值保持一致；4177保持只读，模型降低建议不当作执行错误，旧快照和紫色测试标识保持
+
+### Requirement: Task times identify actual waiting execution and local completion
+
+分析任务 SHALL 保留受理 submitted_at、首次/最近确认入队时间及已有本地起止；尝试 SHALL 独立保存本次首次确认入队、开始和本地结束。补充入队不得重写原受理或首次入队，重试不得复用上次尝试的等待起点。任务/尝试/Run/步骤 SHALL 沿真实关联读取，开始包含输入准备，尚无 Run/step 时不得虚构步骤。原状态/原因/下一重试时间保留，读取投影提供实际活动步骤及服务 observed_at；GET 不写运行状态。
+
+排队/执行/总历时 SHALL 按定稿 §6 的同层时间计算，未知为 null 而非0，负时差显式异常。unknown 的本地结束 SHALL 与远端 Run 未知分别表示，不能据此继续累加本地运行时长或冒充远端已完成。时间带时区，配置及能力不改变既有容量/串行/重试规则，不新增心跳平台。
+
+#### Scenario: A task is replenished and later retried
+- **WHEN** 同次等待任务被补充入队，随后发生一次已允许的重试
+- **THEN** 本次首次入队及原受理不变，新尝试有自己的入队/起止；HTTP 与4177耗时对应同一尝试，重试预约时间不冒充实际开始
+
+#### Scenario: Local execution ends with an unknown remote result
+- **WHEN** 任务已本地收尾，而 Run 结果仍 unknown
+- **THEN** 读取本地 ended_at/耗时及 Run unknown，不继续显示本地执行中；无已保存步骤/入队时间则显示未记录，不能回填推测值
+
+#### Scenario: Preparation is visible before a Run exists
+- **WHEN** a dispatcher acquires an execution slot and starts loading task materials
+- **THEN** it SHALL first persist a running attempt with the actual start and confirmed enqueue time, so task HTTP reads show running without inventing a Run or step
+- **AND** an unchanged-material check SHALL end that preparation attempt and skip the task without a Run, normal-completion pointer update or automatic-window refresh
+- **AND** capacity recovery SHALL compare against the stopped task's actual saved Run rather than the new preparation attempt
+
+#### Scenario: Task timing reads share one server observation
+- **WHEN** a task list or detail is read
+- **THEN** task and attempt durations SHALL use one database observation time per response, and active_step SHALL belong to the current local running attempt and its running Run
+- **AND** missing timestamps or unknown local ends SHALL produce null duration, negative differences SHALL be reported as anomalies, and historical enqueue times SHALL NOT be fabricated
+- **AND** task timing SHALL distinguish total elapsed, current pending queue and retry wait, while attempt timing SHALL distinguish queue and execution
+
+### Requirement: Operational exceptions are persisted to configured log files
+
+本链路服务 SHALL 沿既有日志设施将真实依赖、调用、执行和保存异常写入配置指定的结构化文件；只有控制台或 logger 调用不算完成。文件 SHALL 可在 Redis/PG 失败时独立写入，路径、级别、轮转/保留由 profile 配置，容器持久挂载，多进程分文件。记录 SHALL 含时间、服务/模块、操作/阶段、依赖、错误类型/码、程序定义的事件 message 及 traceback 结构，以及实际存在的 task/attempt/Run/step 关联和重试事实。尚无任务的异常不得伪造 task ID。
+
+日志 SHALL NOT 保存凭据、locals、完整告警/请求、提示词、模型原答或隐藏推理；第三方正文不复制，异常链仅保留类型及文件/行号/函数结构。按负责人最新决定，本轮不新增业务数据脱敏或通用脱敏专项，既有凭据保护保持。HTTP 仅暴露受控错误摘要及关联，不返回堆栈。文件失败 SHALL 通过 stderr 受控报告、不递归或掩盖原异常；不得宣称文件保存成功。正常排队/待复核/降低建议不作为执行错误；不为本需求新增监控、自动重启或通用恢复框架。
+
+#### Scenario: Redis is unavailable before task selection
+- **WHEN** 调度连接 Redis 失败，尚未取得某个任务
+- **THEN** 文件保留服务、Redis 操作、错误码/异常链和实际时间，无任务关联保持缺失；无需 Redis/PG 成功才能记录，页面不会虚构某任务已开始
+
+#### Scenario: A known task fails during a stage
+- **WHEN** 某已登记任务阶段发生第三方异常
+- **THEN** 文件有 task/attempt/Run/step 中已存在的关联、异常类型及堆栈文件行号，普通日志不复制异常正文；原业务失败/unknown语义保持
+
+#### Scenario: Log files rotate or cannot be written
+- **WHEN** 达到 profile 配置大小或文件写入失败
+- **THEN** 成功写入的文件按配置份数轮转保留；写入失败向 stderr 给出一次结构化降级记录，原业务异常和既有控制台仍可观察
 
 ### Requirement: Investigation runs expose a saved decision not to escalate
 

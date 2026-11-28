@@ -42,6 +42,32 @@ def receive(stage, content, prepared, **kwargs):
     return ai_stage_delivery.receive(stage, text, prepared, uuid4(), **kwargs)
 
 
+@pytest.mark.parametrize("verdict", ["malicious", "benign", "false_positive", "needs_review", None, "invalid", "duplicate"])
+def test_incident_verdict_is_independent_of_the_diagnosis(prepared, verdict):
+    from app.socai2.business_verdict import PATH, VERSION
+
+    prepared["business_verdict_version"] = VERSION
+    body = answer("I")
+    if verdict == "duplicate":
+        body["business_verdict"] = "needs_review"
+        content = json.dumps(body)[:-1] + ', "business_verdict": "benign"}'
+    else:
+        if verdict is not None:
+            body["business_verdict"] = verdict
+        content = json.dumps(body)
+    got = receive("I", content, prepared)
+    valid = verdict not in {None, "invalid", "duplicate"}
+    assert got["result"].conclusion == body["diagnosis"]["conclusion"]
+    assert got["result"].business_verdict == (verdict if valid else None)
+    assert got["delivery"]["state"] == ("complete" if valid else "partial")
+    if valid:
+        unit, = [u for u in got["retained_units"] if u["path"] == PATH]
+        start, end = unit["value_span"]
+        assert json.loads(content[start:end]) == verdict
+    else:
+        assert any(gap["path"] == PATH for gap in got["missing_units"] + got["invalid_units"])
+
+
 @pytest.mark.parametrize("stage", ["A", "I"])
 @pytest.mark.parametrize("finish", ["stop", "length"])
 def test_full_answer_keeps_result_and_every_original_value(stage, finish, prepared):

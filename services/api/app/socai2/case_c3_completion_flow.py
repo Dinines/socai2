@@ -12,7 +12,29 @@ from .baseline_enrichment import S, error
 from .baseline_execution_schema import compact_execution_wire
 from .baseline_reasoning import ModelSteps
 from .baseline_store import F, StoreError, digest
+from .model_errors import RESPONSE_ENVELOPE_INVALID
 from .stage_delivery import VERSION, validate_sources
+
+
+def request_dispatched(model, originals):
+    """Use an explicit call fact or a verified received response, never step existence."""
+    if model is None:
+        return False
+    explicit = (model.get("error") or {}).get("request_dispatched")
+    if type(explicit) is bool:
+        return explicit
+    for body in originals.values():
+        if body.get("type") == "model_original_response" and isinstance(body.get("raw"), dict):
+            return True
+        if body.get("direction") == "response" and isinstance((body.get("payload") or {}).get("raw"), dict):
+            return True
+    return None
+
+
+def combined_dispatch(*states):
+    if any(state is True for state in states):
+        return True
+    return False if all(state is False for state in states) else None
 
 
 async def originals_for(service, steps, tenant, case_id, run_id, model_id, response_id):
@@ -53,14 +75,16 @@ async def complete_sections(service, tenant, case_id, run_id, stage_id, prepared
     received = prepared.get("unit_delivery")
     if received is None:
         received = units.receive("", prepared, context, bindings, None)
-        received["parse"].update(state="no_response" if not originals or not prepared["citation_review"].get(
-            "original_response_artifact_id") else "unusable", reasons=[reason or "response_not_admitted"])
+        received["parse"].update(state="unusable" if reason == RESPONSE_ENVELOPE_INVALID or (
+            originals and prepared["citation_review"].get("original_response_artifact_id")) else "no_response",
+            reasons=[reason or "response_not_admitted"])
     policy = prepared["case_boundary"]["c3_completion"]
     completion.validate_policy(policy, frozen=True)
     missing = units.completion_fields(received)
     record = {"schema_version": schema, "type": "c3_section_completion", "version": completion.VERSION,
         "initial_response_artifact_id": str(response_id) if response_id else None,
-        "initial_reason": reason, "initial_delivery": copy.deepcopy(received["delivery"]),
+        "initial_reason": reason, "initial_request_dispatched": request_dispatched(first, originals),
+        "initial_delivery": copy.deepcopy(received["delivery"]),
         "initial_missing_units": copy.deepcopy(received["missing_units"]),
         "initial_invalid_units": copy.deepcopy(received["invalid_units"]),
         "state": "not_needed", "attempts": 0, "missing_fields": missing}
@@ -87,6 +111,7 @@ async def complete_sections(service, tenant, case_id, run_id, stage_id, prepared
                     supplement_response_artifact_id=str(second_response) if second_response else None)
                 second, more, _ = await originals_for(service, steps, tenant, case_id, run_id, second_id, second_response)
                 record["supplement_call_state"] = second["state"] if second else "skipped"
+                record["supplement_request_dispatched"] = request_dispatched(second, more)
                 originals.update(more)
                 supplement = extra.get("unit_delivery")
                 if supplement is not None:
@@ -111,7 +136,9 @@ async def complete_sections(service, tenant, case_id, run_id, stage_id, prepared
             "originals": [{"artifact_id": identity, "kind": "response" if body.get("type") == "model_original_response" or body.get("direction") == "response"
                            else "request", "sha256": digest(body)} for identity, body in originals.items()],
             "execution": {"kind": "model", "call_state": "unknown" if record.get("supplement_call_state") == "unknown" else first["state"] if first else "skipped",
-                "local_state": "ended", "local_ended_at": now.isoformat(), "request_dispatched": bool(first),
+                "local_state": "ended", "local_ended_at": now.isoformat(),
+                "request_dispatched": combined_dispatch(record["initial_request_dispatched"],
+                    record.get("supplement_request_dispatched", False)),
                 "finish_reason": prepared.get("received_finish_reason"),
                 "error": error(reason, now) if reason else None,
                 "retry_allowed": False, "retry_reason": "bounded_supplement_finished_or_not_available"},

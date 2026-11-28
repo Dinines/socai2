@@ -73,7 +73,7 @@ async def open_delivery(path):
         setattr(settings, name, runtime[name])
     if not settings.operational_logging_profile_file:
         structlog.configure(wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, runtime["log_level"])))
-    limits = selection.body["read_limits"]
+    limits = policy.read_limits(selection)
     client = Client(**config["clickhouse"], disable_reconnect=True,
                     connect_timeout=limits["connect_timeout_seconds"], send_receive_timeout=limits["send_receive_timeout_seconds"])
     cache = redis.from_url(config["redis"]["url"], decode_responses=False,
@@ -88,7 +88,7 @@ async def open_delivery(path):
         engine = FusionEngine(Deduplicator(cache), Correlator(cache), confidence_scorer=ConfidenceScorer(enabled=runtime["confidence_enabled"]))
         receiver = LakeAlertReceiver(selection, receive, sink, engine)
         store = DeliveryStore(sink._pool, selection, receive, policy)
-        yield LakeAlertDelivery(LakeDeliverySource(client, selection), receiver, store, policy)
+        yield LakeAlertDelivery(LakeDeliverySource(client, selection, read_limits=limits), receiver, store, policy)
     finally:
         await sink.stop()
         await cache.aclose()

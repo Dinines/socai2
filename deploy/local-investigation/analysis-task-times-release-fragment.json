@@ -1,0 +1,50 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "candidate_S5_passed_not_deployed",
+  "requires": [
+    "analysis-dispatch-release-fragment.json",
+    "subject-risk-release-fragment.json"
+  ],
+  "schema": {
+    "prerequisite": "128_socai2_analysis_lifecycle.sql",
+    "migration": "133_socai2_analysis_task_times.sql",
+    "installer_mode": "analysis-task-times"
+  },
+  "patches": {
+    "services/api/app/models/socai2.py": "api/app/models/socai2.py",
+    "services/api/app/socai2/analysis_task_times.py": "api/app/socai2/analysis_task_times.py",
+    "services/api/app/socai2/analysis_task_store.py": "api/app/socai2/analysis_task_store.py",
+    "services/api/app/socai2/analysis_tasks.py": "api/app/socai2/analysis_tasks.py",
+    "services/api/app/socai2/analysis_dispatch_store.py": "api/app/socai2/analysis_dispatch_store.py",
+    "services/api/app/socai2/analysis_dispatcher.py": "api/app/socai2/analysis_dispatcher.py",
+    "services/api/app/socai2/analysis_incident_executor.py": "api/app/socai2/analysis_incident_executor.py",
+    "services/api/investigation_http/analysis_task_contracts.py": "api/investigation_http/analysis_task_contracts.py",
+    "services/api/investigation_http/adapters/analysis_tasks.py": "api/investigation_http/adapters/analysis_tasks.py"
+  },
+  "activation_order": [
+    "Complete the change acceptance and independent end audit before coordinated release.",
+    "Use the explicit database profile and apply 133 before loading the new ORM/dispatcher/HTTP readers; preserve the frozen V1 and all existing records.",
+    "Retain the configured queue namespace, tenant, capacity, retry policy and process lock; this fragment does not enable consumers.",
+    "Publish the updated OpenAPI and both existing task views together; compare stored times, attempts and step links with HTTP reads."
+  ],
+  "page_delivery": {
+    "viewer4177": {
+      "source_root": "services/investigation_test/web",
+      "assets": [
+        "viewer.js",
+        "execution_flow.mjs",
+        "analysis_task_time.mjs"
+      ],
+      "mode": "GET_only"
+    },
+    "preview4173": {
+      "source_root": "prototypes/security-pages-v2",
+      "assets": [
+        "index.html",
+        "service-workspace.js"
+      ],
+      "mode": "data=service"
+    }
+  },
+  "notes": "No historical timestamp backfill, model calls, formal service activation or deployment command. New times are nullable; preparation skips have no Run and never refresh automatic eligibility."
+}

@@ -1,19 +1,12 @@
 """The transport boundary translates existing application errors exactly once."""
 
 import logging
-from app.core.operational_logging import log_exception
 
 from fastapi import HTTPException
 from pydantic import ValidationError
 
+from investigation_http.adapters.operational_logging import log_service_error
 from investigation_http.contracts import Actor, StoreError
-
-
-def log_service_error(exc):
-    if exc.status >= 500:
-        log_exception(logging.getLogger(__name__), "http_use_case_failed", extra={
-            "operation": "http_use_case", "stage": "http", "error_code": exc.code,
-            "http_status": exc.status})
 
 
 def query_input(model, **values):
@@ -40,7 +33,7 @@ async def invoke(call):
     try:
         return await call
     except StoreError as exc:
-        log_service_error(exc)
+        log_service_error(logging.getLogger(__name__), exc)
         raise HTTPException(exc.status, exc.code) from None
 
 
@@ -48,7 +41,7 @@ def provide(factory, *args):
     try:
         return factory(*args)
     except StoreError as exc:
-        log_service_error(exc)
+        log_service_error(logging.getLogger(__name__), exc)
         raise HTTPException(exc.status, exc.code) from None
 
 
@@ -66,5 +59,5 @@ async def invoke_record(call):
     try:
         return await call
     except StoreError as exc:
-        log_service_error(exc)
+        log_service_error(logging.getLogger(__name__), exc)
         raise record_error(exc.code, exc.status) from None

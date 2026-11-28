@@ -238,7 +238,7 @@ async def run_checks(engine, record, only=None):
         assert (await rows(select(C).where(C.c.id == cid)))[0]["current_evidence_artifact_id"] is None
         assert len(await rows(select(S).where(S.c.run_id == rid, S.c.kind == "model", S.c.stage_code == "C6"))) == 1
 
-    async def test_c6_rebuilds_stale_graph_before_claim():
+    async def test_c6_excludes_stale_graph_without_rebuilding():
         cid, rid, _, _ = await fixture()
         before = await service.build_graph(T, cid, rid)
         prepared = await service.prepare_evidence(T, cid, rid)
@@ -246,7 +246,9 @@ async def run_checks(engine, record, only=None):
         await service.query_evidence(T, cid, rid, binding, "member_relationships", gateway=lake.SyntheticLake(0))
         out = await service.finalize(T, cid, rid, gateway=FinalGateway())
         saved = await report(out)
-        assert out["state"] == "completed" and saved["result"]["graph_artifact_id"] != before["graph_artifact_id"]
+        assert out["state"] == "completed" and saved["result"]["graph_artifact_id"] is None
+        graphs = await rows(select(F).where(F.c.run_id == rid, F.c.kind == "alert_graph"))
+        assert len(graphs) == 1 and str(graphs[0]["id"]) == before["graph_artifact_id"]
 
     async def test_c6_invalid_output_is_preserved_without_adoption():
         cid, rid, _, _ = await fixture()
@@ -387,7 +389,7 @@ async def run_checks(engine, record, only=None):
     checks = [test_c6_final_report_result_adoption_and_replay, test_c6_is_fourth_model_after_deep_without_extra_report_call,
         test_c6_exhaustion_and_unknown_usage_are_system_handoffs, test_c6_selected_comparison_has_frozen_old_scope_and_new_members,
         test_c6_unselected_history_does_not_claim_initial_comparison, test_c6_concurrent_owner_and_scope_change_prevent_stale_adoption,
-        test_c6_rebuilds_stale_graph_before_claim, test_c6_invalid_output_is_preserved_without_adoption,
+        test_c6_excludes_stale_graph_without_rebuilding, test_c6_invalid_output_is_preserved_without_adoption,
         test_c6_publication_commit_failure_is_atomic, test_c6_request_commit_failure_does_not_dispatch,
         test_c6_cancel_unknown_and_tenant_isolation, test_c6_contract_scope_roles_comparison_and_report_schema,
         test_c6_no_initial_analysis_and_unavailable_comparison, test_c6_failed_unadopted_history_is_not_initial]

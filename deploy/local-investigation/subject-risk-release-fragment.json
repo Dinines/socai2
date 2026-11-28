@@ -1,0 +1,88 @@
+{
+  "kind": "release-profile-fragment",
+  "status": "candidate_S1_S2_S3_S4_passed_not_deployed",
+  "schema": {
+    "prerequisite": "129_socai2_case_allocation.sql",
+    "migration": "132_socai2_subject_risk.sql",
+    "ingress_migration": "136_socai2_subject_risk_ingress.sql",
+    "installer_mode": "subject-risk"
+  },
+  "config_files": {
+    "deploy/local-investigation/subject-risk.json": "/run/config/subject-risk.json"
+  },
+  "environment": {
+    "SOCAI2_SUBJECT_RISK_CONFIG_FILE": "/run/config/subject-risk.json"
+  },
+  "services_requiring_config": [
+    "fusion",
+    "investigation_http",
+    "analysis_dispatcher"
+  ],
+  "patches": {
+    "services/fusion/app/services/socai2_sink.py": "fusion/app/services/socai2_sink.py",
+    "services/api/app/models/socai2.py": "api/app/models/socai2.py",
+    "services/api/app/socai2/subject_risk.py": "api/app/socai2/subject_risk.py",
+    "services/api/app/socai2/subject_risk_contracts.py": "api/app/socai2/subject_risk_contracts.py",
+    "services/api/app/socai2/case_allocation.py": "api/app/socai2/case_allocation.py",
+    "services/api/app/socai2/case_contracts.py": "api/app/socai2/case_contracts.py",
+    "services/api/app/socai2/page_contracts.py": "api/app/socai2/page_contracts.py",
+    "services/api/app/socai2/page_reader.py": "api/app/socai2/page_reader.py",
+    "services/api/app/socai2/program_facts.py": "api/app/socai2/program_facts.py",
+    "services/api/app/socai2/list_export.py": "api/app/socai2/list_export.py",
+    "services/api/investigation_http/contracts.py": "api/investigation_http/contracts.py",
+    "services/api/investigation_http/external_routes/pages.py": "api/investigation_http/external_routes/pages.py",
+    "services/api/app/socai2/incident-input-v1.json": "api/app/socai2/incident-input-v1.json",
+    "services/api/app/socai2/severity_opinion.py": "api/app/socai2/severity_opinion.py",
+    "services/api/app/socai2/subject_risk_opinions.py": "api/app/socai2/subject_risk_opinions.py",
+    "services/api/app/socai2/incident_model_boundary.py": "api/app/socai2/incident_model_boundary.py",
+    "services/api/app/socai2/incident_output_adapter.py": "api/app/socai2/incident_output_adapter.py",
+    "services/api/app/socai2/ai_stage_delivery.py": "api/app/socai2/ai_stage_delivery.py",
+    "services/api/app/socai2/ai_delivery_store.py": "api/app/socai2/ai_delivery_store.py",
+    "services/api/app/socai2/incident_diagnosis_executor.py": "api/app/socai2/incident_diagnosis_executor.py",
+    "services/api/app/socai2/stage_results.py": "api/app/socai2/stage_results.py",
+    "services/api/app/socai2/stage_inputs.py": "api/app/socai2/stage_inputs.py",
+    "services/api/app/socai2/baseline_store.py": "api/app/socai2/baseline_store.py",
+    "services/api/app/socai2/baseline_delivery.py": "api/app/socai2/baseline_delivery.py",
+    "services/api/app/socai2/baseline_closing.py": "api/app/socai2/baseline_closing.py",
+    "services/api/app/socai2/case_followup_output.py": "api/app/socai2/case_followup_output.py",
+    "services/api/app/socai2/case_followup_input.py": "api/app/socai2/case_followup_input.py",
+    "services/api/app/socai2/case_c6_delivery.py": "api/app/socai2/case_c6_delivery.py",
+    "services/api/app/socai2/risk_management_contracts.py": "api/app/socai2/risk_management_contracts.py",
+    "services/api/app/socai2/subject_risk_management.py": "api/app/socai2/subject_risk_management.py",
+    "services/api/app/socai2/case_management.py": "api/app/socai2/case_management.py",
+    "services/api/app/socai2/case_management_contracts.py": "api/app/socai2/case_management_contracts.py",
+    "services/api/app/socai2/subject_management.py": "api/app/socai2/subject_management.py",
+    "services/api/app/socai2/subject_management_contracts.py": "api/app/socai2/subject_management_contracts.py"
+  },
+  "activation_order": [
+    "Complete the remaining subject-field steps and the whole change acceptance before coordinated release; the candidate is not a complete product workflow.",
+    "Use an explicit database profile with analysis.writer_role and analysis_ingress.role. Apply 132 and 136 through subject-risk and apply the current task-time increment 133 before loading the current ORM. Include analysis-task-times-release-fragment.json when packaging current sources.",
+    "Mount the same reviewed policy in Fusion, HTTP creation/manual management, and the analysis dispatcher; require the existing explicit management batch-limit profile.",
+    "Regenerate and publish the coordinated OpenAPI and verify persisted current values, not only HTTP status."
+  ],
+  "notes": "No deployment command, old-row backfill, data deletion, model call or automatic consumer activation. Existing alert DTOs and priorities are unchanged.",
+  "page_delivery": {
+    "preview4173": {
+      "source_root": "prototypes/security-pages-v2",
+      "assets": [
+        "index.html",
+        "workspace-layout.js",
+        "service-workspace.js",
+        "service-workspace.css",
+        "subject-risk.js"
+      ],
+      "mode": "data=service",
+      "validation": "docs/operations/evidence/subject-risk-s4-20261120-01/README.md"
+    },
+    "viewer4177": {
+      "source_root": "services/investigation_test/web",
+      "assets": [
+        "viewer.js",
+        "subject_risk.mjs"
+      ],
+      "package_builder": "deploy/investigation-test/build.py",
+      "mode": "GET_only",
+      "validation": "docs/operations/evidence/subject-risk-s4-20261120-01/README.md"
+    }
+  }
+}

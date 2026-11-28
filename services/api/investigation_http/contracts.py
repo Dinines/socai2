@@ -78,7 +78,14 @@ from app.socai2.case_management_contracts import (
     CaseManagementUpdate,
     CaseManagementView,
 )
-from app.socai2.case_story_contracts import StoryPage, StoryQuery
+from app.socai2.case_story_contracts import (
+    MemberRelationsQuery,
+    RelatedStoryQuery,
+    StoryEntry,
+    StoryPage,
+    StoryQuery,
+    StorySummary,
+)
 from app.socai2.enums import (
     AlertStatus,
     ArtifactKind,
@@ -113,6 +120,7 @@ from app.socai2.list_query_contracts import (
 from app.socai2.owner_directory import OwnerDirectoryPage, OwnerDirectoryQuery
 from app.socai2.page_contracts import (
     ContentView,
+    IncidentDetailView,
     IncidentSubjectPage,
     IncidentSubjectView,
     RecordPage,
@@ -120,6 +128,7 @@ from app.socai2.page_contracts import (
     Subject,
     SubjectPage,
     SubjectView,
+    TacticCount,
     TraceView,
 )
 from app.socai2.run_directory_contracts import (
@@ -200,6 +209,7 @@ __all__ = [
     "ExplorationQuery",
     "HistoryPage",
     "IncidentAnalysisCoverage",
+    "IncidentDetailView",
     "IncidentInputSelection",
     "IncidentListQuery",
     "IncidentManagementBatch",
@@ -211,10 +221,12 @@ __all__ = [
     "IncidentSubjectView",
     "MaterialState",
     "MemberChange",
+    "MemberRelationsQuery",
     "MoveMembers",
     "MoveReceipt",
     "MutationReceipt",
     "RecordPage",
+    "RelatedStoryQuery",
     "ResultAdoptionPreview",
     "ResultAdoptionReceipt",
     "ResultAdoptionRequest",
@@ -233,13 +245,16 @@ __all__ = [
     "StepKind",
     "StepState",
     "StoreError",
+    "StoryEntry",
     "StoryPage",
     "StoryQuery",
+    "StorySummary",
     "Subject",
     "SubjectBatchReceipt",
     "SubjectMutationReceipt",
     "SubjectPage",
     "SubjectView",
+    "TacticCount",
     "TaskCreate",
     "TaskEdit",
     "TaskMutation",

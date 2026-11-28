@@ -148,7 +148,7 @@ python3 deploy/http-service/verify_management.py --profile .local/backend-integr
 
 反馈四值：`true_positive`真实威胁、`false_positive`误报、`benign`正常/授权、`needs_review`需跟进。误报/正常使告警`completed`；已关闭改真实威胁/需跟进恢复`in_progress`。管理时仅分配不改告警状态；人工直接关闭必须有理由，不改原判定。
 
-事件分配未解决对象默认进入`in_progress`，已解决只换负责人保持`resolved`；显式解决须`resolution_note`。`severity_override`设置非null需同时给`severity_override_reason`，清空覆盖用null并省略理由；清空后恢复成员自动等级。省略字段不改，`owner_id=null`取消分配，`tags=[]`清空；`handling_status`和`tags`不接受null，不能人工写unknown。
+事件分配未解决对象默认进入`in_progress`，已解决只换负责人保持`resolved`；显式解决须`resolution_note`。正式11-17版的`severity_override`设置非null需理由，null清除不带理由；**S3候选已明确变更：设置和null恢复均必填非空理由，Case等级不再允许null清空**，并增加优先级设置/撤销，详见[候选管理合同](subject-risk-fields-s3-20261120.md)。候选验证脚本须搭配同版服务，正式服务发布前仍以线上Swagger为准。省略字段不改，`owner_id=null`取消分配，`tags=[]`清空；`handling_status`和`tags`不接受null，不能人工写unknown。
 
 错误：404 `subject_not_found`；409 `subject_row_version_conflict`／`operation_key_conflict`；422 字段校验或`subject_owner_not_in_tenant`、`subject_batch_selection_invalid`、`alert_close_reason_required`。解决或覆盖理由缺失由字段校验返回422。未知执行先GET确认，不自动换键重新提交。写入不调用模型，不启动Run，不自动关闭/重开父事件或Case。
 

@@ -16,7 +16,7 @@
 - **THEN** 未登记返回404，已登记不可读返回503；不按客户端路径读取其他文件，不返回损坏正文冒充原件
 
 ### Requirement: Reusable investigation scenarios include complete context and future dependencies
-测试配套 SHALL 覆盖正常告警入站、A/I、Case完整调查、持续更新、H、定向、手动综合、采用/结束及对应HTTP保存读取，保留尚未实现能力的用例、数据和接口依赖。场景 SHALL 将告警、可查询上下文、基础/知识材料、人工输入、操作时间线及独立预期成套定义，保持来源身份/时间/原文一致；期望答案 MUST NOT 进入投递或模型输入。测试与业务Run身份 SHALL 分开，每次执行使用独立批次并保留历史证据。
+测试配套 SHALL 覆盖本期正常告警入站、A/I、Case完整调查、持续更新、H、采用/结束及对应HTTP保存读取。人工定向分析、手动全案综合等后置能力 SHALL 保留用例设计、数据合同和接口依赖；后置能力未提供时记录依赖未就绪，不要求在本期真实执行或声称已通过。场景 SHALL 将告警、可查询上下文、基础/知识材料、人工输入、操作时间线及独立预期成套定义，保持来源身份/时间/原文一致；期望答案 MUST NOT 进入投递或模型输入。测试与业务Run身份 SHALL 分开，每次执行使用独立批次并保留历史证据。
 
 #### Scenario: A Case capability has a contract but no implementation
 - **WHEN** 定向或综合合同已定而实际模块或HTTP尚未交付

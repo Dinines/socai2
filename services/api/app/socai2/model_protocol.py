@@ -130,7 +130,8 @@ async def complete_deepseek(config, body, timeout):
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
             response = await client.post(url, headers={"Authorization": "Bearer " + config.api_key}, json=body)
             response.raise_for_status()
-            result = dict(response.json())
+            from .model_errors import decode_response
+            result = decode_response(response, config.api_key)
     except Exception as exc:
         llm_health.record_failure(type(exc).__name__)
         raise
